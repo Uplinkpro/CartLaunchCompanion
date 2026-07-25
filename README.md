@@ -272,15 +272,8 @@ Publish-Portable.ps1
 
 Planned improvements include:
 
-* Automatic library import
-* Theme editor
-* Favorites
-* Collections
-* Search and filters
 * Custom controller mappings
 * Emulation support
-* Background music
-* Download manager
 * Cloud artwork cache
 
 ---
