@@ -598,7 +598,7 @@ Enjoying **Cart Launch Companion**? You can support continued development, bug f
 <br>
 
 <a href="https://buymeacoffee.com/Uplinkpro">
-  <img src="docs/images/buy-me-a-coffee-qr.png" alt="Buy Me a Coffee QR code" width="240">
+  <img src="docs/images/buymeacoffee-qr.png" alt="Buy Me a Coffee QR code" width="240">
 </a>
 
 <br><br>
