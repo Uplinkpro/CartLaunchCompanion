@@ -1,0 +1,10 @@
+{
+  "Name": "Example Ubisoft Game",
+  "Launcher": "Ubisoft",
+  "UbisoftGameId": "1234",
+  "SteamMetadataID": "123456",
+  "ProcessName": "ExampleGame",
+  "RestoreOnExit": true,
+  "ProcessStartTimeoutSeconds": 180,
+  "ProcessExitPollSeconds": 2
+}

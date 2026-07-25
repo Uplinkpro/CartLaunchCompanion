@@ -1,0 +1,7 @@
+{
+  "Name": "Example GOG Game",
+  "Launcher": "GOG",
+  "GogGameId": "1234567890",
+  "ProcessName": "ExampleGame",
+  "RestoreOnExit": true
+}

@@ -1,0 +1,9 @@
+{
+  "Name": "Portal 2",
+  "Launcher": "Steam",
+  "SteamID": "620",
+  "ProcessName": "portal2",
+  "RestoreOnExit": true,
+  "ProcessStartTimeoutSeconds": 30,
+  "ProcessExitPollSeconds": 2
+}

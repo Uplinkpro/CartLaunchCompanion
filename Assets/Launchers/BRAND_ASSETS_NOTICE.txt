@@ -1,0 +1,7 @@
+Launcher brand assets
+=====================
+These graphics contain or depict third-party trademarks solely to identify compatible game-launcher services.
+All trademarks and brand names remain the property of their respective owners. No endorsement or affiliation is implied.
+The custom layout, gradients, sizing, and presentation were created for Cart Launch Companion Script.
+
+Layout update: launcher marks are positioned in a lower-left safe zone to avoid the central game-selection interface.

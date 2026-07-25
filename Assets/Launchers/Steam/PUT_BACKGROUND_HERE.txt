@@ -1,0 +1,1 @@
+Add Background.jpg and optionally Logo.png to this folder.

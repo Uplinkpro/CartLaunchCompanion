@@ -1,0 +1,7 @@
+{
+  "Name": "Example Epic Game",
+  "Launcher": "Epic",
+  "EpicAppName": "YourEpicCatalogAppName",
+  "ProcessName": "ExampleGame",
+  "RestoreOnExit": true
+}

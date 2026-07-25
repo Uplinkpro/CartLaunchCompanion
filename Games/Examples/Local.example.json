@@ -1,0 +1,10 @@
+{
+  "Name": "Example Local Game",
+  "Launcher": "DirectExe",
+  "Executable": "Game\\ExampleGame.exe",
+  "Arguments": "-fullscreen",
+  "WorkingDirectory": "Game",
+  "SteamMetadataID": "123456",
+  "ProcessName": "ExampleGame",
+  "RestoreOnExit": true
+}

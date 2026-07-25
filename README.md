@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/brand/repository-banner.png" alt="Cart Launch Companion" width="100%">
+
 # Cart Launch Companion
 
 ### A portable, fullscreen game launcher built for the couch.
@@ -589,43 +591,42 @@ Thank you to everyone who tests the project, reports bugs, improves documentatio
 
 <div align="center">
 
-# ☕ Support Cart Launch Companion
+## ☕ Support Cart Launch Companion
 
-If you've enjoyed using **Cart Launch Companion**, saved time, or just want to help support future development, consider buying me a coffee.
-
-Your support helps fund:
-
-🎮 New launcher integrations  
-🛠️ Bug fixes and improvements  
-📚 Better documentation  
-🚀 New features and continued development
+Enjoying **Cart Launch Companion**? You can support continued development, bug fixes, documentation, and new launcher integrations.
 
 <br>
 
-## Scan to Buy Me a Coffee
+<a href="https://buymeacoffee.com/Uplinkpro">
+  <img src="docs/images/buy-me-a-coffee-qr.png" alt="Buy Me a Coffee QR code" width="240">
+</a>
 
-<p align="center">
-  <img src="docs/images/buymeacoffee-qr.png" alt="Buy Me a Coffee QR Code" width="250">
-</p>
+<br><br>
 
-**or click below**
-
-<a href="https://buymeacoffee.com/uplinkpro" target="_blank">
+<a href="https://buymeacoffee.com/Uplinkpro">
   <img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=000000" alt="Buy Me a Coffee">
 </a>
 
 <br><br>
 
-**Every coffee helps keep this project growing. ❤️**
+*Scan the QR code or use the button above to support development through Buy Me a Coffee.*
+
+</div>
 
 ---
 
-### Turn your Windows games into a cart like couch-friendly experience.
+<div align="center">
+
+### Turn your Windows game library into a couch-friendly experience.
 
 [Download](https://github.com/Uplinkpro/CartLaunchCompanion/releases/latest)
-&nbsp;&nbsp;•&nbsp;&nbsp;
+  •  
 [Documentation](#game-configuration)
-&nbsp;&nbsp;•&nbsp;&nbsp;
+  •  
 [Issues](https://github.com/Uplinkpro/CartLaunchCompanion/issues)
+&nbsp;&nbsp;•&nbsp;&nbsp;
+[Contributing](CONTRIBUTING.md)
+&nbsp;&nbsp;•&nbsp;&nbsp;
+[Security](SECURITY.md)
 
 </div>

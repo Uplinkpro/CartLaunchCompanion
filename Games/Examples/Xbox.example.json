@@ -1,0 +1,8 @@
+{
+  "Name": "Example Xbox Game",
+  "Launcher": "Xbox",
+  "XboxAppId": "PackageFamilyName!App",
+  "ProcessName": "ExampleGame",
+  "RestoreOnExit": true,
+  "VideoFile": "snaps.mp4"
+}
