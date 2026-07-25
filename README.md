@@ -60,8 +60,6 @@ The application is designed to remain self-contained. Configuration, artwork, ca
 
 </div>
 
-> Add screenshots to `docs/screenshots/` using the filenames shown above, or update these paths to match your files.
-
 ---
 
 ## Highlights
