@@ -12,17 +12,17 @@ Browse your PC game collection with a controller, view artwork and metadata, wat
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet\&logoColor=white)](#building-from-source)
 [![WinUI 3](https://img.shields.io/badge/UI-WinUI%203-0078D4)](#technology)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Latest Release](https://img.shields.io/github/v/release/YOUR-USERNAME/CartLaunchCompanion?display_name=tag)](https://github.com/YOUR-USERNAME/CartLaunchCompanion/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/Uplinkpro/CartLaunchCompanion?display_name=tag)](https://github.com/Uplinkpro/CartLaunchCompanion/releases/latest)
 
 <br>
 
-[Download Latest Release](https://github.com/YOUR-USERNAME/CartLaunchCompanion/releases/latest)
+[Download Latest Release](https://github.com/Uplinkpro/CartLaunchCompanion/releases/latest)
   •  
 [Installation](#installation)
   •  
 [Game Configuration](#game-configuration)
   •  
-[Report an Issue](https://github.com/YOUR-USERNAME/CartLaunchCompanion/issues)
+[Report an Issue](https://github.com/Uplinkpro/CartLaunchCompanion/issues)
 
 </div>
 
@@ -170,7 +170,7 @@ Additional launcher integrations may be added over time.
 
 ### Download a release
 
-1. Open the [Releases](https://github.com/YOUR-USERNAME/CartLaunchCompanion/releases) page.
+1. Open the [Releases](https://github.com/Uplinkpro/CartLaunchCompanion/releases) page.
 2. Download the latest portable ZIP.
 3. Extract the entire archive to a writable folder.
 4. Run the included launcher script or executable.
@@ -447,7 +447,7 @@ Include both files when opening a bug report related to:
 Clone the repository:
 
 ```powershell
-git clone https://github.com/YOUR-USERNAME/CartLaunchCompanion.git
+git clone https://github.com/Uplinkpro/CartLaunchCompanion.git
 cd CartLaunchCompanion
 ```
 
@@ -542,7 +542,7 @@ Please avoid committing:
 
 ## Reporting Bugs
 
-Open a [GitHub issue](https://github.com/YOUR-USERNAME/CartLaunchCompanion/issues/new) and include:
+Open a [GitHub issue](https://github.com/Uplinkpro/CartLaunchCompanion/issues/new) and include:
 
 * Windows version
 * Launcher version or commit
@@ -591,10 +591,10 @@ Thank you to everyone who tests the project, reports bugs, improves documentatio
 
 ### Turn your Windows game library into a couch-friendly experience.
 
-[Download](https://github.com/YOUR-USERNAME/CartLaunchCompanion/releases/latest)
+[Download](https://github.com/Uplinkpro/CartLaunchCompanion/releases/latest)
   •  
 [Documentation](#game-configuration)
   •  
-[Issues](https://github.com/YOUR-USERNAME/CartLaunchCompanion/issues)
+[Issues](https://github.com/Uplinkpro/CartLaunchCompanion/issues)
 
 </div>
