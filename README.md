@@ -30,7 +30,7 @@ Inspired by the simplicity of physical game cartridges, Cart Launch Companion le
 | Xbox App / Game Pass    | ✔      |
 | Ubisoft Connect         | ✔      |
 | Rockstar Games Launcher | ✔      |
-| Flashpoint              | ✔      |
+| Flash                   | ✔      |
 | Direct Executable       | ✔      |
 
 ---
