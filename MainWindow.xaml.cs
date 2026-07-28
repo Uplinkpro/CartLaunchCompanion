@@ -27,8 +27,6 @@ public sealed partial class MainWindow : Window
     private readonly Grid Root = new();
     private readonly Image BackgroundImage = new();
     private readonly Image LauncherBrandLogo = new();
-    private readonly Border LauncherChromeLogo = new();
-    private readonly ImageBrush LauncherLogoMask = new();
     private readonly Image AppBrandIcon = new();
     private readonly TextBlock AppBrandTitle = new();
     private readonly TextBlock AppBrandSubtitle = new();
@@ -45,8 +43,6 @@ public sealed partial class MainWindow : Window
     private readonly Image DetailHeader = new();
     private readonly Image DetailCover = new();
     private readonly Image DetailLauncherLogo = new();
-    private readonly Border DetailChromeLogo = new();
-    private readonly ImageBrush DetailLogoMask = new();
     private readonly Border DetailLauncherLogoGlow = new();
     private readonly TextBlock DetailTitle = new();
     private readonly TextBlock DetailMetadata = new();
@@ -263,17 +259,12 @@ public sealed partial class MainWindow : Window
         brandStack.Children.Add(AppBrandSubtitle);
         CollectionPage.Children.Add(brandStack);
 
-        LauncherChromeLogo.Width = 92;
-        LauncherChromeLogo.Height = 62;
-        LauncherChromeLogo.HorizontalAlignment = HorizontalAlignment.Center;
-        LauncherChromeLogo.VerticalAlignment = VerticalAlignment.Center;
-        LauncherChromeLogo.Background = CreateChromeBrush();
-        LauncherChromeLogo.OpacityMask = LauncherLogoMask;
-        LauncherChromeLogo.Opacity = 0.98;
-
-        LauncherLogoMask.Stretch = Stretch.Uniform;
-        LauncherLogoMask.AlignmentX = AlignmentX.Center;
-        LauncherLogoMask.AlignmentY = AlignmentY.Center;
+        LauncherBrandLogo.Width = 92;
+        LauncherBrandLogo.Height = 62;
+        LauncherBrandLogo.HorizontalAlignment = HorizontalAlignment.Center;
+        LauncherBrandLogo.VerticalAlignment = VerticalAlignment.Center;
+        LauncherBrandLogo.Stretch = Stretch.Uniform;
+        LauncherBrandLogo.Opacity = 0.98;
 
         LauncherLogoGlow.Width = 142;
         LauncherLogoGlow.Height = 92;
@@ -281,7 +272,10 @@ public sealed partial class MainWindow : Window
         LauncherLogoGlow.HorizontalAlignment = HorizontalAlignment.Center;
         LauncherLogoGlow.VerticalAlignment = VerticalAlignment.Center;
         LauncherLogoGlow.Background = CreateLauncherGlowBrush("Steam", 72);
-        LauncherLogoGlow.Child = LauncherChromeLogo;
+        LauncherLogoGlow.BorderBrush = CreateChromeBrush();
+        LauncherLogoGlow.BorderThickness = new Thickness(1);
+        LauncherLogoGlow.Padding = new Thickness(14, 10, 14, 10);
+        LauncherLogoGlow.Child = LauncherBrandLogo;
         Grid.SetRow(LauncherLogoGlow, 1);
         CollectionPage.Children.Add(LauncherLogoGlow);
 
@@ -479,17 +473,12 @@ public sealed partial class MainWindow : Window
         BackButton.Click += Back_Click;
         heroGrid.Children.Add(BackButton);
 
-        DetailChromeLogo.Width = 112;
-        DetailChromeLogo.Height = 72;
-        DetailChromeLogo.HorizontalAlignment = HorizontalAlignment.Center;
-        DetailChromeLogo.VerticalAlignment = VerticalAlignment.Center;
-        DetailChromeLogo.Background = CreateChromeBrush();
-        DetailChromeLogo.OpacityMask = DetailLogoMask;
-        DetailChromeLogo.Opacity = 0.98;
-
-        DetailLogoMask.Stretch = Stretch.Uniform;
-        DetailLogoMask.AlignmentX = AlignmentX.Center;
-        DetailLogoMask.AlignmentY = AlignmentY.Center;
+        DetailLauncherLogo.Width = 112;
+        DetailLauncherLogo.Height = 72;
+        DetailLauncherLogo.HorizontalAlignment = HorizontalAlignment.Center;
+        DetailLauncherLogo.VerticalAlignment = VerticalAlignment.Center;
+        DetailLauncherLogo.Stretch = Stretch.Uniform;
+        DetailLauncherLogo.Opacity = 0.98;
 
         DetailLauncherLogoGlow.Width = 174;
         DetailLauncherLogoGlow.Height = 118;
@@ -497,7 +486,10 @@ public sealed partial class MainWindow : Window
         DetailLauncherLogoGlow.HorizontalAlignment = HorizontalAlignment.Right;
         DetailLauncherLogoGlow.VerticalAlignment = VerticalAlignment.Top;
         DetailLauncherLogoGlow.Margin = new Thickness(0, 54, 96, 0);
-        DetailLauncherLogoGlow.Child = DetailChromeLogo;
+        DetailLauncherLogoGlow.BorderBrush = CreateChromeBrush();
+        DetailLauncherLogoGlow.BorderThickness = new Thickness(1);
+        DetailLauncherLogoGlow.Padding = new Thickness(18, 13, 18, 13);
+        DetailLauncherLogoGlow.Child = DetailLauncherLogo;
         heroGrid.Children.Add(DetailLauncherLogoGlow);
 
         DetailsPage.Children.Add(heroGrid);
@@ -2053,7 +2045,7 @@ public sealed partial class MainWindow : Window
     {
         var normalized = LaunchService.NormalizeLauncher(launcher);
         var logoPath = ResolveLauncherAsset(normalized, "Logo.png");
-        DetailLogoMask.ImageSource =
+        DetailLauncherLogo.Source =
             File.Exists(logoPath) ? CreateBitmap(logoPath) : null;
 
         DetailLauncherLogoGlow.Background =
@@ -2101,7 +2093,7 @@ public sealed partial class MainWindow : Window
             CreateLauncherGlowBrush(normalized, 92);
 
         var logoPath = ResolveLauncherAsset(normalized, "Logo.png");
-        LauncherLogoMask.ImageSource =
+        LauncherBrandLogo.Source =
             File.Exists(logoPath) ? CreateBitmap(logoPath) : null;
     }
 
