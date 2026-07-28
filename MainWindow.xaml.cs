@@ -269,31 +269,40 @@ public sealed partial class MainWindow : Window
         return shell;
     }
 
-    private static Button CreateHomeActionButton(
+    private static void ConfigureHomeActionButton(
+        Button button,
         string glyph,
         string label,
+        string keyboardHint,
         Windows.UI.Color accent)
     {
+        var badgeText = new TextBlock
+        {
+            Text = glyph,
+            FontSize = 24,
+            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
+            Foreground = new SolidColorBrush(Microsoft.UI.Colors.White),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextAlignment = TextAlignment.Center
+        };
+
         var badge = new Border
         {
-            Width = 48,
-            Height = 48,
-            CornerRadius = new CornerRadius(24),
+            Width = 50,
+            Height = 50,
+            CornerRadius = new CornerRadius(25),
             Background = new RadialGradientBrush
             {
-                Center = new Windows.Foundation.Point(0.42, 0.35),
-                GradientOrigin = new Windows.Foundation.Point(0.42, 0.35),
-                RadiusX = 0.72,
-                RadiusY = 0.72,
+                Center = new Windows.Foundation.Point(0.40, 0.32),
+                GradientOrigin = new Windows.Foundation.Point(0.40, 0.32),
+                RadiusX = 0.75,
+                RadiusY = 0.75,
                 GradientStops =
                 {
                     new GradientStop
                     {
-                        Color = Windows.UI.Color.FromArgb(
-                            255,
-                            (byte)Math.Min(255, accent.R + 48),
-                            (byte)Math.Min(255, accent.G + 48),
-                            (byte)Math.Min(255, accent.B + 48)),
+                        Color = LightenColor(accent, 1.30),
                         Offset = 0
                     },
                     new GradientStop
@@ -303,78 +312,140 @@ public sealed partial class MainWindow : Window
                     },
                     new GradientStop
                     {
-                        Color = Windows.UI.Color.FromArgb(
-                            255,
-                            (byte)(accent.R * 0.55),
-                            (byte)(accent.G * 0.55),
-                            (byte)(accent.B * 0.55)),
+                        Color = LightenColor(accent, 0.48),
                         Offset = 1
                     }
                 }
             },
-            BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.White),
+            BorderBrush = new SolidColorBrush(
+                Windows.UI.Color.FromArgb(235, 255, 255, 255)),
             BorderThickness = new Thickness(2),
-            Child = new TextBlock
-            {
-                Text = glyph,
-                FontSize = 24,
-                FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-                Foreground = new SolidColorBrush(Microsoft.UI.Colors.White),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-                TextAlignment = TextAlignment.Center
-            }
+            Child = badgeText
         };
 
-        var text = new TextBlock
+        var labelText = new TextBlock
         {
             Text = label,
             FontSize = 18,
             FontWeight = Microsoft.UI.Text.FontWeights.Bold,
             Foreground = new SolidColorBrush(Microsoft.UI.Colors.White),
-            VerticalAlignment = VerticalAlignment.Center
+            TextAlignment = TextAlignment.Left,
+            HorizontalAlignment = HorizontalAlignment.Left
         };
 
-        var content = new StackPanel
+        var hintText = new TextBlock
         {
-            Orientation = Orientation.Horizontal,
-            Spacing = 14,
-            HorizontalAlignment = HorizontalAlignment.Center,
+            Text = keyboardHint,
+            FontSize = 12,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = new SolidColorBrush(
+                Windows.UI.Color.FromArgb(220, accent.R, accent.G, accent.B)),
+            TextAlignment = TextAlignment.Left,
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+
+        var textStack = new StackPanel
+        {
+            Spacing = 1,
+            HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center
         };
+        textStack.Children.Add(labelText);
+        textStack.Children.Add(hintText);
+
+        var content = new Grid
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        content.ColumnDefinitions.Add(new ColumnDefinition
+        {
+            Width = new GridLength(58)
+        });
+        content.ColumnDefinitions.Add(new ColumnDefinition
+        {
+            Width = new GridLength(1, GridUnitType.Star)
+        });
+
+        badge.HorizontalAlignment = HorizontalAlignment.Center;
+        badge.VerticalAlignment = VerticalAlignment.Center;
         content.Children.Add(badge);
-        content.Children.Add(text);
 
-        var button = new Button
-        {
-            Width = 248,
-            Height = 66,
-            Content = content,
-            Background = new SolidColorBrush(
-                Windows.UI.Color.FromArgb(224, 8, 10, 14)),
-            BorderBrush = new SolidColorBrush(accent),
-            BorderThickness = new Thickness(2),
-            CornerRadius = new CornerRadius(33),
-            Padding = new Thickness(20, 8, 20, 8),
-            HorizontalContentAlignment = HorizontalAlignment.Center,
-            VerticalContentAlignment = VerticalAlignment.Center
-        };
+        Grid.SetColumn(textStack, 1);
+        content.Children.Add(textStack);
+
+        button.Width = 264;
+        button.Height = 72;
+        button.Content = content;
+        button.Background = new SolidColorBrush(
+            Windows.UI.Color.FromArgb(232, 7, 9, 13));
+        button.BorderBrush = new SolidColorBrush(accent);
+        button.BorderThickness = new Thickness(2);
+        button.CornerRadius = new CornerRadius(36);
+        button.Padding = new Thickness(14, 8, 22, 8);
+        button.HorizontalContentAlignment = HorizontalAlignment.Stretch;
+        button.VerticalContentAlignment = VerticalAlignment.Center;
+        button.IsTabStop = true;
 
         button.PointerEntered += (_, _) =>
         {
             button.Background = new SolidColorBrush(
-                Windows.UI.Color.FromArgb(246, 18, 21, 28));
+                Windows.UI.Color.FromArgb(250, 18, 21, 28));
             button.BorderThickness = new Thickness(3);
+            button.RenderTransform = new CompositeTransform
+            {
+                ScaleX = 1.025,
+                ScaleY = 1.025,
+                CenterX = button.ActualWidth / 2,
+                CenterY = button.ActualHeight / 2
+            };
         };
+
         button.PointerExited += (_, _) =>
         {
             button.Background = new SolidColorBrush(
-                Windows.UI.Color.FromArgb(224, 8, 10, 14));
+                Windows.UI.Color.FromArgb(232, 7, 9, 13));
             button.BorderThickness = new Thickness(2);
+            button.RenderTransform = new CompositeTransform
+            {
+                ScaleX = 1,
+                ScaleY = 1,
+                CenterX = button.ActualWidth / 2,
+                CenterY = button.ActualHeight / 2
+            };
         };
 
-        return button;
+        button.PointerPressed += (_, _) =>
+        {
+            button.RenderTransform = new CompositeTransform
+            {
+                ScaleX = 0.985,
+                ScaleY = 0.985,
+                CenterX = button.ActualWidth / 2,
+                CenterY = button.ActualHeight / 2
+            };
+        };
+
+        button.PointerReleased += (_, _) =>
+        {
+            button.RenderTransform = new CompositeTransform
+            {
+                ScaleX = 1.025,
+                ScaleY = 1.025,
+                CenterX = button.ActualWidth / 2,
+                CenterY = button.ActualHeight / 2
+            };
+        };
     }
+
+    private static Windows.UI.Color LightenColor(
+        Windows.UI.Color color,
+        double amount)
+        => Windows.UI.Color.FromArgb(
+            color.A,
+            (byte)Math.Clamp((int)Math.Round(color.R * amount), 0, 255),
+            (byte)Math.Clamp((int)Math.Round(color.G * amount), 0, 255),
+            (byte)Math.Clamp((int)Math.Round(color.B * amount), 0, 255));
 
     private void BuildVisualTree()
     {
@@ -543,84 +614,36 @@ public sealed partial class MainWindow : Window
             Spacing = 18
         };
 
-        var detailsButton = CreateHomeActionButton(
+        ConfigureHomeActionButton(
+            HomeDetailsButton,
             "A",
             "VIEW DETAILS",
+            "A / ENTER",
             Windows.UI.Color.FromArgb(255, 16, 124, 16));
-        HomeDetailsButton.Width = detailsButton.Width;
-        HomeDetailsButton.Height = detailsButton.Height;
-        var detailsContent = detailsButton.Content;
-        detailsButton.Content = null;
-        HomeDetailsButton.Content = detailsContent;
-        HomeDetailsButton.Background = detailsButton.Background;
-        HomeDetailsButton.BorderBrush = detailsButton.BorderBrush;
-        HomeDetailsButton.BorderThickness = detailsButton.BorderThickness;
-        HomeDetailsButton.CornerRadius = detailsButton.CornerRadius;
-        HomeDetailsButton.Padding = detailsButton.Padding;
-        HomeDetailsButton.HorizontalContentAlignment =
-            HorizontalAlignment.Center;
-        HomeDetailsButton.VerticalContentAlignment =
-            VerticalAlignment.Center;
         HomeDetailsButton.Click += HomeDetails_Click;
-        HomeDetailsButton.PointerEntered += (_, _) =>
-        {
-            HomeDetailsButton.Background = new SolidColorBrush(
-                Windows.UI.Color.FromArgb(246, 18, 21, 28));
-            HomeDetailsButton.BorderThickness = new Thickness(3);
-        };
-        HomeDetailsButton.PointerExited += (_, _) =>
-        {
-            HomeDetailsButton.Background = new SolidColorBrush(
-                Windows.UI.Color.FromArgb(224, 8, 10, 14));
-            HomeDetailsButton.BorderThickness = new Thickness(2);
-        };
 
-        var exitButton = CreateHomeActionButton(
+        ConfigureHomeActionButton(
+            HomeExitButton,
             "B",
             "EXIT",
+            "B / ESC",
             Windows.UI.Color.FromArgb(255, 209, 52, 56));
-        HomeExitButton.Width = exitButton.Width;
-        HomeExitButton.Height = exitButton.Height;
-        var exitContent = exitButton.Content;
-        exitButton.Content = null;
-        HomeExitButton.Content = exitContent;
-        HomeExitButton.Background = exitButton.Background;
-        HomeExitButton.BorderBrush = exitButton.BorderBrush;
-        HomeExitButton.BorderThickness = exitButton.BorderThickness;
-        HomeExitButton.CornerRadius = exitButton.CornerRadius;
-        HomeExitButton.Padding = exitButton.Padding;
-        HomeExitButton.HorizontalContentAlignment =
-            HorizontalAlignment.Center;
-        HomeExitButton.VerticalContentAlignment =
-            VerticalAlignment.Center;
         HomeExitButton.Click += Exit_Click;
-        HomeExitButton.PointerEntered += (_, _) =>
-        {
-            HomeExitButton.Background = new SolidColorBrush(
-                Windows.UI.Color.FromArgb(246, 18, 21, 28));
-            HomeExitButton.BorderThickness = new Thickness(3);
-        };
-        HomeExitButton.PointerExited += (_, _) =>
-        {
-            HomeExitButton.Background = new SolidColorBrush(
-                Windows.UI.Color.FromArgb(224, 8, 10, 14));
-            HomeExitButton.BorderThickness = new Thickness(2);
-        };
 
         promptStack.Children.Add(HomeDetailsButton);
         promptStack.Children.Add(HomeExitButton);
 
         CollectionPromptBar.Background =
-            new SolidColorBrush(Windows.UI.Color.FromArgb(190, 4, 6, 9));
+            new SolidColorBrush(Windows.UI.Color.FromArgb(178, 3, 5, 8));
         CollectionPromptBar.BorderBrush =
-            new SolidColorBrush(Windows.UI.Color.FromArgb(70, 255, 255, 255));
+            new SolidColorBrush(Windows.UI.Color.FromArgb(58, 255, 255, 255));
         CollectionPromptBar.BorderThickness = new Thickness(1);
-        CollectionPromptBar.CornerRadius = new CornerRadius(38);
+        CollectionPromptBar.CornerRadius = new CornerRadius(42);
         CollectionPromptBar.HorizontalAlignment =
             HorizontalAlignment.Center;
         CollectionPromptBar.VerticalAlignment =
             VerticalAlignment.Center;
-        CollectionPromptBar.Padding = new Thickness(10, 6, 10, 6);
+        CollectionPromptBar.Padding = new Thickness(10, 7, 10, 7);
         CollectionPromptBar.Child = promptStack;
         Grid.SetRow(CollectionPromptBar, 3);
         CollectionPage.Children.Add(CollectionPromptBar);
@@ -1110,8 +1133,8 @@ public sealed partial class MainWindow : Window
         HomeOverheadLight.Height =
             Math.Clamp(520 * scale, 370, 760);
 
-        var actionWidth = Math.Clamp(248 * scale, 205, 320);
-        var actionHeight = Math.Clamp(66 * scale, 58, 84);
+        var actionWidth = Math.Clamp(264 * scale, 228, 340);
+        var actionHeight = Math.Clamp(72 * scale, 64, 92);
         HomeDetailsButton.Width = HomeExitButton.Width = actionWidth;
         HomeDetailsButton.Height = HomeExitButton.Height = actionHeight;
 
