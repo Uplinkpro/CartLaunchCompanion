@@ -1007,9 +1007,7 @@ public sealed partial class MainWindow : Window
             }
         };
 
-        var logoPath = Path.Combine(_root, "Assets", "Launchers", normalized, "Logo.png");
-        if (!File.Exists(logoPath))
-            logoPath = Path.Combine(_root, "Assets", "Launchers", "DirectExe", "Logo.png");
+        var logoPath = ResolveLauncherGlyphAsset(normalized);
         game.LauncherLogo = CreateLogoBitmap(logoPath);
     }
 
@@ -2563,7 +2561,7 @@ public sealed partial class MainWindow : Window
     private void UpdateDetailLauncherBrand(string launcher)
     {
         var normalized = LaunchService.NormalizeLauncher(launcher);
-        var logoPath = ResolveLauncherAsset(normalized, "Logo.png");
+        var logoPath = ResolveLauncherGlyphAsset(normalized);
         DetailLauncherLogo.Source =
             File.Exists(logoPath) ? CreateLogoBitmap(logoPath) : null;
 
@@ -2612,7 +2610,7 @@ public sealed partial class MainWindow : Window
         LauncherLogoGlow.Background =
             CreateLauncherGlowBrush(normalized, 80);
 
-        var logoPath = ResolveLauncherAsset(normalized, "Logo.png");
+        var logoPath = ResolveLauncherGlyphAsset(normalized);
         LauncherBrandLogo.Source =
             File.Exists(logoPath) ? CreateLogoBitmap(logoPath) : null;
 
@@ -2666,6 +2664,48 @@ public sealed partial class MainWindow : Window
                 }
             }
         };
+    }
+
+    private string ResolveLauncherGlyphAsset(string launcher)
+    {
+        var normalized = LaunchService.NormalizeLauncher(launcher);
+
+        var glyphPath = Path.Combine(
+            _root,
+            "Assets",
+            "Launchers",
+            normalized,
+            "Glyph.png");
+
+        if (File.Exists(glyphPath))
+            return glyphPath;
+
+        var legacyLogoPath = Path.Combine(
+            _root,
+            "Assets",
+            "Launchers",
+            normalized,
+            "Logo.png");
+
+        if (File.Exists(legacyLogoPath))
+            return legacyLogoPath;
+
+        var fallbackGlyph = Path.Combine(
+            _root,
+            "Assets",
+            "Launchers",
+            "DirectExe",
+            "Glyph.png");
+
+        if (File.Exists(fallbackGlyph))
+            return fallbackGlyph;
+
+        return Path.Combine(
+            _root,
+            "Assets",
+            "Launchers",
+            "DirectExe",
+            "Logo.png");
     }
 
     private string ResolveLauncherAsset(string launcher, string fileName)
