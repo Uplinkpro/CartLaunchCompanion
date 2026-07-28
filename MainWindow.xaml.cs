@@ -32,6 +32,7 @@ public sealed partial class MainWindow : Window
     private readonly TextBlock AppBrandSubtitle = new();
     private readonly Border LauncherLogoGlow = new();
     private readonly Border CollectionPromptBar = new();
+    private readonly Border CartridgeTransitionCurtain = new();
     private readonly Grid ExitConfirmationOverlay = new();
     private readonly Grid CollectionPage = new();
     private readonly Button ExitCollectionButton = new();
@@ -522,6 +523,15 @@ public sealed partial class MainWindow : Window
         DetailsPage.Children.Add(detailPromptBorder);
 
         Root.Children.Add(DetailsPage);
+
+        // Full-screen cinematic curtain used by the cartridge insertion/ejection
+        // transition. It sits above both pages but remains non-interactive.
+        CartridgeTransitionCurtain.Background =
+            new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0, 0, 0));
+        CartridgeTransitionCurtain.Opacity = 0;
+        CartridgeTransitionCurtain.Visibility = Visibility.Collapsed;
+        CartridgeTransitionCurtain.IsHitTestVisible = false;
+        Root.Children.Add(CartridgeTransitionCurtain);
     }
 
     private void ConfigureWindow()
@@ -645,7 +655,20 @@ public sealed partial class MainWindow : Window
         _currentGame = game;
         SetLauncherBackground(game.Launcher);
         await PopulateDetailsAsync(game);
-        await SwitchPageAsync(CollectionPage, DetailsPage);
+
+        try
+        {
+            await AnimateCartridgeInsertionAsync(game);
+            await SwitchPageAsync(CollectionPage, DetailsPage);
+            await FadeTransitionCurtainAsync(0, 150);
+        }
+        finally
+        {
+            ResetCartridgeVisual(game);
+            CartridgeTransitionCurtain.Visibility = Visibility.Collapsed;
+            CartridgeTransitionCurtain.Opacity = 0;
+        }
+
         await PlayTrailerAsync(game);
         LaunchButton.Focus(FocusState.Programmatic);
     }
@@ -1238,6 +1261,147 @@ public sealed partial class MainWindow : Window
         return completion.Task;
     }
 
+    private static Task AnimateTransformAsync(
+        FrameworkElement element,
+        CompositeTransform transform,
+        double translateY,
+        double scale,
+        double opacity,
+        int durationMilliseconds)
+    {
+        var completion = new TaskCompletionSource();
+        var duration = TimeSpan.FromMilliseconds(durationMilliseconds);
+        var easing = new QuadraticEase { EasingMode = EasingMode.EaseInOut };
+        var storyboard = new Storyboard();
+
+        AddTransformAnimation(storyboard, transform, "TranslateY", translateY, duration, easing);
+        AddTransformAnimation(storyboard, transform, "ScaleX", scale, duration, easing);
+        AddTransformAnimation(storyboard, transform, "ScaleY", scale, duration, easing);
+
+        var opacityAnimation = new DoubleAnimation
+        {
+            To = opacity,
+            Duration = duration,
+            EasingFunction = easing,
+            EnableDependentAnimation = true
+        };
+        Storyboard.SetTarget(opacityAnimation, element);
+        Storyboard.SetTargetProperty(opacityAnimation, "Opacity");
+        storyboard.Children.Add(opacityAnimation);
+
+        storyboard.Completed += (_, _) => completion.TrySetResult();
+        storyboard.Begin();
+        return completion.Task;
+    }
+
+    private static void AddTransformAnimation(
+        Storyboard storyboard,
+        CompositeTransform transform,
+        string property,
+        double value,
+        TimeSpan duration,
+        EasingFunctionBase easing)
+    {
+        var animation = new DoubleAnimation
+        {
+            To = value,
+            Duration = duration,
+            EasingFunction = easing,
+            EnableDependentAnimation = true
+        };
+
+        Storyboard.SetTarget(animation, transform);
+        Storyboard.SetTargetProperty(animation, property);
+        storyboard.Children.Add(animation);
+    }
+
+    private async Task AnimateCartridgeInsertionAsync(GameDefinition game)
+    {
+        if (GamesGrid.ContainerFromItem(game) is not FrameworkElement container)
+            return;
+
+        var transform = EnsureCartridgeTransform(container);
+        container.CenterPoint = new System.Numerics.Vector3(
+            (float)(container.ActualWidth / 2),
+            (float)(container.ActualHeight / 2),
+            0);
+
+        CartridgeTransitionCurtain.Visibility = Visibility.Visible;
+        CartridgeTransitionCurtain.Opacity = 0;
+
+        // Pick the cover up from the shelf.
+        await AnimateTransformAsync(container, transform, -18, 1.045, 1, 135);
+
+        // Move it toward the viewer, then drop it into an implied console slot.
+        var curtainTask = FadeTransitionCurtainAsync(0.88, 210);
+        var cartridgeTask = AnimateTransformAsync(container, transform, 210, 1.13, 0, 210);
+        await Task.WhenAll(curtainTask, cartridgeTask);
+    }
+
+    private void PrepareCartridgeForEjection(GameDefinition game)
+    {
+        if (GamesGrid.ContainerFromItem(game) is not FrameworkElement container)
+            return;
+
+        var transform = EnsureCartridgeTransform(container);
+        container.CenterPoint = new System.Numerics.Vector3(
+            (float)(container.ActualWidth / 2),
+            (float)(container.ActualHeight / 2),
+            0);
+        transform.TranslateY = 210;
+        transform.ScaleX = 1.13;
+        transform.ScaleY = 1.13;
+        container.Opacity = 0;
+    }
+
+    private async Task AnimateCartridgeEjectionAsync(GameDefinition? game)
+    {
+        if (game is null ||
+            GamesGrid.ContainerFromItem(game) is not FrameworkElement container)
+            return;
+
+        var transform = EnsureCartridgeTransform(container);
+
+        // Rise out of the implied slot, pause just above the shelf, then settle.
+        await AnimateTransformAsync(container, transform, -18, 1.045, 1, 220);
+        await AnimateTransformAsync(container, transform, 0, 1, 1, 140);
+    }
+
+    private static CompositeTransform EnsureCartridgeTransform(FrameworkElement element)
+    {
+        if (element.RenderTransform is CompositeTransform existing)
+            return existing;
+
+        var transform = new CompositeTransform();
+        element.RenderTransform = transform;
+        return transform;
+    }
+
+    private void ResetCartridgeVisual(GameDefinition game)
+    {
+        if (GamesGrid.ContainerFromItem(game) is not FrameworkElement container)
+            return;
+
+        var transform = EnsureCartridgeTransform(container);
+        transform.TranslateY = 0;
+        transform.ScaleX = 1;
+        transform.ScaleY = 1;
+        container.Opacity = 1;
+    }
+
+    private Task FadeTransitionCurtainAsync(double opacity, int durationMilliseconds)
+    {
+        var animation = new DoubleAnimation
+        {
+            To = opacity,
+            Duration = TimeSpan.FromMilliseconds(durationMilliseconds),
+            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut },
+            EnableDependentAnimation = true
+        };
+
+        return AnimateAsync(CartridgeTransitionCurtain, animation);
+    }
+
     private async void Back_Click(object sender, RoutedEventArgs e)
     {
         try { await NavigateBackAsync(); }
@@ -1247,8 +1411,37 @@ public sealed partial class MainWindow : Window
     private async Task NavigateBackAsync()
     {
         if (_transitioning || DetailsPage.Visibility != Visibility.Visible) return;
+
         StopTrailerPlayback();
-        await SwitchPageAsync(DetailsPage, CollectionPage);
+        _transitioning = true;
+
+        try
+        {
+            CartridgeTransitionCurtain.Visibility = Visibility.Visible;
+            CartridgeTransitionCurtain.Opacity = 0;
+            await FadeTransitionCurtainAsync(0.88, 130);
+
+            DetailsPage.Visibility = Visibility.Collapsed;
+            DetailsPage.Opacity = 0;
+            CollectionPage.Visibility = Visibility.Visible;
+            CollectionPage.Opacity = 1;
+
+            if (_currentGame is not null)
+                PrepareCartridgeForEjection(_currentGame);
+
+            await AnimateCartridgeEjectionAsync(_currentGame);
+            await FadeTransitionCurtainAsync(0, 180);
+        }
+        finally
+        {
+            if (_currentGame is not null)
+                ResetCartridgeVisual(_currentGame);
+
+            CartridgeTransitionCurtain.Visibility = Visibility.Collapsed;
+            CartridgeTransitionCurtain.Opacity = 0;
+            _transitioning = false;
+        }
+
         GamesGrid.Focus(FocusState.Programmatic);
     }
 
