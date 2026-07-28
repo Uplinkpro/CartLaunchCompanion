@@ -549,7 +549,9 @@ public sealed partial class MainWindow : Window
             Windows.UI.Color.FromArgb(255, 16, 124, 16));
         HomeDetailsButton.Width = detailsButton.Width;
         HomeDetailsButton.Height = detailsButton.Height;
-        HomeDetailsButton.Content = detailsButton.Content;
+        var detailsContent = detailsButton.Content;
+        detailsButton.Content = null;
+        HomeDetailsButton.Content = detailsContent;
         HomeDetailsButton.Background = detailsButton.Background;
         HomeDetailsButton.BorderBrush = detailsButton.BorderBrush;
         HomeDetailsButton.BorderThickness = detailsButton.BorderThickness;
@@ -579,7 +581,9 @@ public sealed partial class MainWindow : Window
             Windows.UI.Color.FromArgb(255, 209, 52, 56));
         HomeExitButton.Width = exitButton.Width;
         HomeExitButton.Height = exitButton.Height;
-        HomeExitButton.Content = exitButton.Content;
+        var exitContent = exitButton.Content;
+        exitButton.Content = null;
+        HomeExitButton.Content = exitContent;
         HomeExitButton.Background = exitButton.Background;
         HomeExitButton.BorderBrush = exitButton.BorderBrush;
         HomeExitButton.BorderThickness = exitButton.BorderThickness;
