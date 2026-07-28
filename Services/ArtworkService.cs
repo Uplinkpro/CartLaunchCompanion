@@ -4,20 +4,30 @@ namespace CartLaunchCompanion.Services;
 
 public sealed class ArtworkService
 {
-    private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(20) };
+    private readonly HttpClient _http = new()
+    {
+        Timeout = TimeSpan.FromSeconds(20)
+    };
 
-    public async Task EnsureArtworkAsync(GameDefinition game, CancellationToken token = default)
+    public async Task EnsureArtworkAsync(
+        GameDefinition game,
+        CancellationToken token = default)
     {
         var steamMetadataId = game.EffectiveSteamMetadataId;
-        if (string.IsNullOrWhiteSpace(steamMetadataId)) return;
+        if (string.IsNullOrWhiteSpace(steamMetadataId))
+            return;
 
         await EnsureCoverAsync(game, steamMetadataId, token);
         await EnsureHeaderAsync(game, steamMetadataId, token);
     }
 
-    private async Task EnsureCoverAsync(GameDefinition game, string steamMetadataId, CancellationToken token)
+    private async Task EnsureCoverAsync(
+        GameDefinition game,
+        string steamMetadataId,
+        CancellationToken token)
     {
         var target = Path.Combine(game.FolderPath, "Cover.jpg");
+
         var sources = string.IsNullOrWhiteSpace(game.CoverUrl)
             ? new[]
             {
@@ -26,34 +36,65 @@ public sealed class ArtworkService
             }
             : new[] { game.CoverUrl };
 
-        if (await DownloadFirstAsync(sources, target, token)) game.CoverPath = target;
+        if (await DownloadFirstAsync(sources, target, token))
+            game.CoverPath = target;
     }
 
-    private async Task EnsureHeaderAsync(GameDefinition game, string steamMetadataId, CancellationToken token)
+    private async Task EnsureHeaderAsync(
+        GameDefinition game,
+        string steamMetadataId,
+        CancellationToken token)
     {
         var target = Path.Combine(game.FolderPath, "Header.jpg");
+
+        // Steam's library hero is background artwork intended for wide,
+        // cinematic library headers. Its usual 1920x620 aspect ratio scales
+        // directly to Cart Launch Companion's 3840x1240 header target.
+        //
+        // A configured HeaderUrl remains the highest-priority source.
+        // Steam's smaller storefront header is retained only as a fallback
+        // for games that do not provide library hero artwork.
         var sources = string.IsNullOrWhiteSpace(game.HeaderUrl)
-            ? new[] { $"https://cdn.akamai.steamstatic.com/steam/apps/{steamMetadataId}/header.jpg" }
+            ? new[]
+            {
+                $"https://cdn.cloudflare.steamstatic.com/steam/apps/{steamMetadataId}/library_hero.jpg",
+                $"https://cdn.akamai.steamstatic.com/steam/apps/{steamMetadataId}/library_hero.jpg",
+                $"https://cdn.cloudflare.steamstatic.com/steam/apps/{steamMetadataId}/header.jpg",
+                $"https://cdn.akamai.steamstatic.com/steam/apps/{steamMetadataId}/header.jpg"
+            }
             : new[] { game.HeaderUrl };
 
-        if (await DownloadFirstAsync(sources, target, token)) game.HeaderPath = target;
+        if (await DownloadFirstAsync(sources, target, token))
+            game.HeaderPath = target;
     }
 
-    private async Task<bool> DownloadFirstAsync(IEnumerable<string> sources, string target, CancellationToken token)
+    private async Task<bool> DownloadFirstAsync(
+        IEnumerable<string> sources,
+        string target,
+        CancellationToken token)
     {
-        foreach (var source in sources.Where(value => !string.IsNullOrWhiteSpace(value)))
+        foreach (var source in sources.Where(
+                     value => !string.IsNullOrWhiteSpace(value)))
         {
             try
             {
                 using var response = await _http.GetAsync(source, token);
-                if (!response.IsSuccessStatusCode) continue;
-                await using var input = await response.Content.ReadAsStreamAsync(token);
+                if (!response.IsSuccessStatusCode)
+                    continue;
+
+                await using var input =
+                    await response.Content.ReadAsStreamAsync(token);
                 await using var output = File.Create(target);
+
                 await input.CopyToAsync(output, token);
                 return true;
             }
-            catch when (!token.IsCancellationRequested) { }
+            catch when (!token.IsCancellationRequested)
+            {
+                // Continue to the next Steam CDN/source candidate.
+            }
         }
+
         return false;
     }
 }
