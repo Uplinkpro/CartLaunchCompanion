@@ -314,31 +314,117 @@ public sealed partial class MainWindow : Window
 
         var exitPanel = new Border
         {
-            Width = 560,
-            Padding = new Thickness(42, 34, 42, 32),
+            Width = 620,
+            Padding = new Thickness(48, 40, 48, 38),
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
-            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(245, 10, 12, 17)),
-            BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(210, 157, 86, 232)),
+            Background = new LinearGradientBrush
+            {
+                StartPoint = new Windows.Foundation.Point(0, 0),
+                EndPoint = new Windows.Foundation.Point(0, 1),
+                GradientStops =
+                {
+                    new GradientStop
+                    {
+                        Color = Windows.UI.Color.FromArgb(250, 18, 20, 27),
+                        Offset = 0
+                    },
+                    new GradientStop
+                    {
+                        Color = Windows.UI.Color.FromArgb(250, 7, 9, 13),
+                        Offset = 1
+                    }
+                }
+            },
+            BorderBrush = new SolidColorBrush(
+                Windows.UI.Color.FromArgb(225, 157, 86, 232)),
             BorderThickness = new Thickness(2),
-            CornerRadius = new CornerRadius(12)
+            CornerRadius = new CornerRadius(14),
+            Shadow = new Microsoft.UI.Xaml.Media.ThemeShadow()
         };
-        var exitStack = new StackPanel { Spacing = 22, HorizontalAlignment = HorizontalAlignment.Center };
-        exitStack.Children.Add(new TextBlock
+
+        var exitStack = new StackPanel
+        {
+            Spacing = 24,
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+
+        var exitTitle = new TextBlock
         {
             Text = "EXIT CART LAUNCH COMPANION?",
-            FontSize = 28,
+            FontSize = 30,
             FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-            TextAlignment = TextAlignment.Center
-        });
-        exitStack.Children.Add(new TextBlock
+            CharacterSpacing = 35,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Foreground = new LinearGradientBrush
+            {
+                StartPoint = new Windows.Foundation.Point(0, 0),
+                EndPoint = new Windows.Foundation.Point(0, 1),
+                GradientStops =
+                {
+                    new GradientStop
+                    {
+                        Color = Microsoft.UI.Colors.White,
+                        Offset = 0
+                    },
+                    new GradientStop
+                    {
+                        Color = Windows.UI.Color.FromArgb(255, 164, 168, 179),
+                        Offset = 0.58
+                    },
+                    new GradientStop
+                    {
+                        Color = Windows.UI.Color.FromArgb(255, 240, 241, 245),
+                        Offset = 1
+                    }
+                }
+            }
+        };
+        exitStack.Children.Add(exitTitle);
+
+        exitStack.Children.Add(new Microsoft.UI.Xaml.Shapes.Rectangle
         {
-            Text = "Press B again to exit",
-            FontSize = 18,
-            Opacity = 0.82,
-            TextAlignment = TextAlignment.Center
+            Height = 2,
+            Width = 210,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Fill = new LinearGradientBrush
+            {
+                StartPoint = new Windows.Foundation.Point(0, 0.5),
+                EndPoint = new Windows.Foundation.Point(1, 0.5),
+                GradientStops =
+                {
+                    new GradientStop
+                    {
+                        Color = Windows.UI.Color.FromArgb(0, 157, 86, 232),
+                        Offset = 0
+                    },
+                    new GradientStop
+                    {
+                        Color = Windows.UI.Color.FromArgb(235, 157, 86, 232),
+                        Offset = 0.5
+                    },
+                    new GradientStop
+                    {
+                        Color = Windows.UI.Color.FromArgb(0, 157, 86, 232),
+                        Offset = 1
+                    }
+                }
+            }
         });
-        exitStack.Children.Add(CreateGamepadPrompt("A", "CANCEL"));
+
+        var exitPromptRow = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Spacing = 56,
+            Margin = new Thickness(0, 4, 0, 0)
+        };
+        exitPromptRow.Children.Add(CreateGamepadPrompt("B", "EXIT"));
+        exitPromptRow.Children.Add(CreateGamepadPrompt("A", "CANCEL"));
+        exitStack.Children.Add(exitPromptRow);
+
         exitPanel.Child = exitStack;
         ExitConfirmationOverlay.Children.Add(exitPanel);
         Root.Children.Add(ExitConfirmationOverlay);
