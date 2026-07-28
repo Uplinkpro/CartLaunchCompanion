@@ -32,6 +32,8 @@ public sealed partial class MainWindow : Window
     private readonly TextBlock AppBrandSubtitle = new();
     private readonly Border LauncherLogoGlow = new();
     private readonly Microsoft.UI.Xaml.Shapes.Rectangle HomeOverheadLight = new();
+    private readonly Microsoft.UI.Xaml.Shapes.Rectangle HomeLightCore = new();
+    private readonly Microsoft.UI.Xaml.Shapes.Rectangle HomeShelfGlow = new();
     private readonly Button HomeDetailsButton = new();
     private readonly Button HomeExitButton = new();
     private readonly Border CollectionPromptBar = new();
@@ -510,14 +512,41 @@ public sealed partial class MainWindow : Window
             Height = new GridLength(92)
         });
 
+        // Wide ambient spill: very subtle and limited to the center.
         HomeOverheadLight.HorizontalAlignment = HorizontalAlignment.Center;
         HomeOverheadLight.VerticalAlignment = VerticalAlignment.Top;
-        HomeOverheadLight.Width = 860;
-        HomeOverheadLight.Height = 520;
+        HomeOverheadLight.Width = 760;
+        HomeOverheadLight.Height = 540;
         HomeOverheadLight.IsHitTestVisible = false;
-        HomeOverheadLight.Fill = CreateLauncherSpotlightBrush("Steam");
+        HomeOverheadLight.Opacity = 0.62;
+        HomeOverheadLight.Fill =
+            CreateLauncherSpotlightBrush("Steam", 68, 24);
         Grid.SetRowSpan(HomeOverheadLight, 3);
         CollectionPage.Children.Add(HomeOverheadLight);
+
+        // Narrow bright core: gives the impression of a studio fixture above
+        // the logo and selected cover without coloring the entire backdrop.
+        HomeLightCore.HorizontalAlignment = HorizontalAlignment.Center;
+        HomeLightCore.VerticalAlignment = VerticalAlignment.Top;
+        HomeLightCore.Width = 360;
+        HomeLightCore.Height = 500;
+        HomeLightCore.IsHitTestVisible = false;
+        HomeLightCore.Opacity = 0.72;
+        HomeLightCore.Fill =
+            CreateLauncherSpotlightBrush("Steam", 92, 10);
+        Grid.SetRowSpan(HomeLightCore, 3);
+        CollectionPage.Children.Add(HomeLightCore);
+
+        // Soft reflected launcher color along the display shelf.
+        HomeShelfGlow.HorizontalAlignment = HorizontalAlignment.Center;
+        HomeShelfGlow.VerticalAlignment = VerticalAlignment.Bottom;
+        HomeShelfGlow.Width = 720;
+        HomeShelfGlow.Height = 150;
+        HomeShelfGlow.IsHitTestVisible = false;
+        HomeShelfGlow.Opacity = 0.48;
+        HomeShelfGlow.Fill = CreateLauncherShelfGlowBrush("Steam");
+        Grid.SetRow(HomeShelfGlow, 2);
+        CollectionPage.Children.Add(HomeShelfGlow);
 
         var brandStack = new StackPanel
         {
@@ -1212,9 +1241,19 @@ public sealed partial class MainWindow : Window
             Math.Clamp(60 * scale, 44, 86);
 
         HomeOverheadLight.Width =
-            Math.Clamp(860 * scale, 620, 1280);
+            Math.Clamp(760 * scale, 520, 1080);
         HomeOverheadLight.Height =
-            Math.Clamp(520 * scale, 370, 760);
+            Math.Clamp(540 * scale, 390, 780);
+
+        HomeLightCore.Width =
+            Math.Clamp(360 * scale, 250, 520);
+        HomeLightCore.Height =
+            Math.Clamp(500 * scale, 360, 720);
+
+        HomeShelfGlow.Width =
+            Math.Clamp(720 * scale, 500, 1080);
+        HomeShelfGlow.Height =
+            Math.Clamp(150 * scale, 105, 220);
 
         var actionWidth = Math.Clamp(264 * scale, 228, 340);
         var actionHeight = Math.Clamp(72 * scale, 64, 92);
@@ -1245,33 +1284,83 @@ public sealed partial class MainWindow : Window
 
     private async Task CrossFadeLauncherThemeAsync(string launcher)
     {
-        await AnimateAsync(
-            HomeOverheadLight,
-            new DoubleAnimation
+        var fadeOut = new DoubleAnimation
+        {
+            To = 0.18,
+            Duration = TimeSpan.FromMilliseconds(85),
+            EasingFunction = new QuadraticEase
             {
-                To = 0.28,
-                Duration = TimeSpan.FromMilliseconds(80),
-                EasingFunction = new QuadraticEase
+                EasingMode = EasingMode.EaseInOut
+            },
+            EnableDependentAnimation = true
+        };
+
+        await Task.WhenAll(
+            AnimateAsync(HomeOverheadLight, fadeOut),
+            AnimateAsync(
+                HomeLightCore,
+                new DoubleAnimation
                 {
-                    EasingMode = EasingMode.EaseInOut
-                },
-                EnableDependentAnimation = true
-            });
+                    To = 0.22,
+                    Duration = TimeSpan.FromMilliseconds(85),
+                    EasingFunction = new QuadraticEase
+                    {
+                        EasingMode = EasingMode.EaseInOut
+                    },
+                    EnableDependentAnimation = true
+                }),
+            AnimateAsync(
+                HomeShelfGlow,
+                new DoubleAnimation
+                {
+                    To = 0.12,
+                    Duration = TimeSpan.FromMilliseconds(85),
+                    EasingFunction = new QuadraticEase
+                    {
+                        EasingMode = EasingMode.EaseInOut
+                    },
+                    EnableDependentAnimation = true
+                }));
 
         SetLauncherBackground(launcher);
 
-        await AnimateAsync(
-            HomeOverheadLight,
-            new DoubleAnimation
-            {
-                To = 1,
-                Duration = TimeSpan.FromMilliseconds(160),
-                EasingFunction = new QuadraticEase
+        await Task.WhenAll(
+            AnimateAsync(
+                HomeOverheadLight,
+                new DoubleAnimation
                 {
-                    EasingMode = EasingMode.EaseInOut
-                },
-                EnableDependentAnimation = true
-            });
+                    To = 0.62,
+                    Duration = TimeSpan.FromMilliseconds(190),
+                    EasingFunction = new QuadraticEase
+                    {
+                        EasingMode = EasingMode.EaseInOut
+                    },
+                    EnableDependentAnimation = true
+                }),
+            AnimateAsync(
+                HomeLightCore,
+                new DoubleAnimation
+                {
+                    To = 0.72,
+                    Duration = TimeSpan.FromMilliseconds(190),
+                    EasingFunction = new QuadraticEase
+                    {
+                        EasingMode = EasingMode.EaseInOut
+                    },
+                    EnableDependentAnimation = true
+                }),
+            AnimateAsync(
+                HomeShelfGlow,
+                new DoubleAnimation
+                {
+                    To = 0.48,
+                    Duration = TimeSpan.FromMilliseconds(190),
+                    EasingFunction = new QuadraticEase
+                    {
+                        EasingMode = EasingMode.EaseInOut
+                    },
+                    EnableDependentAnimation = true
+                }));
     }
 
     private void GamesGrid_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -2709,7 +2798,12 @@ public sealed partial class MainWindow : Window
         var normalized = LaunchService.NormalizeLauncher(launcher);
 
         HomeOverheadLight.Fill =
-            CreateLauncherSpotlightBrush(normalized);
+            CreateLauncherSpotlightBrush(normalized, 68, 24);
+        HomeLightCore.Fill =
+            CreateLauncherSpotlightBrush(normalized, 92, 10);
+        HomeShelfGlow.Fill =
+            CreateLauncherShelfGlowBrush(normalized);
+
         AppBrandSubtitle.Foreground = new SolidColorBrush(
             GetLauncherAccentColor(normalized));
 
@@ -2735,7 +2829,10 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private static Brush CreateLauncherSpotlightBrush(string launcher)
+    private static Brush CreateLauncherSpotlightBrush(
+        string launcher,
+        byte centerAlpha,
+        byte middleAlpha)
     {
         var normalized = LaunchService.NormalizeLauncher(launcher);
 
@@ -2743,7 +2840,7 @@ public sealed partial class MainWindow : Window
         {
             Center = new Windows.Foundation.Point(0.5, 0),
             GradientOrigin = new Windows.Foundation.Point(0.5, 0),
-            RadiusX = 0.55,
+            RadiusX = 0.50,
             RadiusY = 1.0,
             GradientStops =
             {
@@ -2751,17 +2848,54 @@ public sealed partial class MainWindow : Window
                 {
                     Color = GetLauncherAccentColor(
                         normalized,
-                        126,
-                        1.08),
+                        centerAlpha,
+                        1.04),
                     Offset = 0
                 },
                 new GradientStop
                 {
                     Color = GetLauncherAccentColor(
                         normalized,
-                        42,
-                        0.72),
+                        middleAlpha,
+                        0.78),
                     Offset = 0.46
+                },
+                new GradientStop
+                {
+                    Color = Windows.UI.Color.FromArgb(0, 0, 0, 0),
+                    Offset = 1
+                }
+            }
+        };
+    }
+
+    private static Brush CreateLauncherShelfGlowBrush(string launcher)
+    {
+        var normalized = LaunchService.NormalizeLauncher(launcher);
+
+        return new RadialGradientBrush
+        {
+            Center = new Windows.Foundation.Point(0.5, 0.52),
+            GradientOrigin = new Windows.Foundation.Point(0.5, 0.52),
+            RadiusX = 0.50,
+            RadiusY = 0.50,
+            GradientStops =
+            {
+                new GradientStop
+                {
+                    Color = GetLauncherAccentColor(
+                        normalized,
+                        52,
+                        0.92),
+                    Offset = 0
+                },
+                new GradientStop
+                {
+                    Color = GetLauncherAccentColor(
+                        normalized,
+                        18,
+                        0.65),
+                    Offset = 0.50
                 },
                 new GradientStop
                 {
