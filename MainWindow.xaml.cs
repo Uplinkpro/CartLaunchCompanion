@@ -647,18 +647,45 @@ public sealed partial class MainWindow : Window
     private async Task OpenGameAsync(GameDefinition game)
     {
         App.StartupLog($"Game selected: {game.Name}; launcher={game.Launcher}; steamId={game.SteamId}; steamMetadataId={game.EffectiveSteamMetadataId}");
+
         if (_transitioning)
         {
             App.StartupLog("Game selection ignored because a page transition is active.");
             return;
         }
+
         _currentGame = game;
         SetLauncherBackground(game.Launcher);
-        await PopulateDetailsAsync(game);
+
+        // Populate immediately available cartridge data before any network work.
+        // This makes the A-button response instant even when Steam metadata is slow.
+        PopulateBasicDetails(game);
 
         try
         {
-            await AnimateCartridgeInsertionAsync(game);
+            try
+            {
+                var animationTask = AnimateCartridgeInsertionAsync(game);
+                var completed = await Task.WhenAny(
+                    animationTask,
+                    Task.Delay(TimeSpan.FromMilliseconds(900)));
+
+                if (completed == animationTask)
+                {
+                    await animationTask;
+                }
+                else
+                {
+                    App.StartupLog(
+                        $"Cartridge insertion animation timed out for {game.Name}; continuing to details.");
+                }
+            }
+            catch (Exception animationEx)
+            {
+                App.StartupLog(
+                    $"Cartridge insertion animation failed for {game.Name}; continuing to details. {animationEx}");
+            }
+
             await SwitchPageAsync(CollectionPage, DetailsPage);
             await FadeTransitionCurtainAsync(0, 150);
         }
@@ -667,10 +694,30 @@ public sealed partial class MainWindow : Window
             ResetCartridgeVisual(game);
             CartridgeTransitionCurtain.Visibility = Visibility.Collapsed;
             CartridgeTransitionCurtain.Opacity = 0;
+            _transitioning = false;
         }
 
+        // Remote metadata and trailer discovery happen only after the details page
+        // is visible, so the interface never appears to ignore the A button.
+        await PopulateDetailsAsync(game);
         await PlayTrailerAsync(game);
         LaunchButton.Focus(FocusState.Programmatic);
+    }
+
+    private void PopulateBasicDetails(GameDefinition game)
+    {
+        DetailTitle.Text = game.Name;
+        DetailDescription.Text = First(game.DetailedDescription, game.Description);
+        DetailMetadata.Text =
+            $"DEVELOPER   {Display(game.Developer)}\n" +
+            $"PUBLISHER   {Display(game.Publisher)}\n" +
+            $"GENRE   {Display(game.Genre)}\n" +
+            $"RELEASE DATE   {Display(game.ReleaseDate)}\n" +
+            $"LAUNCHER   {Display(game.Launcher)}";
+
+        DetailHeader.Source = CreateBitmap(game.HeaderPath);
+        DetailCover.Source = CreateBitmap(First(game.CoverPath, game.HeaderPath));
+        UpdateDetailLauncherBrand(game.Launcher);
     }
 
     private async Task PopulateDetailsAsync(GameDefinition game)
@@ -1807,10 +1854,28 @@ public sealed partial class MainWindow : Window
     private async Task RunGamepadActionAsync(Func<Task> action)
     {
         if (_gamepadActionInProgress || _isClosing) return;
+
         _gamepadActionInProgress = true;
-        try { await action(); }
-        catch (Exception ex) { Debug.WriteLine($"Gamepad action failed: {ex}"); }
-        finally { _gamepadActionInProgress = false; }
+        try
+        {
+            await action();
+        }
+        catch (Exception ex)
+        {
+            // Do not silently lose controller failures. Startup.log is available
+            // in portable builds where a debugger is not attached.
+            App.StartupLog($"Gamepad action failed: {ex}");
+            Debug.WriteLine($"Gamepad action failed: {ex}");
+
+            // Recover from any interrupted page transition so input remains usable.
+            _transitioning = false;
+            CartridgeTransitionCurtain.Visibility = Visibility.Collapsed;
+            CartridgeTransitionCurtain.Opacity = 0;
+        }
+        finally
+        {
+            _gamepadActionInProgress = false;
+        }
     }
 
     private async Task ActivateFocusedElementAsync()
