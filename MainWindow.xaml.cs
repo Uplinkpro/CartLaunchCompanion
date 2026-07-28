@@ -64,6 +64,7 @@ public sealed partial class MainWindow : Window
     private WebView2? _youTubePlayer;
     private MediaPlayerElement? _windowsMediaView;
     private Windows.Media.Playback.MediaPlayer? _windowsMediaPlayer;
+    private Windows.Media.Playback.MediaPlayer? _uiSoundPlayer;
     private LibVLC? _libVlc;
     private LibVLCSharp.Shared.MediaPlayer? _vlcMediaPlayer;
     private Media? _vlcMedia;
@@ -75,6 +76,7 @@ public sealed partial class MainWindow : Window
     private bool _gamepadActionInProgress;
     private bool _isClosing;
     private bool _exitConfirmationVisible;
+    private int _themeChangeVersion;
 
     public MainWindow()
     {
@@ -89,6 +91,7 @@ public sealed partial class MainWindow : Window
         // can terminate an unpackaged WinUI process before the first window appears.
         Root.Loaded += async (_, _) => await LoadLibraryAsync();
         Root.KeyDown += Root_KeyDown;
+        Root.SizeChanged += Root_SizeChanged;
         _gamepadTimer.Tick += GamepadTimer_Tick;
         _gamepadTimer.Start();
         Closed += (_, _) =>
@@ -99,6 +102,7 @@ public sealed partial class MainWindow : Window
             DestroyVlcVideoHost();
             _vlcMediaPlayer?.Dispose();
             _windowsMediaPlayer?.Dispose();
+            _uiSoundPlayer?.Dispose();
             _libVlc?.Dispose();
         };
     }
@@ -709,10 +713,114 @@ public sealed partial class MainWindow : Window
             _ => light ? Windows.UI.Color.FromArgb(255, 112, 66, 168) : Windows.UI.Color.FromArgb(255, 62, 35, 101)
         };
 
-    private void GamesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void GamesGrid_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
     {
-        if (GamesGrid.SelectedItem is GameDefinition selected)
-            SetLauncherBackground(selected.Launcher);
+        if (GamesGrid.SelectedItem is not GameDefinition selected)
+            return;
+
+        var version = ++_themeChangeVersion;
+
+        // Avoid rapid launcher-color flashing while the player is moving
+        // quickly across the shelf.
+        await Task.Delay(110);
+
+        if (version != _themeChangeVersion ||
+            GamesGrid.SelectedItem != selected)
+        {
+            return;
+        }
+
+        await CrossFadeLauncherThemeAsync(selected.Launcher);
+    }
+
+    private void Root_SizeChanged(object sender, SizeChangedEventArgs e)
+        => UpdateResponsiveLayout(e.NewSize);
+
+    private void UpdateResponsiveLayout(Windows.Foundation.Size size)
+    {
+        var width = Math.Max(800, size.Width);
+        var height = Math.Max(600, size.Height);
+        var scale = Math.Clamp(Math.Min(width / 1920.0, height / 1080.0), 0.72, 1.65);
+
+        CollectionPage.RowDefinitions[0].Height =
+            new GridLength(Math.Clamp(280 * scale, 190, 430));
+        CollectionPage.RowDefinitions[1].Height =
+            new GridLength(Math.Clamp(92 * scale, 68, 138));
+        CollectionPage.RowDefinitions[3].Height =
+            new GridLength(Math.Clamp(86 * scale, 64, 122));
+
+        AppBrandIcon.Width = AppBrandIcon.Height =
+            Math.Clamp(100 * scale, 72, 148);
+        AppBrandTitle.FontSize = Math.Clamp(42 * scale, 30, 62);
+        AppBrandSubtitle.FontSize = Math.Clamp(21 * scale, 16, 31);
+
+        LauncherLogoGlow.Width = Math.Clamp(142 * scale, 108, 210);
+        LauncherLogoGlow.Height = Math.Clamp(92 * scale, 70, 136);
+        LauncherBrandLogo.Width = Math.Clamp(92 * scale, 70, 136);
+        LauncherBrandLogo.Height = Math.Clamp(62 * scale, 48, 92);
+
+        CollectionPromptBar.Margin =
+            new Thickness(Math.Clamp(140 * scale, 32, 240), 4,
+                          Math.Clamp(140 * scale, 32, 240), 14);
+
+        DetailTitle.FontSize = Math.Clamp(42 * scale, 28, 60);
+        DetailDescription.FontSize = Math.Clamp(17 * scale, 14, 23);
+        DetailDescription.LineHeight = Math.Clamp(27 * scale, 21, 36);
+        DetailMetadata.FontSize = Math.Clamp(14 * scale, 12, 19);
+        DetailMetadata.LineHeight = Math.Clamp(24 * scale, 19, 32);
+
+        var detailInset = Math.Clamp(96 * scale, 44, 150);
+        var detailTop = Math.Clamp(54 * scale, 30, 88);
+        DetailLauncherLogoGlow.Margin =
+            new Thickness(0, detailTop, detailInset, 0);
+        DetailLauncherLogoGlow.Width =
+            Math.Clamp(174 * scale, 126, 250);
+        DetailLauncherLogoGlow.Height =
+            Math.Clamp(118 * scale, 86, 170);
+        DetailLauncherLogo.Width =
+            Math.Clamp(112 * scale, 82, 164);
+        DetailLauncherLogo.Height =
+            Math.Clamp(72 * scale, 54, 108);
+
+        UpdateGameCardLayout(GamesGrid.ActualWidth);
+    }
+
+    private async Task CrossFadeLauncherThemeAsync(string launcher)
+    {
+        var originalOpacity = CollectionPage.Visibility == Visibility.Visible
+            ? 0.16
+            : 0.50;
+
+        await AnimateAsync(
+            BackgroundImage,
+            new DoubleAnimation
+            {
+                To = 0.04,
+                Duration = TimeSpan.FromMilliseconds(90),
+                EasingFunction = new QuadraticEase
+                {
+                    EasingMode = EasingMode.EaseInOut
+                },
+                EnableDependentAnimation = true
+            });
+
+        SetLauncherBackground(launcher);
+        BackgroundImage.Opacity = 0.04;
+
+        await AnimateAsync(
+            BackgroundImage,
+            new DoubleAnimation
+            {
+                To = originalOpacity,
+                Duration = TimeSpan.FromMilliseconds(170),
+                EasingFunction = new QuadraticEase
+                {
+                    EasingMode = EasingMode.EaseInOut
+                },
+                EnableDependentAnimation = true
+            });
     }
 
     private void GamesGrid_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -1472,12 +1580,15 @@ public sealed partial class MainWindow : Window
         CartridgeTransitionCurtain.Visibility = Visibility.Visible;
         CartridgeTransitionCurtain.Opacity = 0;
 
+        PlayUiSound("CartridgeInsert.wav");
+
         // Pick the cover up from the shelf.
         await AnimateTransformAsync(container, transform, -18, 1.045, 1, 135);
 
         // Move it toward the viewer, then drop it into an implied console slot.
+        var travel = GetCartridgeTransitionTravel();
         var curtainTask = FadeTransitionCurtainAsync(0.88, 210);
-        var cartridgeTask = AnimateTransformAsync(container, transform, 210, 1.13, 0, 210);
+        var cartridgeTask = AnimateTransformAsync(container, transform, travel, 1.13, 0, 210);
         await Task.WhenAll(curtainTask, cartridgeTask);
     }
 
@@ -1491,7 +1602,7 @@ public sealed partial class MainWindow : Window
             (float)(container.ActualWidth / 2),
             (float)(container.ActualHeight / 2),
             0);
-        transform.TranslateY = 210;
+        transform.TranslateY = GetCartridgeTransitionTravel();
         transform.ScaleX = 1.13;
         transform.ScaleY = 1.13;
         container.Opacity = 0;
@@ -1504,10 +1615,39 @@ public sealed partial class MainWindow : Window
             return;
 
         var transform = EnsureCartridgeTransform(container);
+        PlayUiSound("CartridgeEject.wav");
 
         // Rise out of the implied slot, pause just above the shelf, then settle.
         await AnimateTransformAsync(container, transform, -18, 1.045, 1, 220);
         await AnimateTransformAsync(container, transform, 0, 1, 1, 140);
+    }
+
+    private double GetCartridgeTransitionTravel()
+        => Math.Clamp(Root.ActualHeight * 0.195, 125, 270);
+
+    private void PlayUiSound(string fileName)
+    {
+        try
+        {
+            var path = Path.Combine(_root, "Assets", "Sounds", fileName);
+            if (!File.Exists(path))
+                return;
+
+            _uiSoundPlayer ??= new Windows.Media.Playback.MediaPlayer
+            {
+                Volume = 0.42,
+                IsLoopingEnabled = false
+            };
+
+            _uiSoundPlayer.Source =
+                MediaSource.CreateFromUri(new Uri(path));
+            _uiSoundPlayer.Play();
+        }
+        catch (Exception ex)
+        {
+            // UI sounds are decorative and must never block navigation.
+            App.StartupLog($"UI sound failed ({fileName}): {ex.Message}");
+        }
     }
 
     private static CompositeTransform EnsureCartridgeTransform(FrameworkElement element)
