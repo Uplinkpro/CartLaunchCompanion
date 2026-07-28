@@ -113,12 +113,14 @@ public sealed partial class MainWindow : Window
 
     private void ConfigureGameGridTemplates()
     {
-        // Up to five games use one centered row. Six through ten use two rows.
+        // One centered row for 1-5 games and two centered rows for 6-10.
         GamesGrid.ItemsPanel = (ItemsPanelTemplate)XamlReader.Load(
             "<ItemsPanelTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'>" +
             "<ItemsWrapGrid Orientation='Horizontal' MaximumRowsOrColumns='2' HorizontalAlignment='Center' VerticalAlignment='Center'/>" +
             "</ItemsPanelTemplate>");
 
+        // Replace the stock GridViewItem template completely so WinUI cannot
+        // draw its default purple selection or keyboard-focus rectangle.
         GamesGrid.ItemContainerStyle = (Style)XamlReader.Load(
             "<Style xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' TargetType='GridViewItem'>" +
             "<Setter Property='Padding' Value='0'/>" +
@@ -129,22 +131,31 @@ public sealed partial class MainWindow : Window
             "<Setter Property='UseSystemFocusVisuals' Value='False'/>" +
             "<Setter Property='HorizontalContentAlignment' Value='Stretch'/>" +
             "<Setter Property='VerticalContentAlignment' Value='Stretch'/>" +
+            "<Setter Property='Template'>" +
+            "<Setter.Value>" +
+            "<ControlTemplate TargetType='GridViewItem'>" +
+            "<Grid Background='Transparent'>" +
+            "<ContentPresenter Content='{TemplateBinding Content}' ContentTemplate='{TemplateBinding ContentTemplate}' HorizontalContentAlignment='Stretch' VerticalContentAlignment='Stretch'/>" +
+            "</Grid>" +
+            "</ControlTemplate>" +
+            "</Setter.Value>" +
+            "</Setter>" +
             "</Style>");
 
         GamesGrid.ItemTemplate = (DataTemplate)XamlReader.Load(
             "<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'>" +
-            "<Border Margin='8,8,8,12' Background='#FF080A0D' BorderBrush='{Binding CardBorderBrush}' BorderThickness='2' CornerRadius='6'>" +
+            "<Border Margin='10,8,10,14' Background='#FF07090C' BorderBrush='{Binding CardBorderBrush}' BorderThickness='2' CornerRadius='5'>" +
             "<Grid>" +
-            "<Grid.RowDefinitions><RowDefinition Height='34'/><RowDefinition Height='3'/><RowDefinition Height='*'/></Grid.RowDefinitions>" +
-            "<Border Grid.Row='0' Background='{Binding LauncherBannerBrush}' CornerRadius='4,4,0,0'>" +
-            "<StackPanel Orientation='Horizontal' HorizontalAlignment='Center' VerticalAlignment='Center' Spacing='7'>" +
-            "<Image Source='{Binding LauncherLogo}' Width='18' Height='18' Stretch='Uniform'/>" +
-            "<TextBlock Text='{Binding LauncherDisplayName}' Foreground='White' FontSize='12' FontWeight='SemiBold' VerticalAlignment='Center'/>" +
+            "<Grid.RowDefinitions><RowDefinition Height='28'/><RowDefinition Height='3'/><RowDefinition Height='*'/></Grid.RowDefinitions>" +
+            "<Border Grid.Row='0' Background='{Binding LauncherBannerBrush}' CornerRadius='3,3,0,0'>" +
+            "<StackPanel Orientation='Horizontal' HorizontalAlignment='Center' VerticalAlignment='Center' Spacing='6'>" +
+            "<Image Source='{Binding LauncherLogo}' Width='16' Height='16' Stretch='Uniform'/>" +
+            "<TextBlock Text='{Binding LauncherDisplayName}' Foreground='White' FontSize='11' FontWeight='SemiBold' CharacterSpacing='20' VerticalAlignment='Center'/>" +
             "</StackPanel>" +
             "</Border>" +
             "<Rectangle Grid.Row='1' Fill='White'/>" +
-            "<Border Grid.Row='2' Background='#FF080A0D' CornerRadius='0,0,4,4'>" +
-            "<Image Source='{Binding CoverImage}' Stretch='Uniform'/>" +
+            "<Border Grid.Row='2' Background='#FF05070A' CornerRadius='0,0,3,3' ClipToBounds='True'>" +
+            "<Image Source='{Binding CoverImage}' Stretch='Uniform' HorizontalAlignment='Center' VerticalAlignment='Center'/>" +
             "</Border>" +
             "</Grid>" +
             "</Border>" +
@@ -603,6 +614,7 @@ public sealed partial class MainWindow : Window
         GamesGrid.VerticalAlignment = VerticalAlignment.Stretch;
         GamesGrid.ItemClick += GamesGrid_ItemClick;
         GamesGrid.SelectionChanged += GamesGrid_SelectionChanged;
+        GamesGrid.ContainerContentChanging += GamesGrid_ContainerContentChanging;
         GamesGrid.SizeChanged += GamesGrid_SizeChanged;
         CollectionPage.Children.Add(GamesGrid);
 
@@ -1034,19 +1046,76 @@ public sealed partial class MainWindow : Window
         game.LauncherLogo = CreateLogoBitmap(logoPath);
     }
 
-    private static Windows.UI.Color GetLauncherBannerColor(string launcher, bool light)
+    private static Windows.UI.Color GetLauncherBannerColor(
+        string launcher,
+        bool light)
         => launcher switch
         {
-            "Xbox" => light ? Windows.UI.Color.FromArgb(255, 34, 139, 34) : Windows.UI.Color.FromArgb(255, 13, 91, 23),
-            "Steam" => light ? Windows.UI.Color.FromArgb(255, 36, 94, 166) : Windows.UI.Color.FromArgb(255, 18, 55, 103),
-            "Epic" => light ? Windows.UI.Color.FromArgb(255, 82, 85, 92) : Windows.UI.Color.FromArgb(255, 38, 40, 45),
-            "GOG" => light ? Windows.UI.Color.FromArgb(255, 167, 103, 0) : Windows.UI.Color.FromArgb(255, 113, 67, 0),
-            "Ubisoft" => light ? Windows.UI.Color.FromArgb(255, 0, 137, 180) : Windows.UI.Color.FromArgb(255, 0, 79, 116),
-            "Rockstar" => light ? Windows.UI.Color.FromArgb(255, 167, 45, 45) : Windows.UI.Color.FromArgb(255, 105, 20, 23),
-            "Amazon" => light ? Windows.UI.Color.FromArgb(255, 218, 126, 0) : Windows.UI.Color.FromArgb(255, 139, 75, 0),
-            "Flash" => light ? Windows.UI.Color.FromArgb(255, 226, 96, 22) : Windows.UI.Color.FromArgb(255, 139, 48, 12),
-            _ => light ? Windows.UI.Color.FromArgb(255, 112, 66, 168) : Windows.UI.Color.FromArgb(255, 62, 35, 101)
+            "Xbox" => light
+                ? Windows.UI.Color.FromArgb(255, 43, 150, 38)
+                : Windows.UI.Color.FromArgb(255, 13, 87, 24),
+
+            "Steam" => light
+                ? Windows.UI.Color.FromArgb(255, 39, 98, 168)
+                : Windows.UI.Color.FromArgb(255, 17, 49, 94),
+
+            "Epic" => light
+                ? Windows.UI.Color.FromArgb(255, 92, 95, 102)
+                : Windows.UI.Color.FromArgb(255, 39, 41, 46),
+
+            "GOG" => light
+                ? Windows.UI.Color.FromArgb(255, 151, 71, 207)
+                : Windows.UI.Color.FromArgb(255, 75, 32, 112),
+
+            "Ubisoft" => light
+                ? Windows.UI.Color.FromArgb(255, 27, 157, 204)
+                : Windows.UI.Color.FromArgb(255, 0, 72, 108),
+
+            "Rockstar" => light
+                ? Windows.UI.Color.FromArgb(255, 194, 143, 26)
+                : Windows.UI.Color.FromArgb(255, 108, 73, 5),
+
+            "Amazon" => light
+                ? Windows.UI.Color.FromArgb(255, 216, 124, 20)
+                : Windows.UI.Color.FromArgb(255, 126, 66, 6),
+
+            "Flash" => light
+                ? Windows.UI.Color.FromArgb(255, 213, 88, 27)
+                : Windows.UI.Color.FromArgb(255, 116, 38, 9),
+
+            _ => light
+                ? Windows.UI.Color.FromArgb(255, 118, 67, 173)
+                : Windows.UI.Color.FromArgb(255, 58, 31, 91)
         };
+
+    private void GamesGrid_ContainerContentChanging(
+        ListViewBase sender,
+        ContainerContentChangingEventArgs args)
+    {
+        if (args.InRecycleQueue ||
+            args.ItemContainer is not GridViewItem container)
+        {
+            return;
+        }
+
+        container.PointerEntered -= GameCard_PointerEntered;
+        container.PointerEntered += GameCard_PointerEntered;
+    }
+
+    private void GameCard_PointerEntered(
+        object sender,
+        PointerRoutedEventArgs e)
+    {
+        if (CollectionPage.Visibility != Visibility.Visible ||
+            sender is not GridViewItem container ||
+            container.Content is not GameDefinition game)
+        {
+            return;
+        }
+
+        if (!ReferenceEquals(GamesGrid.SelectedItem, game))
+            GamesGrid.SelectedItem = game;
+    }
 
     private async void GamesGrid_SelectionChanged(
         object sender,
@@ -1072,26 +1141,40 @@ public sealed partial class MainWindow : Window
     {
         foreach (var game in _games)
         {
-            game.CardBorderBrush = new SolidColorBrush(
-                ReferenceEquals(game, selected)
-                    ? GetLauncherAccentColor(
-                        LaunchService.NormalizeLauncher(game.Launcher),
-                        255,
-                        1.10)
-                    : Windows.UI.Color.FromArgb(72, 255, 255, 255));
+            var isSelected = ReferenceEquals(game, selected);
+            var normalized =
+                LaunchService.NormalizeLauncher(game.Launcher);
 
-            if (GamesGrid.ContainerFromItem(game) is not FrameworkElement container)
+            game.CardBorderBrush = new SolidColorBrush(
+                isSelected
+                    ? GetLauncherAccentColor(
+                        normalized,
+                        218,
+                        1.04)
+                    : Windows.UI.Color.FromArgb(
+                        38,
+                        255,
+                        255,
+                        255));
+
+            if (GamesGrid.ContainerFromItem(game) is not
+                FrameworkElement container)
+            {
                 continue;
+            }
 
             var transform = EnsureCartridgeTransform(container);
             transform.CenterX = container.ActualWidth / 2;
             transform.CenterY = container.ActualHeight / 2;
 
-            var isSelected = ReferenceEquals(game, selected);
-            transform.ScaleX = isSelected ? 1.045 : 1;
-            transform.ScaleY = isSelected ? 1.045 : 1;
-            transform.TranslateY = isSelected ? -7 : 0;
-            container.Opacity = isSelected ? 1 : 0.94;
+            // Keep selection restrained. The cover remains centered and the
+            // launcher color—not a generic purple frame—identifies focus.
+            transform.ScaleX = isSelected ? 1.025 : 1;
+            transform.ScaleY = isSelected ? 1.025 : 1;
+            transform.TranslateY = isSelected ? -5 : 0;
+            container.Opacity = isSelected ? 1 : 0.87;
+
+            Canvas.SetZIndex(container, isSelected ? 10 : 0);
         }
     }
 
@@ -1218,9 +1301,9 @@ public sealed partial class MainWindow : Window
             GamesGrid.Padding.Bottom);
 
         var widthFromScreen =
-            (usableWidth - (itemsPerRow * 20.0)) / itemsPerRow;
+            (usableWidth - (itemsPerRow * 24.0)) / itemsPerRow;
         var rowHeight = usableHeight / rows;
-        var widthFromHeight = (rowHeight - 24) / 1.58;
+        var widthFromHeight = (rowHeight - 28) / 1.56;
 
         var maximum = rows == 1 ? 230.0 : 205.0;
         var width = Math.Clamp(
@@ -1230,7 +1313,7 @@ public sealed partial class MainWindow : Window
 
         panel.MaximumRowsOrColumns = rows;
         panel.ItemWidth = Math.Floor(width);
-        panel.ItemHeight = Math.Floor(width * 1.58);
+        panel.ItemHeight = Math.Floor(width * 1.56);
 
         DispatcherQueue.TryEnqueue(() =>
         {
