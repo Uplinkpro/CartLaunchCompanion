@@ -144,7 +144,7 @@ public sealed partial class MainWindow : Window
             "</Border>" +
             "<Rectangle Grid.Row='1' Fill='White'/>" +
             "<Border Grid.Row='2' Background='#FF080A0D' CornerRadius='0,0,4,4'>" +
-            "<Image Source='{Binding CoverImage}' Stretch='UniformToFill'/>" +
+            "<Image Source='{Binding CoverImage}' Stretch='Uniform'/>" +
             "</Border>" +
             "</Grid>" +
             "</Border>" +
@@ -960,8 +960,9 @@ public sealed partial class MainWindow : Window
         var games = await _library.LoadAsync(_root);
         foreach (var game in games)
         {
-            game.CoverImage = CreateBitmap(First(game.CoverPath, game.HeaderPath));
-            game.HeaderImage = CreateBitmap(game.HeaderPath);
+            game.CoverImage = CreateCoverBitmap(
+                First(game.CoverPath, game.HeaderPath));
+            game.HeaderImage = CreateHeaderBitmap(game.HeaderPath);
             ApplyLauncherCardBranding(game);
             _games.Add(game);
             _ = RefreshArtworkAsync(game);
@@ -976,8 +977,9 @@ public sealed partial class MainWindow : Window
     private async Task RefreshArtworkAsync(GameDefinition game)
     {
         await _artwork.EnsureArtworkAsync(game);
-        game.CoverImage = CreateBitmap(First(game.CoverPath, game.HeaderPath));
-        game.HeaderImage = CreateBitmap(game.HeaderPath);
+        game.CoverImage = CreateCoverBitmap(
+                First(game.CoverPath, game.HeaderPath));
+        game.HeaderImage = CreateHeaderBitmap(game.HeaderPath);
     }
 
     private void ApplyLauncherCardBranding(GameDefinition game)
@@ -1008,7 +1010,7 @@ public sealed partial class MainWindow : Window
         var logoPath = Path.Combine(_root, "Assets", "Launchers", normalized, "Logo.png");
         if (!File.Exists(logoPath))
             logoPath = Path.Combine(_root, "Assets", "Launchers", "DirectExe", "Logo.png");
-        game.LauncherLogo = CreateBitmap(logoPath);
+        game.LauncherLogo = CreateLogoBitmap(logoPath);
     }
 
     private static Windows.UI.Color GetLauncherBannerColor(string launcher, bool light)
@@ -1298,8 +1300,9 @@ public sealed partial class MainWindow : Window
             $"RELEASE DATE   {Display(game.ReleaseDate)}\n" +
             $"LAUNCHER   {Display(game.Launcher)}";
 
-        DetailHeader.Source = CreateBitmap(game.HeaderPath);
-        DetailCover.Source = CreateBitmap(First(game.CoverPath, game.HeaderPath));
+        DetailHeader.Source = CreateHeaderBitmap(game.HeaderPath);
+        DetailCover.Source = CreateCoverBitmap(
+            First(game.CoverPath, game.HeaderPath));
         UpdateDetailLauncherBrand(game.Launcher);
     }
 
@@ -1338,8 +1341,9 @@ public sealed partial class MainWindow : Window
         DetailTitle.Text = game.Name;
         DetailDescription.Text = First(game.DetailedDescription, game.Description);
         DetailMetadata.Text = $"DEVELOPER   {Display(game.Developer)}\nPUBLISHER   {Display(game.Publisher)}\nGENRE   {Display(game.Genre)}\nRELEASE DATE   {Display(game.ReleaseDate)}\nLAUNCHER   {Display(game.Launcher)}";
-        DetailHeader.Source = CreateBitmap(game.HeaderPath);
-        DetailCover.Source = CreateBitmap(First(game.CoverPath, game.HeaderPath));
+        DetailHeader.Source = CreateHeaderBitmap(game.HeaderPath);
+        DetailCover.Source = CreateCoverBitmap(
+            First(game.CoverPath, game.HeaderPath));
         UpdateDetailLauncherBrand(game.Launcher);
     }
 
@@ -2561,7 +2565,7 @@ public sealed partial class MainWindow : Window
         var normalized = LaunchService.NormalizeLauncher(launcher);
         var logoPath = ResolveLauncherAsset(normalized, "Logo.png");
         DetailLauncherLogo.Source =
-            File.Exists(logoPath) ? CreateBitmap(logoPath) : null;
+            File.Exists(logoPath) ? CreateLogoBitmap(logoPath) : null;
 
         DetailLauncherLogoGlow.Background =
             CreateLauncherGlowBrush(normalized, 112);
@@ -2610,7 +2614,7 @@ public sealed partial class MainWindow : Window
 
         var logoPath = ResolveLauncherAsset(normalized, "Logo.png");
         LauncherBrandLogo.Source =
-            File.Exists(logoPath) ? CreateBitmap(logoPath) : null;
+            File.Exists(logoPath) ? CreateLogoBitmap(logoPath) : null;
 
         // The Home Page intentionally stays in the dark studio environment.
         // Launcher backgrounds are only visible behind the metadata page.
@@ -2618,7 +2622,7 @@ public sealed partial class MainWindow : Window
         {
             var backgroundPath =
                 ResolveLauncherAsset(normalized, "Background.png");
-            BackgroundImage.Source = CreateBitmap(backgroundPath);
+            BackgroundImage.Source = CreateHeaderBitmap(backgroundPath);
             BackgroundImage.Opacity = 0.50;
         }
         else
@@ -2782,8 +2786,36 @@ public sealed partial class MainWindow : Window
             Scale(blue, brightness));
     }
 
-    private static BitmapImage? CreateBitmap(string path)
-        => File.Exists(path) ? new BitmapImage(new Uri(ToFileUri(path))) : null;
+    private static BitmapImage? CreateCoverBitmap(string path)
+        => CreateBitmap(path, 1200);
+
+    private static BitmapImage? CreateHeaderBitmap(string path)
+        => CreateBitmap(path, 3840);
+
+    private static BitmapImage? CreateLogoBitmap(string path)
+        => CreateBitmap(path, 256);
+
+    private static BitmapImage? CreateBitmap(
+        string path,
+        int decodePixelWidth = 0)
+    {
+        if (!File.Exists(path))
+            return null;
+
+        var bitmap = new BitmapImage
+        {
+            CreateOptions = BitmapCreateOptions.IgnoreImageCache
+        };
+
+        if (decodePixelWidth > 0)
+        {
+            bitmap.DecodePixelType = DecodePixelType.Physical;
+            bitmap.DecodePixelWidth = decodePixelWidth;
+        }
+
+        bitmap.UriSource = new Uri(ToFileUri(path));
+        return bitmap;
+    }
 
     private static string ToFileUri(string path)
         => string.IsNullOrWhiteSpace(path) ? string.Empty : new Uri(Path.GetFullPath(path)).AbsoluteUri;
