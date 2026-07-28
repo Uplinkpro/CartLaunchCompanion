@@ -9,6 +9,7 @@ public sealed class GameDefinition : INotifyPropertyChanged
 {
     private ImageSource? _coverImage;
     private ImageSource? _headerImage;
+    private ImageSource? _launcherLogo;
 
     public string Id { get; set; } = "";
     public string Name { get; set; } = "Unnamed Game";
@@ -66,6 +67,22 @@ public sealed class GameDefinition : INotifyPropertyChanged
     [JsonIgnore] public IReadOnlyList<string> SteamTrailerUrls { get; set; } = [];
     [JsonIgnore] public string EffectiveSteamMetadataId =>
         !string.IsNullOrWhiteSpace(SteamMetadataId) ? SteamMetadataId.Trim() : SteamId.Trim();
+
+
+    [JsonIgnore] public string LauncherDisplayName { get; set; } = "";
+    [JsonIgnore] public Brush LauncherBannerBrush { get; set; } = new SolidColorBrush(Microsoft.UI.Colors.DimGray);
+
+    [JsonIgnore]
+    public ImageSource? LauncherLogo
+    {
+        get => _launcherLogo;
+        set
+        {
+            if (ReferenceEquals(_launcherLogo, value)) return;
+            _launcherLogo = value;
+            OnPropertyChanged();
+        }
+    }
 
     [JsonIgnore]
     public ImageSource? CoverImage

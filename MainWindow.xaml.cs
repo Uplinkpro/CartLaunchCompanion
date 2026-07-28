@@ -32,6 +32,7 @@ public sealed partial class MainWindow : Window
     private readonly TextBlock AppBrandSubtitle = new();
     private readonly Border LauncherLogoGlow = new();
     private readonly Border CollectionPromptBar = new();
+    private readonly Grid ExitConfirmationOverlay = new();
     private readonly Grid CollectionPage = new();
     private readonly Button ExitCollectionButton = new();
     private readonly GridView GamesGrid = new();
@@ -68,6 +69,7 @@ public sealed partial class MainWindow : Window
     private DateTime _lastGamepadMove = DateTime.MinValue;
     private bool _gamepadActionInProgress;
     private bool _isClosing;
+    private bool _exitConfirmationVisible;
 
     public MainWindow()
     {
@@ -108,17 +110,17 @@ public sealed partial class MainWindow : Window
 
         GamesGrid.ItemTemplate = (DataTemplate)XamlReader.Load(
             "<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'>" +
-            "<Grid>" +
-            "<Border Margin='8,10,8,22' Background='#FF171A20' BorderBrush='#556A6F7A' BorderThickness='1' CornerRadius='10'>" +
-            "<Grid>" +
-            "<Grid.RowDefinitions><RowDefinition Height='22'/><RowDefinition Height='*'/><RowDefinition Height='16'/></Grid.RowDefinitions>" +
-            "<Border Margin='14,8,48,5' Background='#FF090B0F' BorderBrush='#3F9DA3AE' BorderThickness='1' CornerRadius='3'/>" +
-            "<Ellipse Width='9' Height='9' Margin='0,9,12,0' HorizontalAlignment='Right' VerticalAlignment='Top' Fill='#FF080A0D' Stroke='#558A909B' StrokeThickness='1'/>" +
-            "<Border Grid.Row='1' Margin='10,2,10,4' Background='#FF080A0D' CornerRadius='4'>" +
-            "<Image Source='{Binding CoverImage}' Stretch='UniformToFill'/>" +
+            "<Grid Margin='7,10,7,20'>" +
+            "<Grid.RowDefinitions><RowDefinition Height='40'/><RowDefinition Height='3'/><RowDefinition Height='*'/></Grid.RowDefinitions>" +
+            "<Border Grid.Row='0' Background='{Binding LauncherBannerBrush}' CornerRadius='3,3,0,0'>" +
+            "<StackPanel Orientation='Horizontal' HorizontalAlignment='Center' VerticalAlignment='Center' Spacing='8'>" +
+            "<Image Source='{Binding LauncherLogo}' Width='21' Height='21' Stretch='Uniform'/>" +
+            "<TextBlock Text='{Binding LauncherDisplayName}' Foreground='White' FontSize='13' FontWeight='SemiBold' VerticalAlignment='Center'/>" +
+            "</StackPanel>" +
             "</Border>" +
-            "<Rectangle Grid.Row='2' Margin='12,4,12,5' RadiusX='2' RadiusY='2' Fill='#FF090B0F'/>" +
-            "</Grid>" +
+            "<Rectangle Grid.Row='1' Fill='White'/>" +
+            "<Border Grid.Row='2' Background='#FF080A0D' CornerRadius='0,0,4,4' BorderBrush='#557D8490' BorderThickness='1,0,1,1'>" +
+            "<Image Source='{Binding CoverImage}' Stretch='UniformToFill'/>" +
             "</Border>" +
             "</Grid>" +
             "</DataTemplate>");
@@ -268,17 +270,6 @@ public sealed partial class MainWindow : Window
         Grid.SetRow(LauncherLogoGlow, 1);
         CollectionPage.Children.Add(LauncherLogoGlow);
 
-        ExitCollectionButton.Content = "EXIT";
-        MakeSquare(ExitCollectionButton);
-        ExitCollectionButton.HorizontalAlignment = HorizontalAlignment.Right;
-        ExitCollectionButton.VerticalAlignment = VerticalAlignment.Top;
-        ExitCollectionButton.Margin = new Thickness(0, 26, 30, 0);
-        ExitCollectionButton.Width = 104;
-        ExitCollectionButton.Height = 44;
-        ExitCollectionButton.Opacity = 0.72;
-        ExitCollectionButton.Click += Exit_Click;
-        CollectionPage.Children.Add(ExitCollectionButton);
-
         Grid.SetRow(GamesGrid, 2);
         GamesGrid.IsItemClickEnabled = true;
         GamesGrid.SelectionMode = ListViewSelectionMode.Single;
@@ -298,9 +289,8 @@ public sealed partial class MainWindow : Window
             VerticalAlignment = VerticalAlignment.Center,
             Spacing = 62
         };
-        promptStack.Children.Add(CreateGamepadPrompt("A", "LAUNCH"));
-        promptStack.Children.Add(CreateGamepadPrompt("X", "DETAILS"));
-        promptStack.Children.Add(CreateGamepadPrompt("☰", "OPTIONS"));
+        promptStack.Children.Add(CreateGamepadPrompt("A", "VIEW DETAILS"));
+        promptStack.Children.Add(CreateGamepadPrompt("B", "EXIT"));
         CollectionPromptBar.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(218, 5, 7, 10));
         CollectionPromptBar.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(90, 116, 121, 132));
         CollectionPromptBar.BorderThickness = new Thickness(1);
@@ -311,6 +301,43 @@ public sealed partial class MainWindow : Window
         CollectionPage.Children.Add(CollectionPromptBar);
 
         Root.Children.Add(CollectionPage);
+
+        ExitConfirmationOverlay.Visibility = Visibility.Collapsed;
+        ExitConfirmationOverlay.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(188, 0, 0, 0));
+        ExitConfirmationOverlay.HorizontalAlignment = HorizontalAlignment.Stretch;
+        ExitConfirmationOverlay.VerticalAlignment = VerticalAlignment.Stretch;
+        ExitConfirmationOverlay.IsHitTestVisible = true;
+
+        var exitPanel = new Border
+        {
+            Width = 560,
+            Padding = new Thickness(42, 34, 42, 32),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(245, 10, 12, 17)),
+            BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(210, 157, 86, 232)),
+            BorderThickness = new Thickness(2),
+            CornerRadius = new CornerRadius(12)
+        };
+        var exitStack = new StackPanel { Spacing = 22, HorizontalAlignment = HorizontalAlignment.Center };
+        exitStack.Children.Add(new TextBlock
+        {
+            Text = "EXIT CART LAUNCH COMPANION?",
+            FontSize = 28,
+            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
+            TextAlignment = TextAlignment.Center
+        });
+        exitStack.Children.Add(new TextBlock
+        {
+            Text = "Press B again to exit",
+            FontSize = 18,
+            Opacity = 0.82,
+            TextAlignment = TextAlignment.Center
+        });
+        exitStack.Children.Add(CreateGamepadPrompt("A", "CANCEL"));
+        exitPanel.Child = exitStack;
+        ExitConfirmationOverlay.Children.Add(exitPanel);
+        Root.Children.Add(ExitConfirmationOverlay);
         DetailsPage.Visibility = Visibility.Collapsed;
         DetailsPage.Opacity = 0;
         DetailsPage.RowDefinitions.Add(new RowDefinition { Height = new GridLength(90) });
@@ -449,6 +476,7 @@ public sealed partial class MainWindow : Window
         {
             game.CoverImage = CreateBitmap(First(game.CoverPath, game.HeaderPath));
             game.HeaderImage = CreateBitmap(game.HeaderPath);
+            ApplyLauncherCardBranding(game);
             _games.Add(game);
             _ = RefreshArtworkAsync(game);
         }
@@ -465,6 +493,51 @@ public sealed partial class MainWindow : Window
         game.CoverImage = CreateBitmap(First(game.CoverPath, game.HeaderPath));
         game.HeaderImage = CreateBitmap(game.HeaderPath);
     }
+
+    private void ApplyLauncherCardBranding(GameDefinition game)
+    {
+        var normalized = LaunchService.NormalizeLauncher(game.Launcher);
+        game.LauncherDisplayName = normalized switch
+        {
+            "DirectExe" => "LOCAL",
+            "Epic" => "EPIC GAMES",
+            "GOG" => "GOG.COM",
+            "Rockstar" => "ROCKSTAR",
+            "Ubisoft" => "UBISOFT",
+            "Amazon" => "AMAZON GAMES",
+            _ => normalized.ToUpperInvariant()
+        };
+
+        game.LauncherBannerBrush = new LinearGradientBrush
+        {
+            StartPoint = new Windows.Foundation.Point(0, 0),
+            EndPoint = new Windows.Foundation.Point(0, 1),
+            GradientStops =
+            {
+                new GradientStop { Color = GetLauncherBannerColor(normalized, true), Offset = 0 },
+                new GradientStop { Color = GetLauncherBannerColor(normalized, false), Offset = 1 }
+            }
+        };
+
+        var logoPath = Path.Combine(_root, "Assets", "Launchers", normalized, "Logo.png");
+        if (!File.Exists(logoPath))
+            logoPath = Path.Combine(_root, "Assets", "Launchers", "DirectExe", "Logo.png");
+        game.LauncherLogo = CreateBitmap(logoPath);
+    }
+
+    private static Windows.UI.Color GetLauncherBannerColor(string launcher, bool light)
+        => launcher switch
+        {
+            "Xbox" => light ? Windows.UI.Color.FromArgb(255, 34, 139, 34) : Windows.UI.Color.FromArgb(255, 13, 91, 23),
+            "Steam" => light ? Windows.UI.Color.FromArgb(255, 36, 94, 166) : Windows.UI.Color.FromArgb(255, 18, 55, 103),
+            "Epic" => light ? Windows.UI.Color.FromArgb(255, 82, 85, 92) : Windows.UI.Color.FromArgb(255, 38, 40, 45),
+            "GOG" => light ? Windows.UI.Color.FromArgb(255, 167, 103, 0) : Windows.UI.Color.FromArgb(255, 113, 67, 0),
+            "Ubisoft" => light ? Windows.UI.Color.FromArgb(255, 0, 137, 180) : Windows.UI.Color.FromArgb(255, 0, 79, 116),
+            "Rockstar" => light ? Windows.UI.Color.FromArgb(255, 167, 45, 45) : Windows.UI.Color.FromArgb(255, 105, 20, 23),
+            "Amazon" => light ? Windows.UI.Color.FromArgb(255, 218, 126, 0) : Windows.UI.Color.FromArgb(255, 139, 75, 0),
+            "Flash" => light ? Windows.UI.Color.FromArgb(255, 226, 96, 22) : Windows.UI.Color.FromArgb(255, 139, 48, 12),
+            _ => light ? Windows.UI.Color.FromArgb(255, 112, 66, 168) : Windows.UI.Color.FromArgb(255, 62, 35, 101)
+        };
 
     private void GamesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -1333,13 +1406,34 @@ public sealed partial class MainWindow : Window
         Process.Start(new ProcessStartInfo($"https://store.steampowered.com/app/{_currentGame.EffectiveSteamMetadataId}/") { UseShellExecute = true });
     }
 
-    private void Exit_Click(object sender, RoutedEventArgs e) => StopTrailerAndClose();
+    private void Exit_Click(object sender, RoutedEventArgs e) => RequestExitOrConfirm();
+
+    private void RequestExitOrConfirm()
+    {
+        if (_exitConfirmationVisible)
+        {
+            StopTrailerAndClose();
+            return;
+        }
+
+        _exitConfirmationVisible = true;
+        ExitConfirmationOverlay.Visibility = Visibility.Visible;
+        ExitConfirmationOverlay.Opacity = 1;
+    }
+
+    private void CancelExitConfirmation()
+    {
+        if (!_exitConfirmationVisible) return;
+        _exitConfirmationVisible = false;
+        ExitConfirmationOverlay.Visibility = Visibility.Collapsed;
+        GamesGrid.Focus(FocusState.Programmatic);
+    }
 
     private void Root_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
     {
         if (e.Key != Windows.System.VirtualKey.Escape) return;
         if (DetailsPage.Visibility == Visibility.Visible) Back_Click(sender, e);
-        else StopTrailerAndClose();
+        else RequestExitOrConfirm();
     }
 
     private void GamepadTimer_Tick(object? sender, object e)
@@ -1384,12 +1478,15 @@ public sealed partial class MainWindow : Window
             }
 
             if (pressed.HasFlag(GamepadButtons.A))
-                _ = RunGamepadActionAsync(ActivateFocusedElementAsync);
+            {
+                if (_exitConfirmationVisible) CancelExitConfirmation();
+                else _ = RunGamepadActionAsync(ActivateFocusedElementAsync);
+            }
             else if (pressed.HasFlag(GamepadButtons.B))
                 _ = RunGamepadActionAsync(async () =>
                 {
                     if (DetailsPage.Visibility == Visibility.Visible) await NavigateBackAsync();
-                    else StopTrailerAndClose();
+                    else RequestExitOrConfirm();
                 });
         }
         catch (Exception ex)
