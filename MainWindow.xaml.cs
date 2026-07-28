@@ -31,6 +31,9 @@ public sealed partial class MainWindow : Window
     private readonly TextBlock AppBrandTitle = new();
     private readonly TextBlock AppBrandSubtitle = new();
     private readonly Border LauncherLogoGlow = new();
+    private readonly Microsoft.UI.Xaml.Shapes.Rectangle HomeOverheadLight = new();
+    private readonly Button HomeDetailsButton = new();
+    private readonly Button HomeExitButton = new();
     private readonly Border CollectionPromptBar = new();
     private readonly Border CartridgeTransitionCurtain = new();
     private readonly Grid ExitConfirmationOverlay = new();
@@ -110,32 +113,45 @@ public sealed partial class MainWindow : Window
 
     private void ConfigureGameGridTemplates()
     {
-        // The home screen is a curated cartridge shelf, not a large library browser.
-        // A single horizontal row keeps up to ten games readable from couch distance.
+        // Up to five games use one centered row. Six through ten use two rows.
         GamesGrid.ItemsPanel = (ItemsPanelTemplate)XamlReader.Load(
             "<ItemsPanelTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'>" +
-            "<ItemsWrapGrid Orientation='Horizontal' MaximumRowsOrColumns='1' HorizontalAlignment='Center' VerticalAlignment='Bottom'/>" +
+            "<ItemsWrapGrid Orientation='Horizontal' MaximumRowsOrColumns='2' HorizontalAlignment='Center' VerticalAlignment='Center'/>" +
             "</ItemsPanelTemplate>");
+
+        GamesGrid.ItemContainerStyle = (Style)XamlReader.Load(
+            "<Style xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' TargetType='GridViewItem'>" +
+            "<Setter Property='Padding' Value='0'/>" +
+            "<Setter Property='Margin' Value='0'/>" +
+            "<Setter Property='Background' Value='Transparent'/>" +
+            "<Setter Property='BorderBrush' Value='Transparent'/>" +
+            "<Setter Property='BorderThickness' Value='0'/>" +
+            "<Setter Property='UseSystemFocusVisuals' Value='False'/>" +
+            "<Setter Property='HorizontalContentAlignment' Value='Stretch'/>" +
+            "<Setter Property='VerticalContentAlignment' Value='Stretch'/>" +
+            "</Style>");
 
         GamesGrid.ItemTemplate = (DataTemplate)XamlReader.Load(
             "<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'>" +
-            "<Grid Margin='7,10,7,20'>" +
-            "<Grid.RowDefinitions><RowDefinition Height='40'/><RowDefinition Height='3'/><RowDefinition Height='*'/></Grid.RowDefinitions>" +
-            "<Border Grid.Row='0' Background='{Binding LauncherBannerBrush}' CornerRadius='3,3,0,0'>" +
-            "<StackPanel Orientation='Horizontal' HorizontalAlignment='Center' VerticalAlignment='Center' Spacing='8'>" +
-            "<Image Source='{Binding LauncherLogo}' Width='21' Height='21' Stretch='Uniform'/>" +
-            "<TextBlock Text='{Binding LauncherDisplayName}' Foreground='White' FontSize='13' FontWeight='SemiBold' VerticalAlignment='Center'/>" +
+            "<Border Margin='8,8,8,12' Background='#FF080A0D' BorderBrush='{Binding CardBorderBrush}' BorderThickness='2' CornerRadius='6'>" +
+            "<Grid>" +
+            "<Grid.RowDefinitions><RowDefinition Height='34'/><RowDefinition Height='3'/><RowDefinition Height='*'/></Grid.RowDefinitions>" +
+            "<Border Grid.Row='0' Background='{Binding LauncherBannerBrush}' CornerRadius='4,4,0,0'>" +
+            "<StackPanel Orientation='Horizontal' HorizontalAlignment='Center' VerticalAlignment='Center' Spacing='7'>" +
+            "<Image Source='{Binding LauncherLogo}' Width='18' Height='18' Stretch='Uniform'/>" +
+            "<TextBlock Text='{Binding LauncherDisplayName}' Foreground='White' FontSize='12' FontWeight='SemiBold' VerticalAlignment='Center'/>" +
             "</StackPanel>" +
             "</Border>" +
             "<Rectangle Grid.Row='1' Fill='White'/>" +
-            "<Border Grid.Row='2' Background='#FF080A0D' CornerRadius='0,0,4,4' BorderBrush='#557D8490' BorderThickness='1,0,1,1'>" +
+            "<Border Grid.Row='2' Background='#FF080A0D' CornerRadius='0,0,4,4'>" +
             "<Image Source='{Binding CoverImage}' Stretch='UniformToFill'/>" +
             "</Border>" +
             "</Grid>" +
+            "</Border>" +
             "</DataTemplate>");
 
         GamesGrid.HorizontalContentAlignment = HorizontalAlignment.Center;
-        GamesGrid.VerticalContentAlignment = VerticalAlignment.Bottom;
+        GamesGrid.VerticalContentAlignment = VerticalAlignment.Center;
     }
 
     private static void MakeSquare(Button button)
@@ -177,117 +193,341 @@ public sealed partial class MainWindow : Window
         return prompt;
     }
 
+    private static FrameworkElement CreateChromeCartridgeLogo()
+    {
+        var chrome = CreateChromeBrush();
+
+        var shell = new Border
+        {
+            Width = 104,
+            Height = 86,
+            CornerRadius = new CornerRadius(12),
+            BorderThickness = new Thickness(3),
+            BorderBrush = chrome,
+            Background = new SolidColorBrush(
+                Windows.UI.Color.FromArgb(238, 10, 12, 17)),
+            Padding = new Thickness(10),
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+
+        var layout = new Grid();
+        layout.RowDefinitions.Add(new RowDefinition
+        {
+            Height = new GridLength(1, GridUnitType.Star)
+        });
+        layout.RowDefinitions.Add(new RowDefinition
+        {
+            Height = new GridLength(18)
+        });
+
+        var screen = new Border
+        {
+            Margin = new Thickness(5, 3, 5, 5),
+            CornerRadius = new CornerRadius(4),
+            BorderThickness = new Thickness(3),
+            BorderBrush = chrome,
+            Background = new SolidColorBrush(
+                Windows.UI.Color.FromArgb(255, 4, 6, 10))
+        };
+
+        var screenDetail = new Grid();
+        screenDetail.Children.Add(new Microsoft.UI.Xaml.Shapes.Rectangle
+        {
+            Width = 34,
+            Height = 7,
+            RadiusX = 3,
+            RadiusY = 3,
+            Fill = new SolidColorBrush(
+                Windows.UI.Color.FromArgb(165, 255, 255, 255)),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        screen.Child = screenDetail;
+        layout.Children.Add(screen);
+
+        var contacts = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Spacing = 4
+        };
+        for (var index = 0; index < 7; index++)
+        {
+            contacts.Children.Add(new Border
+            {
+                Width = 7,
+                Height = 13,
+                CornerRadius = new CornerRadius(2),
+                Background = chrome
+            });
+        }
+
+        Grid.SetRow(contacts, 1);
+        layout.Children.Add(contacts);
+        shell.Child = layout;
+        return shell;
+    }
+
+    private static Button CreateHomeActionButton(
+        string glyph,
+        string label,
+        Windows.UI.Color accent)
+    {
+        var badge = new Border
+        {
+            Width = 48,
+            Height = 48,
+            CornerRadius = new CornerRadius(24),
+            Background = new RadialGradientBrush
+            {
+                Center = new Windows.Foundation.Point(0.42, 0.35),
+                GradientOrigin = new Windows.Foundation.Point(0.42, 0.35),
+                RadiusX = 0.72,
+                RadiusY = 0.72,
+                GradientStops =
+                {
+                    new GradientStop
+                    {
+                        Color = Windows.UI.Color.FromArgb(
+                            255,
+                            (byte)Math.Min(255, accent.R + 48),
+                            (byte)Math.Min(255, accent.G + 48),
+                            (byte)Math.Min(255, accent.B + 48)),
+                        Offset = 0
+                    },
+                    new GradientStop
+                    {
+                        Color = accent,
+                        Offset = 0.58
+                    },
+                    new GradientStop
+                    {
+                        Color = Windows.UI.Color.FromArgb(
+                            255,
+                            (byte)(accent.R * 0.55),
+                            (byte)(accent.G * 0.55),
+                            (byte)(accent.B * 0.55)),
+                        Offset = 1
+                    }
+                }
+            },
+            BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.White),
+            BorderThickness = new Thickness(2),
+            Child = new TextBlock
+            {
+                Text = glyph,
+                FontSize = 24,
+                FontWeight = Microsoft.UI.Text.FontWeights.Bold,
+                Foreground = new SolidColorBrush(Microsoft.UI.Colors.White),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextAlignment = TextAlignment.Center
+            }
+        };
+
+        var text = new TextBlock
+        {
+            Text = label,
+            FontSize = 18,
+            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
+            Foreground = new SolidColorBrush(Microsoft.UI.Colors.White),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var content = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 14,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        content.Children.Add(badge);
+        content.Children.Add(text);
+
+        var button = new Button
+        {
+            Width = 248,
+            Height = 66,
+            Content = content,
+            Background = new SolidColorBrush(
+                Windows.UI.Color.FromArgb(224, 8, 10, 14)),
+            BorderBrush = new SolidColorBrush(accent),
+            BorderThickness = new Thickness(2),
+            CornerRadius = new CornerRadius(33),
+            Padding = new Thickness(20, 8, 20, 8),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center
+        };
+
+        button.PointerEntered += (_, _) =>
+        {
+            button.Background = new SolidColorBrush(
+                Windows.UI.Color.FromArgb(246, 18, 21, 28));
+            button.BorderThickness = new Thickness(3);
+        };
+        button.PointerExited += (_, _) =>
+        {
+            button.Background = new SolidColorBrush(
+                Windows.UI.Color.FromArgb(224, 8, 10, 14));
+            button.BorderThickness = new Thickness(2);
+        };
+
+        return button;
+    }
+
     private void BuildVisualTree()
     {
-        Root.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 9, 12, 16));
+        Root.Background = new SolidColorBrush(
+            Windows.UI.Color.FromArgb(255, 4, 7, 10));
 
+        // Background artwork remains available for the metadata page, but the
+        // Home Page always uses the consistent dark studio environment.
         BackgroundImage.Stretch = Stretch.UniformToFill;
-        BackgroundImage.Opacity = 0.50;
+        BackgroundImage.Opacity = 0;
         Root.Children.Add(BackgroundImage);
 
         Root.Children.Add(new Microsoft.UI.Xaml.Shapes.Rectangle
         {
-            Fill = new SolidColorBrush(Windows.UI.Color.FromArgb(137, 0, 0, 0))
+            Fill = new LinearGradientBrush
+            {
+                StartPoint = new Windows.Foundation.Point(0, 0),
+                EndPoint = new Windows.Foundation.Point(0, 1),
+                GradientStops =
+                {
+                    new GradientStop
+                    {
+                        Color = Windows.UI.Color.FromArgb(110, 8, 12, 16),
+                        Offset = 0
+                    },
+                    new GradientStop
+                    {
+                        Color = Windows.UI.Color.FromArgb(245, 2, 4, 7),
+                        Offset = 1
+                    }
+                }
+            }
         });
 
         CollectionPage.HorizontalAlignment = HorizontalAlignment.Stretch;
         CollectionPage.VerticalAlignment = VerticalAlignment.Stretch;
-        CollectionPage.RowDefinitions.Add(new RowDefinition { Height = new GridLength(280) });
-        CollectionPage.RowDefinitions.Add(new RowDefinition { Height = new GridLength(92) });
-        CollectionPage.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        CollectionPage.RowDefinitions.Add(new RowDefinition { Height = new GridLength(86) });
-
-        // Premium display-case lighting: a soft overhead beam and a restrained
-        // graphite floor. Launcher identity is carried by the logo glow.
-        var overheadLight = new Microsoft.UI.Xaml.Shapes.Rectangle
+        CollectionPage.RowDefinitions.Add(new RowDefinition
         {
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Top,
-            Width = 760,
-            Height = 420,
-            IsHitTestVisible = false,
-            Fill = new RadialGradientBrush
-            {
-                Center = new Windows.Foundation.Point(0.5, 0),
-                GradientOrigin = new Windows.Foundation.Point(0.5, 0),
-                RadiusX = 0.58,
-                RadiusY = 1.0,
-                GradientStops =
-                {
-                    new GradientStop { Color = Windows.UI.Color.FromArgb(100, 119, 70, 210), Offset = 0 },
-                    new GradientStop { Color = Windows.UI.Color.FromArgb(30, 67, 36, 120), Offset = 0.48 },
-                    new GradientStop { Color = Windows.UI.Color.FromArgb(0, 0, 0, 0), Offset = 1 }
-                }
-            }
-        };
-        Grid.SetRowSpan(overheadLight, 3);
-        CollectionPage.Children.Add(overheadLight);
+            Height = new GridLength(245)
+        });
+        CollectionPage.RowDefinitions.Add(new RowDefinition
+        {
+            Height = new GridLength(78)
+        });
+        CollectionPage.RowDefinitions.Add(new RowDefinition
+        {
+            Height = new GridLength(1, GridUnitType.Star)
+        });
+        CollectionPage.RowDefinitions.Add(new RowDefinition
+        {
+            Height = new GridLength(92)
+        });
+
+        HomeOverheadLight.HorizontalAlignment = HorizontalAlignment.Center;
+        HomeOverheadLight.VerticalAlignment = VerticalAlignment.Top;
+        HomeOverheadLight.Width = 860;
+        HomeOverheadLight.Height = 520;
+        HomeOverheadLight.IsHitTestVisible = false;
+        HomeOverheadLight.Fill = CreateLauncherSpotlightBrush("Steam");
+        Grid.SetRowSpan(HomeOverheadLight, 3);
+        CollectionPage.Children.Add(HomeOverheadLight);
 
         var brandStack = new StackPanel
         {
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
-            Spacing = 2,
-            Margin = new Thickness(0, 26, 0, 0)
+            Spacing = 3,
+            Margin = new Thickness(0, 18, 0, 0)
         };
-        AppBrandIcon.Width = 100;
-        AppBrandIcon.Height = 100;
-        AppBrandIcon.Stretch = Stretch.Uniform;
-        AppBrandIcon.Source = CreateBitmap(Path.Combine(_root, "Assets", "AppIcon.png"));
-        AppBrandIcon.HorizontalAlignment = HorizontalAlignment.Center;
-        brandStack.Children.Add(AppBrandIcon);
+        brandStack.Children.Add(CreateChromeCartridgeLogo());
 
         AppBrandTitle.Text = "CART LAUNCH";
-        AppBrandTitle.FontSize = 42;
+        AppBrandTitle.FontSize = 44;
         AppBrandTitle.FontWeight = Microsoft.UI.Text.FontWeights.Bold;
-        AppBrandTitle.CharacterSpacing = 65;
-        AppBrandTitle.Foreground = new LinearGradientBrush
-        {
-            StartPoint = new Windows.Foundation.Point(0, 0),
-            EndPoint = new Windows.Foundation.Point(0, 1),
-            GradientStops =
-            {
-                new GradientStop { Color = Microsoft.UI.Colors.White, Offset = 0 },
-                new GradientStop { Color = Windows.UI.Color.FromArgb(255, 161, 164, 174), Offset = 0.52 },
-                new GradientStop { Color = Windows.UI.Color.FromArgb(255, 238, 239, 243), Offset = 1 }
-            }
-        };
+        AppBrandTitle.CharacterSpacing = 70;
+        AppBrandTitle.Foreground = CreateChromeBrush();
+        AppBrandTitle.HorizontalAlignment = HorizontalAlignment.Center;
         brandStack.Children.Add(AppBrandTitle);
 
         AppBrandSubtitle.Text = "COMPANION";
-        AppBrandSubtitle.FontSize = 21;
-        AppBrandSubtitle.FontWeight = Microsoft.UI.Text.FontWeights.SemiBold;
-        AppBrandSubtitle.CharacterSpacing = 430;
-        AppBrandSubtitle.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 157, 86, 232));
-        AppBrandSubtitle.HorizontalAlignment = HorizontalAlignment.Center;
+        AppBrandSubtitle.FontSize = 20;
+        AppBrandSubtitle.FontWeight =
+            Microsoft.UI.Text.FontWeights.SemiBold;
+        AppBrandSubtitle.CharacterSpacing = 420;
+        AppBrandSubtitle.Foreground = new SolidColorBrush(
+            GetLauncherAccentColor("Steam"));
+        AppBrandSubtitle.HorizontalAlignment =
+            HorizontalAlignment.Center;
         brandStack.Children.Add(AppBrandSubtitle);
         CollectionPage.Children.Add(brandStack);
 
-        LauncherBrandLogo.Width = 92;
-        LauncherBrandLogo.Height = 62;
-        LauncherBrandLogo.HorizontalAlignment = HorizontalAlignment.Center;
-        LauncherBrandLogo.VerticalAlignment = VerticalAlignment.Center;
+        LauncherBrandLogo.Width = 104;
+        LauncherBrandLogo.Height = 60;
+        LauncherBrandLogo.HorizontalAlignment =
+            HorizontalAlignment.Center;
+        LauncherBrandLogo.VerticalAlignment =
+            VerticalAlignment.Center;
         LauncherBrandLogo.Stretch = Stretch.Uniform;
         LauncherBrandLogo.Opacity = 0.98;
 
-        LauncherLogoGlow.Width = 142;
-        LauncherLogoGlow.Height = 92;
-        LauncherLogoGlow.CornerRadius = new CornerRadius(46);
-        LauncherLogoGlow.HorizontalAlignment = HorizontalAlignment.Center;
-        LauncherLogoGlow.VerticalAlignment = VerticalAlignment.Center;
-        LauncherLogoGlow.Background = CreateLauncherGlowBrush("Steam", 72);
-        LauncherLogoGlow.BorderBrush = CreateChromeBrush();
-        LauncherLogoGlow.BorderThickness = new Thickness(1);
-        LauncherLogoGlow.Padding = new Thickness(14, 10, 14, 10);
+        LauncherLogoGlow.Width = 164;
+        LauncherLogoGlow.Height = 84;
+        LauncherLogoGlow.CornerRadius = new CornerRadius(42);
+        LauncherLogoGlow.HorizontalAlignment =
+            HorizontalAlignment.Center;
+        LauncherLogoGlow.VerticalAlignment =
+            VerticalAlignment.Center;
+        LauncherLogoGlow.Background =
+            CreateLauncherGlowBrush("Steam", 74);
+        LauncherLogoGlow.BorderThickness = new Thickness(0);
+        LauncherLogoGlow.Padding = new Thickness(22, 12, 22, 12);
         LauncherLogoGlow.Child = LauncherBrandLogo;
         Grid.SetRow(LauncherLogoGlow, 1);
         CollectionPage.Children.Add(LauncherLogoGlow);
+
+        // Subtle reflective shelf under the covers.
+        var shelf = new Microsoft.UI.Xaml.Shapes.Rectangle
+        {
+            Height = 120,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            IsHitTestVisible = false,
+            Fill = new LinearGradientBrush
+            {
+                StartPoint = new Windows.Foundation.Point(0, 0),
+                EndPoint = new Windows.Foundation.Point(0, 1),
+                GradientStops =
+                {
+                    new GradientStop
+                    {
+                        Color = Windows.UI.Color.FromArgb(0, 255, 255, 255),
+                        Offset = 0
+                    },
+                    new GradientStop
+                    {
+                        Color = Windows.UI.Color.FromArgb(34, 255, 255, 255),
+                        Offset = 0.48
+                    },
+                    new GradientStop
+                    {
+                        Color = Windows.UI.Color.FromArgb(8, 255, 255, 255),
+                        Offset = 1
+                    }
+                }
+            }
+        };
+        Grid.SetRow(shelf, 2);
+        CollectionPage.Children.Add(shelf);
 
         Grid.SetRow(GamesGrid, 2);
         GamesGrid.IsItemClickEnabled = true;
         GamesGrid.SelectionMode = ListViewSelectionMode.Single;
         GamesGrid.IsTabStop = true;
-        GamesGrid.Padding = new Thickness(28, 0, 28, 2);
+        GamesGrid.Padding = new Thickness(28, 2, 28, 4);
         GamesGrid.HorizontalAlignment = HorizontalAlignment.Stretch;
         GamesGrid.VerticalAlignment = VerticalAlignment.Stretch;
         GamesGrid.ItemClick += GamesGrid_ItemClick;
@@ -300,15 +540,83 @@ public sealed partial class MainWindow : Window
             Orientation = Orientation.Horizontal,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
-            Spacing = 62
+            Spacing = 18
         };
-        promptStack.Children.Add(CreateGamepadPrompt("A", "VIEW DETAILS"));
-        promptStack.Children.Add(CreateGamepadPrompt("B", "EXIT"));
-        CollectionPromptBar.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(218, 5, 7, 10));
-        CollectionPromptBar.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(90, 116, 121, 132));
+
+        var detailsButton = CreateHomeActionButton(
+            "A",
+            "VIEW DETAILS",
+            Windows.UI.Color.FromArgb(255, 16, 124, 16));
+        HomeDetailsButton.Width = detailsButton.Width;
+        HomeDetailsButton.Height = detailsButton.Height;
+        HomeDetailsButton.Content = detailsButton.Content;
+        HomeDetailsButton.Background = detailsButton.Background;
+        HomeDetailsButton.BorderBrush = detailsButton.BorderBrush;
+        HomeDetailsButton.BorderThickness = detailsButton.BorderThickness;
+        HomeDetailsButton.CornerRadius = detailsButton.CornerRadius;
+        HomeDetailsButton.Padding = detailsButton.Padding;
+        HomeDetailsButton.HorizontalContentAlignment =
+            HorizontalAlignment.Center;
+        HomeDetailsButton.VerticalContentAlignment =
+            VerticalAlignment.Center;
+        HomeDetailsButton.Click += HomeDetails_Click;
+        HomeDetailsButton.PointerEntered += (_, _) =>
+        {
+            HomeDetailsButton.Background = new SolidColorBrush(
+                Windows.UI.Color.FromArgb(246, 18, 21, 28));
+            HomeDetailsButton.BorderThickness = new Thickness(3);
+        };
+        HomeDetailsButton.PointerExited += (_, _) =>
+        {
+            HomeDetailsButton.Background = new SolidColorBrush(
+                Windows.UI.Color.FromArgb(224, 8, 10, 14));
+            HomeDetailsButton.BorderThickness = new Thickness(2);
+        };
+
+        var exitButton = CreateHomeActionButton(
+            "B",
+            "EXIT",
+            Windows.UI.Color.FromArgb(255, 209, 52, 56));
+        HomeExitButton.Width = exitButton.Width;
+        HomeExitButton.Height = exitButton.Height;
+        HomeExitButton.Content = exitButton.Content;
+        HomeExitButton.Background = exitButton.Background;
+        HomeExitButton.BorderBrush = exitButton.BorderBrush;
+        HomeExitButton.BorderThickness = exitButton.BorderThickness;
+        HomeExitButton.CornerRadius = exitButton.CornerRadius;
+        HomeExitButton.Padding = exitButton.Padding;
+        HomeExitButton.HorizontalContentAlignment =
+            HorizontalAlignment.Center;
+        HomeExitButton.VerticalContentAlignment =
+            VerticalAlignment.Center;
+        HomeExitButton.Click += Exit_Click;
+        HomeExitButton.PointerEntered += (_, _) =>
+        {
+            HomeExitButton.Background = new SolidColorBrush(
+                Windows.UI.Color.FromArgb(246, 18, 21, 28));
+            HomeExitButton.BorderThickness = new Thickness(3);
+        };
+        HomeExitButton.PointerExited += (_, _) =>
+        {
+            HomeExitButton.Background = new SolidColorBrush(
+                Windows.UI.Color.FromArgb(224, 8, 10, 14));
+            HomeExitButton.BorderThickness = new Thickness(2);
+        };
+
+        promptStack.Children.Add(HomeDetailsButton);
+        promptStack.Children.Add(HomeExitButton);
+
+        CollectionPromptBar.Background =
+            new SolidColorBrush(Windows.UI.Color.FromArgb(190, 4, 6, 9));
+        CollectionPromptBar.BorderBrush =
+            new SolidColorBrush(Windows.UI.Color.FromArgb(70, 255, 255, 255));
         CollectionPromptBar.BorderThickness = new Thickness(1);
-        CollectionPromptBar.CornerRadius = new CornerRadius(10);
-        CollectionPromptBar.Margin = new Thickness(140, 4, 140, 14);
+        CollectionPromptBar.CornerRadius = new CornerRadius(38);
+        CollectionPromptBar.HorizontalAlignment =
+            HorizontalAlignment.Center;
+        CollectionPromptBar.VerticalAlignment =
+            VerticalAlignment.Center;
+        CollectionPromptBar.Padding = new Thickness(10, 6, 10, 6);
         CollectionPromptBar.Child = promptStack;
         Grid.SetRow(CollectionPromptBar, 3);
         CollectionPage.Children.Add(CollectionPromptBar);
@@ -721,10 +1029,7 @@ public sealed partial class MainWindow : Window
             return;
 
         var version = ++_themeChangeVersion;
-
-        // Avoid rapid launcher-color flashing while the player is moving
-        // quickly across the shelf.
-        await Task.Delay(110);
+        await Task.Delay(90);
 
         if (version != _themeChangeVersion ||
             GamesGrid.SelectedItem != selected)
@@ -733,6 +1038,36 @@ public sealed partial class MainWindow : Window
         }
 
         await CrossFadeLauncherThemeAsync(selected.Launcher);
+        UpdateSelectedCardVisuals(selected);
+    }
+
+    private void UpdateSelectedCardVisuals(GameDefinition selected)
+    {
+        foreach (var game in _games)
+        {
+            game.CardBorderBrush = new SolidColorBrush(
+                ReferenceEquals(game, selected)
+                    ? GetLauncherAccentColor(
+                        LaunchService.NormalizeLauncher(game.Launcher),
+                        255,
+                        1.10)
+                    : Windows.UI.Color.FromArgb(72, 255, 255, 255));
+
+            if (GamesGrid.ContainerFromItem(game) is not FrameworkElement container)
+                continue;
+
+            var transform = EnsureCartridgeTransform(container);
+            container.CenterPoint = new System.Numerics.Vector3(
+                (float)(container.ActualWidth / 2),
+                (float)(container.ActualHeight / 2),
+                0);
+
+            var isSelected = ReferenceEquals(game, selected);
+            transform.ScaleX = isSelected ? 1.045 : 1;
+            transform.ScaleY = isSelected ? 1.045 : 1;
+            transform.TranslateY = isSelected ? -7 : 0;
+            container.Opacity = isSelected ? 1 : 0.94;
+        }
     }
 
     private void Root_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -742,28 +1077,41 @@ public sealed partial class MainWindow : Window
     {
         var width = Math.Max(800, size.Width);
         var height = Math.Max(600, size.Height);
-        var scale = Math.Clamp(Math.Min(width / 1920.0, height / 1080.0), 0.72, 1.65);
+        var scale = Math.Clamp(
+            Math.Min(width / 1920.0, height / 1080.0),
+            0.72,
+            1.65);
 
         CollectionPage.RowDefinitions[0].Height =
-            new GridLength(Math.Clamp(280 * scale, 190, 430));
+            new GridLength(Math.Clamp(245 * scale, 176, 370));
         CollectionPage.RowDefinitions[1].Height =
-            new GridLength(Math.Clamp(92 * scale, 68, 138));
+            new GridLength(Math.Clamp(78 * scale, 58, 112));
         CollectionPage.RowDefinitions[3].Height =
-            new GridLength(Math.Clamp(86 * scale, 64, 122));
+            new GridLength(Math.Clamp(92 * scale, 74, 132));
 
-        AppBrandIcon.Width = AppBrandIcon.Height =
-            Math.Clamp(100 * scale, 72, 148);
-        AppBrandTitle.FontSize = Math.Clamp(42 * scale, 30, 62);
-        AppBrandSubtitle.FontSize = Math.Clamp(21 * scale, 16, 31);
+        AppBrandTitle.FontSize =
+            Math.Clamp(44 * scale, 31, 64);
+        AppBrandSubtitle.FontSize =
+            Math.Clamp(20 * scale, 15, 29);
 
-        LauncherLogoGlow.Width = Math.Clamp(142 * scale, 108, 210);
-        LauncherLogoGlow.Height = Math.Clamp(92 * scale, 70, 136);
-        LauncherBrandLogo.Width = Math.Clamp(92 * scale, 70, 136);
-        LauncherBrandLogo.Height = Math.Clamp(62 * scale, 48, 92);
+        LauncherLogoGlow.Width =
+            Math.Clamp(164 * scale, 122, 230);
+        LauncherLogoGlow.Height =
+            Math.Clamp(84 * scale, 64, 120);
+        LauncherBrandLogo.Width =
+            Math.Clamp(104 * scale, 76, 148);
+        LauncherBrandLogo.Height =
+            Math.Clamp(60 * scale, 44, 86);
 
-        CollectionPromptBar.Margin =
-            new Thickness(Math.Clamp(140 * scale, 32, 240), 4,
-                          Math.Clamp(140 * scale, 32, 240), 14);
+        HomeOverheadLight.Width =
+            Math.Clamp(860 * scale, 620, 1280);
+        HomeOverheadLight.Height =
+            Math.Clamp(520 * scale, 370, 760);
+
+        var actionWidth = Math.Clamp(248 * scale, 205, 320);
+        var actionHeight = Math.Clamp(66 * scale, 58, 84);
+        HomeDetailsButton.Width = HomeExitButton.Width = actionWidth;
+        HomeDetailsButton.Height = HomeExitButton.Height = actionHeight;
 
         DetailTitle.FontSize = Math.Clamp(42 * scale, 28, 60);
         DetailDescription.FontSize = Math.Clamp(17 * scale, 14, 23);
@@ -789,16 +1137,12 @@ public sealed partial class MainWindow : Window
 
     private async Task CrossFadeLauncherThemeAsync(string launcher)
     {
-        var originalOpacity = CollectionPage.Visibility == Visibility.Visible
-            ? 0.16
-            : 0.50;
-
         await AnimateAsync(
-            BackgroundImage,
+            HomeOverheadLight,
             new DoubleAnimation
             {
-                To = 0.04,
-                Duration = TimeSpan.FromMilliseconds(90),
+                To = 0.28,
+                Duration = TimeSpan.FromMilliseconds(80),
                 EasingFunction = new QuadraticEase
                 {
                     EasingMode = EasingMode.EaseInOut
@@ -807,14 +1151,13 @@ public sealed partial class MainWindow : Window
             });
 
         SetLauncherBackground(launcher);
-        BackgroundImage.Opacity = 0.04;
 
         await AnimateAsync(
-            BackgroundImage,
+            HomeOverheadLight,
             new DoubleAnimation
             {
-                To = originalOpacity,
-                Duration = TimeSpan.FromMilliseconds(170),
+                To = 1,
+                Duration = TimeSpan.FromMilliseconds(160),
                 EasingFunction = new QuadraticEase
                 {
                     EasingMode = EasingMode.EaseInOut
@@ -828,19 +1171,53 @@ public sealed partial class MainWindow : Window
 
     private void UpdateGameCardLayout(double availableWidth)
     {
-        if (GamesGrid.ItemsPanelRoot is not ItemsWrapGrid panel || _games.Count == 0) return;
+        if (GamesGrid.ItemsPanelRoot is not ItemsWrapGrid panel ||
+            _games.Count == 0)
+        {
+            return;
+        }
 
-        var usableWidth = Math.Max(640, availableWidth - GamesGrid.Padding.Left - GamesGrid.Padding.Right);
-        var usableHeight = Math.Max(280, GamesGrid.ActualHeight - GamesGrid.Padding.Top - GamesGrid.Padding.Bottom);
         var count = Math.Clamp(_games.Count, 1, 10);
-        var horizontalGapAllowance = count * 16.0;
-        var widthFromScreen = (usableWidth - horizontalGapAllowance) / count;
-        var widthFromHeight = usableHeight / 1.62;
-        var width = Math.Clamp(Math.Min(widthFromScreen, widthFromHeight), 112.0, 230.0);
+        var rows = count <= 5 ? 1 : 2;
+        var itemsPerRow = (int)Math.Ceiling(count / (double)rows);
 
-        panel.MaximumRowsOrColumns = 1;
+        var usableWidth = Math.Max(
+            640,
+            availableWidth -
+            GamesGrid.Padding.Left -
+            GamesGrid.Padding.Right);
+        var usableHeight = Math.Max(
+            280,
+            GamesGrid.ActualHeight -
+            GamesGrid.Padding.Top -
+            GamesGrid.Padding.Bottom);
+
+        var widthFromScreen =
+            (usableWidth - (itemsPerRow * 20.0)) / itemsPerRow;
+        var rowHeight = usableHeight / rows;
+        var widthFromHeight = (rowHeight - 24) / 1.58;
+
+        var maximum = rows == 1 ? 230.0 : 205.0;
+        var width = Math.Clamp(
+            Math.Min(widthFromScreen, widthFromHeight),
+            145.0,
+            maximum);
+
+        panel.MaximumRowsOrColumns = rows;
         panel.ItemWidth = Math.Floor(width);
         panel.ItemHeight = Math.Floor(width * 1.58);
+
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (GamesGrid.SelectedItem is GameDefinition selected)
+                UpdateSelectedCardVisuals(selected);
+        });
+    }
+
+    private async void HomeDetails_Click(object sender, RoutedEventArgs e)
+    {
+        if (GamesGrid.SelectedItem is GameDefinition selected)
+            await OpenGameAsync(selected);
     }
 
     private async void GamesGrid_ItemClick(object sender, ItemClickEventArgs e)
@@ -2224,17 +2601,69 @@ public sealed partial class MainWindow : Window
     private void SetLauncherBackground(string launcher)
     {
         var normalized = LaunchService.NormalizeLauncher(launcher);
-        var backgroundPath = ResolveLauncherAsset(normalized, "Background.png");
-        BackgroundImage.Source = CreateBitmap(backgroundPath);
-        BackgroundImage.Opacity =
-            CollectionPage.Visibility == Visibility.Visible ? 0.16 : 0.50;
+
+        HomeOverheadLight.Fill =
+            CreateLauncherSpotlightBrush(normalized);
+        AppBrandSubtitle.Foreground = new SolidColorBrush(
+            GetLauncherAccentColor(normalized));
 
         LauncherLogoGlow.Background =
-            CreateLauncherGlowBrush(normalized, 92);
+            CreateLauncherGlowBrush(normalized, 80);
 
         var logoPath = ResolveLauncherAsset(normalized, "Logo.png");
         LauncherBrandLogo.Source =
             File.Exists(logoPath) ? CreateBitmap(logoPath) : null;
+
+        // The Home Page intentionally stays in the dark studio environment.
+        // Launcher backgrounds are only visible behind the metadata page.
+        if (DetailsPage.Visibility == Visibility.Visible)
+        {
+            var backgroundPath =
+                ResolveLauncherAsset(normalized, "Background.png");
+            BackgroundImage.Source = CreateBitmap(backgroundPath);
+            BackgroundImage.Opacity = 0.50;
+        }
+        else
+        {
+            BackgroundImage.Opacity = 0;
+        }
+    }
+
+    private static Brush CreateLauncherSpotlightBrush(string launcher)
+    {
+        var normalized = LaunchService.NormalizeLauncher(launcher);
+
+        return new RadialGradientBrush
+        {
+            Center = new Windows.Foundation.Point(0.5, 0),
+            GradientOrigin = new Windows.Foundation.Point(0.5, 0),
+            RadiusX = 0.55,
+            RadiusY = 1.0,
+            GradientStops =
+            {
+                new GradientStop
+                {
+                    Color = GetLauncherAccentColor(
+                        normalized,
+                        126,
+                        1.08),
+                    Offset = 0
+                },
+                new GradientStop
+                {
+                    Color = GetLauncherAccentColor(
+                        normalized,
+                        42,
+                        0.72),
+                    Offset = 0.46
+                },
+                new GradientStop
+                {
+                    Color = Windows.UI.Color.FromArgb(0, 0, 0, 0),
+                    Offset = 1
+                }
+            }
+        };
     }
 
     private string ResolveLauncherAsset(string launcher, string fileName)

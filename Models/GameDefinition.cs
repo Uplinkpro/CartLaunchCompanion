@@ -10,6 +10,7 @@ public sealed class GameDefinition : INotifyPropertyChanged
     private ImageSource? _coverImage;
     private ImageSource? _headerImage;
     private ImageSource? _launcherLogo;
+    private Brush _cardBorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
 
     public string Id { get; set; } = "";
     public string Name { get; set; } = "Unnamed Game";
@@ -71,6 +72,19 @@ public sealed class GameDefinition : INotifyPropertyChanged
 
     [JsonIgnore] public string LauncherDisplayName { get; set; } = "";
     [JsonIgnore] public Brush LauncherBannerBrush { get; set; } = new SolidColorBrush(Microsoft.UI.Colors.DimGray);
+
+
+    [JsonIgnore]
+    public Brush CardBorderBrush
+    {
+        get => _cardBorderBrush;
+        set
+        {
+            if (ReferenceEquals(_cardBorderBrush, value)) return;
+            _cardBorderBrush = value;
+            OnPropertyChanged();
+        }
+    }
 
     [JsonIgnore]
     public ImageSource? LauncherLogo
