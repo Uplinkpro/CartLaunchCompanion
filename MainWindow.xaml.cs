@@ -549,9 +549,7 @@ public sealed partial class MainWindow : Window
             Windows.UI.Color.FromArgb(255, 16, 124, 16));
         HomeDetailsButton.Width = detailsButton.Width;
         HomeDetailsButton.Height = detailsButton.Height;
-        var detailsContent = detailsButton.Content;
-        detailsButton.Content = null;
-        HomeDetailsButton.Content = detailsContent;
+        HomeDetailsButton.Content = detailsButton.Content;
         HomeDetailsButton.Background = detailsButton.Background;
         HomeDetailsButton.BorderBrush = detailsButton.BorderBrush;
         HomeDetailsButton.BorderThickness = detailsButton.BorderThickness;
@@ -581,9 +579,7 @@ public sealed partial class MainWindow : Window
             Windows.UI.Color.FromArgb(255, 209, 52, 56));
         HomeExitButton.Width = exitButton.Width;
         HomeExitButton.Height = exitButton.Height;
-        var exitContent = exitButton.Content;
-        exitButton.Content = null;
-        HomeExitButton.Content = exitContent;
+        HomeExitButton.Content = exitButton.Content;
         HomeExitButton.Background = exitButton.Background;
         HomeExitButton.BorderBrush = exitButton.BorderBrush;
         HomeExitButton.BorderThickness = exitButton.BorderThickness;
@@ -1061,10 +1057,8 @@ public sealed partial class MainWindow : Window
                 continue;
 
             var transform = EnsureCartridgeTransform(container);
-            container.CenterPoint = new System.Numerics.Vector3(
-                (float)(container.ActualWidth / 2),
-                (float)(container.ActualHeight / 2),
-                0);
+            transform.CenterX = container.ActualWidth / 2;
+            transform.CenterY = container.ActualHeight / 2;
 
             var isSelected = ReferenceEquals(game, selected);
             transform.ScaleX = isSelected ? 1.045 : 1;
@@ -1953,10 +1947,8 @@ public sealed partial class MainWindow : Window
             return;
 
         var transform = EnsureCartridgeTransform(container);
-        container.CenterPoint = new System.Numerics.Vector3(
-            (float)(container.ActualWidth / 2),
-            (float)(container.ActualHeight / 2),
-            0);
+        transform.CenterX = container.ActualWidth / 2;
+        transform.CenterY = container.ActualHeight / 2;
 
         CartridgeTransitionCurtain.Visibility = Visibility.Visible;
         CartridgeTransitionCurtain.Opacity = 0;
@@ -1979,10 +1971,8 @@ public sealed partial class MainWindow : Window
             return;
 
         var transform = EnsureCartridgeTransform(container);
-        container.CenterPoint = new System.Numerics.Vector3(
-            (float)(container.ActualWidth / 2),
-            (float)(container.ActualHeight / 2),
-            0);
+        transform.CenterX = container.ActualWidth / 2;
+        transform.CenterY = container.ActualHeight / 2;
         transform.TranslateY = GetCartridgeTransitionTravel();
         transform.ScaleX = 1.13;
         transform.ScaleY = 1.13;
