@@ -40,6 +40,9 @@ public sealed partial class MainWindow : Window
     private readonly Button BackButton = new();
     private readonly Button ExitDetailsButton = new();
     private readonly Image DetailHeader = new();
+    private readonly Image DetailCover = new();
+    private readonly Image DetailLauncherLogo = new();
+    private readonly Border DetailLauncherLogoGlow = new();
     private readonly TextBlock DetailTitle = new();
     private readonly TextBlock DetailMetadata = new();
     private readonly TextBlock DetailDescription = new();
@@ -340,92 +343,134 @@ public sealed partial class MainWindow : Window
         Root.Children.Add(ExitConfirmationOverlay);
         DetailsPage.Visibility = Visibility.Collapsed;
         DetailsPage.Opacity = 0;
-        DetailsPage.RowDefinitions.Add(new RowDefinition { Height = new GridLength(90) });
-        DetailsPage.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        DetailsPage.RowDefinitions.Add(new RowDefinition { Height = new GridLength(0.39, GridUnitType.Star) });
+        DetailsPage.RowDefinitions.Add(new RowDefinition { Height = new GridLength(0.61, GridUnitType.Star) });
+        DetailsPage.RowDefinitions.Add(new RowDefinition { Height = new GridLength(86) });
+
+        // Cinematic hero artwork. Header assets are authored at 3840x1240 and
+        // cropped responsively so they retain the same visual weight at 720p–4K.
+        var heroGrid = new Grid();
+        Grid.SetRow(heroGrid, 0);
+        DetailHeader.Stretch = Stretch.UniformToFill;
+        DetailHeader.HorizontalAlignment = HorizontalAlignment.Stretch;
+        DetailHeader.VerticalAlignment = VerticalAlignment.Stretch;
+        heroGrid.Children.Add(DetailHeader);
+        heroGrid.Children.Add(new Microsoft.UI.Xaml.Shapes.Rectangle
+        {
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Height = 220,
+            Fill = new LinearGradientBrush
+            {
+                StartPoint = new Windows.Foundation.Point(0, 0),
+                EndPoint = new Windows.Foundation.Point(0, 1),
+                GradientStops =
+                {
+                    new GradientStop { Color = Windows.UI.Color.FromArgb(0, 4, 7, 11), Offset = 0 },
+                    new GradientStop { Color = Windows.UI.Color.FromArgb(245, 4, 7, 11), Offset = 1 }
+                }
+            }
+        });
 
         BackButton.Content = "BACK";
         MakeSquare(BackButton);
         BackButton.HorizontalAlignment = HorizontalAlignment.Left;
-        BackButton.VerticalAlignment = VerticalAlignment.Center;
-        BackButton.Margin = new Thickness(30, 0, 0, 0);
-        BackButton.Width = 132;
-        BackButton.Height = 48;
+        BackButton.VerticalAlignment = VerticalAlignment.Top;
+        BackButton.Margin = new Thickness(34, 30, 0, 0);
+        BackButton.Width = 126;
+        BackButton.Height = 46;
         BackButton.Click += Back_Click;
-        DetailsPage.Children.Add(BackButton);
+        heroGrid.Children.Add(BackButton);
 
-        ExitDetailsButton.Content = "EXIT";
-        MakeSquare(ExitDetailsButton);
-        ExitDetailsButton.HorizontalAlignment = HorizontalAlignment.Right;
-        ExitDetailsButton.VerticalAlignment = VerticalAlignment.Center;
-        ExitDetailsButton.Margin = new Thickness(0, 0, 30, 0);
-        ExitDetailsButton.Width = 120;
-        ExitDetailsButton.Height = 48;
-        ExitDetailsButton.Click += Exit_Click;
-        DetailsPage.Children.Add(ExitDetailsButton);
+        DetailLauncherLogo.Width = 112;
+        DetailLauncherLogo.Height = 72;
+        DetailLauncherLogo.Stretch = Stretch.Uniform;
+        DetailLauncherLogo.Opacity = 0.96;
+        DetailLauncherLogoGlow.Width = 154;
+        DetailLauncherLogoGlow.Height = 104;
+        DetailLauncherLogoGlow.CornerRadius = new CornerRadius(52);
+        DetailLauncherLogoGlow.HorizontalAlignment = HorizontalAlignment.Right;
+        DetailLauncherLogoGlow.VerticalAlignment = VerticalAlignment.Top;
+        DetailLauncherLogoGlow.Margin = new Thickness(0, 54, 96, 0);
+        DetailLauncherLogoGlow.Child = DetailLauncherLogo;
+        heroGrid.Children.Add(DetailLauncherLogoGlow);
 
-        GamepadPromptBar.Orientation = Orientation.Horizontal;
-        GamepadPromptBar.HorizontalAlignment = HorizontalAlignment.Center;
-        GamepadPromptBar.VerticalAlignment = VerticalAlignment.Center;
-        GamepadPromptBar.Spacing = 26;
-        GamepadPromptBar.Children.Add(CreateGamepadPrompt("A", "LAUNCH GAME"));
-        GamepadPromptBar.Children.Add(CreateGamepadPrompt("B", "BACK"));
-        DetailsPage.Children.Add(GamepadPromptBar);
+        DetailsPage.Children.Add(heroGrid);
 
-        var contentGrid = new Grid { Margin = new Thickness(44, 6, 44, 34) };
+        var contentGrid = new Grid { Margin = new Thickness(54, -54, 54, 18) };
         Grid.SetRow(contentGrid, 1);
-        contentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        contentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
-        contentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.35, GridUnitType.Star) });
+        contentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.62, GridUnitType.Star) });
+        contentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(34) });
+        contentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.38, GridUnitType.Star) });
 
-        var infoGrid = new Grid();
-        infoGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(250) });
-        infoGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(20) });
-        infoGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        // Flat cover art: never larger than 600x900, with no perspective or cartridge frame.
+        var leftGrid = new Grid();
+        leftGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        leftGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
+        leftGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-        DetailHeader.Stretch = Stretch.Uniform;
-        DetailHeader.HorizontalAlignment = HorizontalAlignment.Center;
-        DetailHeader.VerticalAlignment = VerticalAlignment.Center;
-        infoGrid.Children.Add(new Border
+        var coverBorder = new Border
         {
-            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(221, 16, 21, 28)),
-            Padding = new Thickness(8),
-            Child = DetailHeader
-        });
+            MaxWidth = 400,
+            MaxHeight = 600,
+            MinWidth = 180,
+            CornerRadius = new CornerRadius(8),
+            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 7, 9, 13)),
+            BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(100, 255, 255, 255)),
+            BorderThickness = new Thickness(1),
+            Child = DetailCover
+        };
+        DetailCover.Stretch = Stretch.Uniform;
+        DetailCover.HorizontalAlignment = HorizontalAlignment.Center;
+        DetailCover.VerticalAlignment = VerticalAlignment.Center;
+        leftGrid.Children.Add(coverBorder);
 
-        DetailTitle.FontSize = 29;
+        var infoStack = new StackPanel
+        {
+            Spacing = 14,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(infoStack, 2);
+        DetailTitle.FontSize = 42;
         DetailTitle.FontWeight = Microsoft.UI.Text.FontWeights.Bold;
         DetailTitle.TextWrapping = TextWrapping.Wrap;
-        DetailTitle.Margin = new Thickness(0, 0, 0, 13);
-        DetailMetadata.FontSize = 14;
-        DetailMetadata.TextWrapping = TextWrapping.Wrap;
-        DetailMetadata.Margin = new Thickness(0, 0, 0, 13);
-        DetailDescription.FontSize = 16;
+        DetailTitle.Margin = new Thickness(0, 0, 0, 2);
+        DetailDescription.FontSize = 17;
+        DetailDescription.LineHeight = 27;
         DetailDescription.TextWrapping = TextWrapping.Wrap;
-
-        var infoStack = new StackPanel();
+        DetailDescription.MaxHeight = 170;
+        DetailMetadata.FontSize = 14;
+        DetailMetadata.LineHeight = 24;
+        DetailMetadata.TextWrapping = TextWrapping.Wrap;
+        DetailMetadata.Opacity = 0.92;
         infoStack.Children.Add(DetailTitle);
-        infoStack.Children.Add(DetailMetadata);
-        infoStack.Children.Add(new TextBlock { Text = "SYNOPSIS", FontSize = 13, Margin = new Thickness(0, 0, 0, 13) });
         infoStack.Children.Add(DetailDescription);
-        var infoBorder = new Border
+        infoStack.Children.Add(new Microsoft.UI.Xaml.Shapes.Rectangle
         {
-            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(229, 17, 22, 29)),
-            Padding = new Thickness(26),
-            Child = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = infoStack }
-        };
-        Grid.SetRow(infoBorder, 2);
-        infoGrid.Children.Add(infoBorder);
-        contentGrid.Children.Add(infoGrid);
+            Height = 1,
+            Fill = new SolidColorBrush(Windows.UI.Color.FromArgb(70, 255, 255, 255)),
+            Margin = new Thickness(0, 2, 0, 0)
+        });
+        infoStack.Children.Add(DetailMetadata);
+        leftGrid.Children.Add(infoStack);
+        contentGrid.Children.Add(leftGrid);
 
         var trailerGrid = new Grid();
         Grid.SetColumn(trailerGrid, 2);
         trailerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        trailerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(22) });
-        trailerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(76) });
+        trailerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(18) });
+        trailerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(78) });
 
-        var trailerArea = new Grid { Background = new SolidColorBrush(Microsoft.UI.Colors.Black) };
-        trailerArea.Children.Add(TrailerNativeHost);
-        TrailerStatus.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(208, 18, 21, 26));
+        var trailerBorder = new Border
+        {
+            Background = new SolidColorBrush(Microsoft.UI.Colors.Black),
+            BorderThickness = new Thickness(2),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(2),
+            Child = TrailerNativeHost
+        };
+        trailerGrid.Children.Add(trailerBorder);
+
+        TrailerStatus.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(218, 12, 15, 21));
         TrailerStatus.Visibility = Visibility.Collapsed;
         TrailerStatus.Padding = new Thickness(20);
         TrailerStatusText.Text = "Loading trailer...";
@@ -442,11 +487,12 @@ public sealed partial class MainWindow : Window
         statusStack.Children.Add(TrailerStatusText);
         statusStack.Children.Add(TrailerFallback);
         TrailerStatus.Child = statusStack;
-        trailerArea.Children.Add(TrailerStatus);
-        trailerGrid.Children.Add(trailerArea);
+        trailerBorder.Child = new Grid();
+        ((Grid)trailerBorder.Child).Children.Add(TrailerNativeHost);
+        ((Grid)trailerBorder.Child).Children.Add(TrailerStatus);
 
         Grid.SetRow(LaunchButton, 2);
-        LaunchButton.Content = "LAUNCH";
+        LaunchButton.Content = "LAUNCH GAME";
         MakeSquare(LaunchButton);
         LaunchButton.HorizontalAlignment = HorizontalAlignment.Stretch;
         LaunchButton.VerticalAlignment = VerticalAlignment.Stretch;
@@ -455,8 +501,26 @@ public sealed partial class MainWindow : Window
         LaunchButton.Click += Launch_Click;
         trailerGrid.Children.Add(LaunchButton);
         contentGrid.Children.Add(trailerGrid);
-
         DetailsPage.Children.Add(contentGrid);
+
+        var detailPromptBorder = new Border
+        {
+            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(224, 4, 6, 10)),
+            BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(70, 255, 255, 255)),
+            BorderThickness = new Thickness(1, 1, 1, 0),
+            Padding = new Thickness(28, 0, 28, 0)
+        };
+        GamepadPromptBar.Orientation = Orientation.Horizontal;
+        GamepadPromptBar.HorizontalAlignment = HorizontalAlignment.Center;
+        GamepadPromptBar.VerticalAlignment = VerticalAlignment.Center;
+        GamepadPromptBar.Spacing = 52;
+        GamepadPromptBar.Children.Add(CreateGamepadPrompt("A", "LAUNCH GAME"));
+        GamepadPromptBar.Children.Add(CreateGamepadPrompt("X", "PLAY TRAILER"));
+        GamepadPromptBar.Children.Add(CreateGamepadPrompt("B", "BACK"));
+        detailPromptBorder.Child = GamepadPromptBar;
+        Grid.SetRow(detailPromptBorder, 2);
+        DetailsPage.Children.Add(detailPromptBorder);
+
         Root.Children.Add(DetailsPage);
     }
 
@@ -620,8 +684,10 @@ public sealed partial class MainWindow : Window
 
         DetailTitle.Text = game.Name;
         DetailDescription.Text = First(game.DetailedDescription, game.Description);
-        DetailMetadata.Text = $"Developer: {Display(game.Developer)}\nPublisher: {Display(game.Publisher)}\nGenre: {Display(game.Genre)}\nRelease date: {Display(game.ReleaseDate)}\nLauncher: {Display(game.Launcher)}";
+        DetailMetadata.Text = $"DEVELOPER   {Display(game.Developer)}\nPUBLISHER   {Display(game.Publisher)}\nGENRE   {Display(game.Genre)}\nRELEASE DATE   {Display(game.ReleaseDate)}\nLAUNCHER   {Display(game.Launcher)}";
         DetailHeader.Source = CreateBitmap(game.HeaderPath);
+        DetailCover.Source = CreateBitmap(First(game.CoverPath, game.HeaderPath));
+        UpdateDetailLauncherBrand(game.Launcher);
     }
 
     private async Task PlayTrailerAsync(GameDefinition game)
@@ -1619,6 +1685,40 @@ public sealed partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(id)) return false;
         embedUri = new Uri($"https://www.youtube.com/embed/{Uri.EscapeDataString(id)}?autoplay=1&rel=0&playsinline=1&origin=https%3A%2F%2Fgamecartridge.local");
         return true;
+    }
+
+    private void UpdateDetailLauncherBrand(string launcher)
+    {
+        var normalized = LaunchService.NormalizeLauncher(launcher);
+        var logoPath = Path.Combine(_root, "Assets", "Launchers", normalized, "Logo.png");
+        if (!File.Exists(logoPath))
+            logoPath = Path.Combine(_root, "Assets", "Launchers", "DirectExe", "Logo.png");
+        DetailLauncherLogo.Source = File.Exists(logoPath) ? CreateBitmap(logoPath) : null;
+
+        var accent = normalized switch
+        {
+            "Xbox" => Windows.UI.Color.FromArgb(80, 82, 196, 26),
+            "Steam" => Windows.UI.Color.FromArgb(80, 62, 139, 255),
+            "Epic" => Windows.UI.Color.FromArgb(68, 210, 210, 216),
+            "GOG" => Windows.UI.Color.FromArgb(80, 174, 76, 224),
+            "Ubisoft" => Windows.UI.Color.FromArgb(80, 36, 184, 224),
+            "Rockstar" => Windows.UI.Color.FromArgb(80, 255, 190, 30),
+            "Amazon" => Windows.UI.Color.FromArgb(80, 255, 153, 0),
+            "Flash" => Windows.UI.Color.FromArgb(80, 255, 116, 28),
+            _ => Windows.UI.Color.FromArgb(72, 157, 86, 232)
+        };
+        DetailLauncherLogoGlow.Background = new RadialGradientBrush
+        {
+            Center = new Windows.Foundation.Point(0.5, 0.5),
+            GradientOrigin = new Windows.Foundation.Point(0.5, 0.5),
+            RadiusX = 0.5,
+            RadiusY = 0.5,
+            GradientStops =
+            {
+                new GradientStop { Color = accent, Offset = 0 },
+                new GradientStop { Color = Windows.UI.Color.FromArgb(0, 0, 0, 0), Offset = 1 }
+            }
+        };
     }
 
     private void SetLauncherBackground(string launcher)
