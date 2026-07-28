@@ -27,6 +27,8 @@ public sealed partial class MainWindow : Window
     private readonly Grid Root = new();
     private readonly Image BackgroundImage = new();
     private readonly Image LauncherBrandLogo = new();
+    private readonly Border LauncherChromeLogo = new();
+    private readonly ImageBrush LauncherLogoMask = new();
     private readonly Image AppBrandIcon = new();
     private readonly TextBlock AppBrandTitle = new();
     private readonly TextBlock AppBrandSubtitle = new();
@@ -43,11 +45,14 @@ public sealed partial class MainWindow : Window
     private readonly Image DetailHeader = new();
     private readonly Image DetailCover = new();
     private readonly Image DetailLauncherLogo = new();
+    private readonly Border DetailChromeLogo = new();
+    private readonly ImageBrush DetailLogoMask = new();
     private readonly Border DetailLauncherLogoGlow = new();
     private readonly TextBlock DetailTitle = new();
     private readonly TextBlock DetailMetadata = new();
     private readonly TextBlock DetailDescription = new();
     private readonly Grid TrailerNativeHost = new();
+    private readonly Border TrailerFrame = new();
     private readonly Border TrailerStatus = new();
     private readonly TextBlock TrailerStatusText = new();
     private readonly Button TrailerFallback = new();
@@ -258,19 +263,25 @@ public sealed partial class MainWindow : Window
         brandStack.Children.Add(AppBrandSubtitle);
         CollectionPage.Children.Add(brandStack);
 
-        LauncherBrandLogo.HorizontalAlignment = HorizontalAlignment.Center;
-        LauncherBrandLogo.VerticalAlignment = VerticalAlignment.Center;
-        LauncherBrandLogo.Width = 92;
-        LauncherBrandLogo.Height = 62;
-        LauncherBrandLogo.Stretch = Stretch.Uniform;
-        LauncherBrandLogo.Opacity = 0.96;
-        LauncherLogoGlow.Width = 126;
-        LauncherLogoGlow.Height = 78;
-        LauncherLogoGlow.CornerRadius = new CornerRadius(39);
+        LauncherChromeLogo.Width = 92;
+        LauncherChromeLogo.Height = 62;
+        LauncherChromeLogo.HorizontalAlignment = HorizontalAlignment.Center;
+        LauncherChromeLogo.VerticalAlignment = VerticalAlignment.Center;
+        LauncherChromeLogo.Background = CreateChromeBrush();
+        LauncherChromeLogo.OpacityMask = LauncherLogoMask;
+        LauncherChromeLogo.Opacity = 0.98;
+
+        LauncherLogoMask.Stretch = Stretch.Uniform;
+        LauncherLogoMask.AlignmentX = AlignmentX.Center;
+        LauncherLogoMask.AlignmentY = AlignmentY.Center;
+
+        LauncherLogoGlow.Width = 142;
+        LauncherLogoGlow.Height = 92;
+        LauncherLogoGlow.CornerRadius = new CornerRadius(46);
         LauncherLogoGlow.HorizontalAlignment = HorizontalAlignment.Center;
         LauncherLogoGlow.VerticalAlignment = VerticalAlignment.Center;
-        LauncherLogoGlow.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(42, 72, 139, 255));
-        LauncherLogoGlow.Child = LauncherBrandLogo;
+        LauncherLogoGlow.Background = CreateLauncherGlowBrush("Steam", 72);
+        LauncherLogoGlow.Child = LauncherChromeLogo;
         Grid.SetRow(LauncherLogoGlow, 1);
         CollectionPage.Children.Add(LauncherLogoGlow);
 
@@ -468,17 +479,25 @@ public sealed partial class MainWindow : Window
         BackButton.Click += Back_Click;
         heroGrid.Children.Add(BackButton);
 
-        DetailLauncherLogo.Width = 112;
-        DetailLauncherLogo.Height = 72;
-        DetailLauncherLogo.Stretch = Stretch.Uniform;
-        DetailLauncherLogo.Opacity = 0.96;
-        DetailLauncherLogoGlow.Width = 154;
-        DetailLauncherLogoGlow.Height = 104;
-        DetailLauncherLogoGlow.CornerRadius = new CornerRadius(52);
+        DetailChromeLogo.Width = 112;
+        DetailChromeLogo.Height = 72;
+        DetailChromeLogo.HorizontalAlignment = HorizontalAlignment.Center;
+        DetailChromeLogo.VerticalAlignment = VerticalAlignment.Center;
+        DetailChromeLogo.Background = CreateChromeBrush();
+        DetailChromeLogo.OpacityMask = DetailLogoMask;
+        DetailChromeLogo.Opacity = 0.98;
+
+        DetailLogoMask.Stretch = Stretch.Uniform;
+        DetailLogoMask.AlignmentX = AlignmentX.Center;
+        DetailLogoMask.AlignmentY = AlignmentY.Center;
+
+        DetailLauncherLogoGlow.Width = 174;
+        DetailLauncherLogoGlow.Height = 118;
+        DetailLauncherLogoGlow.CornerRadius = new CornerRadius(59);
         DetailLauncherLogoGlow.HorizontalAlignment = HorizontalAlignment.Right;
         DetailLauncherLogoGlow.VerticalAlignment = VerticalAlignment.Top;
         DetailLauncherLogoGlow.Margin = new Thickness(0, 54, 96, 0);
-        DetailLauncherLogoGlow.Child = DetailLauncherLogo;
+        DetailLauncherLogoGlow.Child = DetailChromeLogo;
         heroGrid.Children.Add(DetailLauncherLogoGlow);
 
         DetailsPage.Children.Add(heroGrid);
@@ -547,15 +566,14 @@ public sealed partial class MainWindow : Window
         trailerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(18) });
         trailerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(78) });
 
-        var trailerBorder = new Border
-        {
-            Background = new SolidColorBrush(Microsoft.UI.Colors.Black),
-            BorderThickness = new Thickness(2),
-            CornerRadius = new CornerRadius(10),
-            Padding = new Thickness(2),
-            Child = TrailerNativeHost
-        };
-        trailerGrid.Children.Add(trailerBorder);
+        TrailerFrame.Background = new SolidColorBrush(Microsoft.UI.Colors.Black);
+        TrailerFrame.BorderBrush = new SolidColorBrush(
+            GetLauncherAccentColor("Steam", 210));
+        TrailerFrame.BorderThickness = new Thickness(2);
+        TrailerFrame.CornerRadius = new CornerRadius(10);
+        TrailerFrame.Padding = new Thickness(2);
+        TrailerFrame.Child = TrailerNativeHost;
+        trailerGrid.Children.Add(TrailerFrame);
 
         TrailerStatus.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(218, 12, 15, 21));
         TrailerStatus.Visibility = Visibility.Collapsed;
@@ -574,9 +592,9 @@ public sealed partial class MainWindow : Window
         statusStack.Children.Add(TrailerStatusText);
         statusStack.Children.Add(TrailerFallback);
         TrailerStatus.Child = statusStack;
-        trailerBorder.Child = new Grid();
-        ((Grid)trailerBorder.Child).Children.Add(TrailerNativeHost);
-        ((Grid)trailerBorder.Child).Children.Add(TrailerStatus);
+        TrailerFrame.Child = new Grid();
+        ((Grid)TrailerFrame.Child).Children.Add(TrailerNativeHost);
+        ((Grid)TrailerFrame.Child).Children.Add(TrailerStatus);
 
         Grid.SetRow(LaunchButton, 2);
         LaunchButton.Content = "LAUNCH GAME";
@@ -2034,24 +2052,119 @@ public sealed partial class MainWindow : Window
     private void UpdateDetailLauncherBrand(string launcher)
     {
         var normalized = LaunchService.NormalizeLauncher(launcher);
-        var logoPath = Path.Combine(_root, "Assets", "Launchers", normalized, "Logo.png");
-        if (!File.Exists(logoPath))
-            logoPath = Path.Combine(_root, "Assets", "Launchers", "DirectExe", "Logo.png");
-        DetailLauncherLogo.Source = File.Exists(logoPath) ? CreateBitmap(logoPath) : null;
+        var logoPath = ResolveLauncherAsset(normalized, "Logo.png");
+        DetailLogoMask.ImageSource =
+            File.Exists(logoPath) ? CreateBitmap(logoPath) : null;
 
-        var accent = normalized switch
+        DetailLauncherLogoGlow.Background =
+            CreateLauncherGlowBrush(normalized, 112);
+
+        var accent = GetLauncherAccentColor(normalized, 255);
+        DetailMetadata.Foreground = new SolidColorBrush(accent);
+        TrailerFrame.BorderBrush = new SolidColorBrush(
+            GetLauncherAccentColor(normalized, 220));
+
+        LaunchButton.Background = new LinearGradientBrush
         {
-            "Xbox" => Windows.UI.Color.FromArgb(80, 82, 196, 26),
-            "Steam" => Windows.UI.Color.FromArgb(80, 62, 139, 255),
-            "Epic" => Windows.UI.Color.FromArgb(68, 210, 210, 216),
-            "GOG" => Windows.UI.Color.FromArgb(80, 174, 76, 224),
-            "Ubisoft" => Windows.UI.Color.FromArgb(80, 36, 184, 224),
-            "Rockstar" => Windows.UI.Color.FromArgb(80, 255, 190, 30),
-            "Amazon" => Windows.UI.Color.FromArgb(80, 255, 153, 0),
-            "Flash" => Windows.UI.Color.FromArgb(80, 255, 116, 28),
-            _ => Windows.UI.Color.FromArgb(72, 157, 86, 232)
+            StartPoint = new Windows.Foundation.Point(0, 0),
+            EndPoint = new Windows.Foundation.Point(0, 1),
+            GradientStops =
+            {
+                new GradientStop
+                {
+                    Color = GetLauncherAccentColor(normalized, 235, 1.10),
+                    Offset = 0
+                },
+                new GradientStop
+                {
+                    Color = GetLauncherAccentColor(normalized, 235, 0.68),
+                    Offset = 1
+                }
+            }
         };
-        DetailLauncherLogoGlow.Background = new RadialGradientBrush
+        LaunchButton.BorderBrush = new SolidColorBrush(
+            GetLauncherAccentColor(normalized, 255, 1.18));
+        LaunchButton.BorderThickness = new Thickness(2);
+        LaunchButton.Foreground = new SolidColorBrush(
+            normalized == "Rockstar" ? Microsoft.UI.Colors.Black : Microsoft.UI.Colors.White);
+    }
+
+    private void SetLauncherBackground(string launcher)
+    {
+        var normalized = LaunchService.NormalizeLauncher(launcher);
+        var backgroundPath = ResolveLauncherAsset(normalized, "Background.png");
+        BackgroundImage.Source = CreateBitmap(backgroundPath);
+        BackgroundImage.Opacity =
+            CollectionPage.Visibility == Visibility.Visible ? 0.16 : 0.50;
+
+        LauncherLogoGlow.Background =
+            CreateLauncherGlowBrush(normalized, 92);
+
+        var logoPath = ResolveLauncherAsset(normalized, "Logo.png");
+        LauncherLogoMask.ImageSource =
+            File.Exists(logoPath) ? CreateBitmap(logoPath) : null;
+    }
+
+    private string ResolveLauncherAsset(string launcher, string fileName)
+    {
+        var path = Path.Combine(
+            _root, "Assets", "Launchers", launcher, fileName);
+
+        if (!File.Exists(path))
+        {
+            path = Path.Combine(
+                _root, "Assets", "Launchers", "DirectExe", fileName);
+        }
+
+        return path;
+    }
+
+    private static Brush CreateChromeBrush()
+        => new LinearGradientBrush
+        {
+            StartPoint = new Windows.Foundation.Point(0, 0),
+            EndPoint = new Windows.Foundation.Point(0, 1),
+            GradientStops =
+            {
+                new GradientStop
+                {
+                    Color = Windows.UI.Color.FromArgb(255, 255, 255, 255),
+                    Offset = 0
+                },
+                new GradientStop
+                {
+                    Color = Windows.UI.Color.FromArgb(255, 181, 186, 197),
+                    Offset = 0.24
+                },
+                new GradientStop
+                {
+                    Color = Windows.UI.Color.FromArgb(255, 73, 78, 89),
+                    Offset = 0.48
+                },
+                new GradientStop
+                {
+                    Color = Windows.UI.Color.FromArgb(255, 245, 247, 251),
+                    Offset = 0.67
+                },
+                new GradientStop
+                {
+                    Color = Windows.UI.Color.FromArgb(255, 126, 132, 145),
+                    Offset = 0.84
+                },
+                new GradientStop
+                {
+                    Color = Windows.UI.Color.FromArgb(255, 238, 241, 247),
+                    Offset = 1
+                }
+            }
+        };
+
+    private static Brush CreateLauncherGlowBrush(
+        string launcher,
+        byte peakAlpha)
+    {
+        var normalized = LaunchService.NormalizeLauncher(launcher);
+        return new RadialGradientBrush
         {
             Center = new Windows.Foundation.Point(0.5, 0.5),
             GradientOrigin = new Windows.Foundation.Point(0.5, 0.5),
@@ -2059,39 +2172,55 @@ public sealed partial class MainWindow : Window
             RadiusY = 0.5,
             GradientStops =
             {
-                new GradientStop { Color = accent, Offset = 0 },
-                new GradientStop { Color = Windows.UI.Color.FromArgb(0, 0, 0, 0), Offset = 1 }
+                new GradientStop
+                {
+                    Color = GetLauncherAccentColor(
+                        normalized, peakAlpha, 1.18),
+                    Offset = 0
+                },
+                new GradientStop
+                {
+                    Color = GetLauncherAccentColor(
+                        normalized, (byte)(peakAlpha * 0.42), 0.92),
+                    Offset = 0.48
+                },
+                new GradientStop
+                {
+                    Color = Windows.UI.Color.FromArgb(0, 0, 0, 0),
+                    Offset = 1
+                }
             }
         };
     }
 
-    private void SetLauncherBackground(string launcher)
+    private static Windows.UI.Color GetLauncherAccentColor(
+        string launcher,
+        byte alpha = 255,
+        double brightness = 1.0)
     {
         var normalized = LaunchService.NormalizeLauncher(launcher);
-        var path = Path.Combine(_root, "Assets", "Launchers", normalized, "Background.png");
-        if (!File.Exists(path))
-            path = Path.Combine(_root, "Assets", "Launchers", "DirectExe", "Background.png");
-        BackgroundImage.Source = CreateBitmap(path);
-        BackgroundImage.Opacity = CollectionPage.Visibility == Visibility.Visible ? 0.16 : 0.50;
-
-        var accent = normalized switch
+        var (red, green, blue) = normalized switch
         {
-            "Xbox" => Windows.UI.Color.FromArgb(62, 82, 196, 26),
-            "Steam" => Windows.UI.Color.FromArgb(62, 62, 139, 255),
-            "Epic" => Windows.UI.Color.FromArgb(48, 210, 210, 216),
-            "GOG" => Windows.UI.Color.FromArgb(62, 174, 76, 224),
-            "Ubisoft" => Windows.UI.Color.FromArgb(62, 36, 184, 224),
-            "Rockstar" => Windows.UI.Color.FromArgb(62, 255, 190, 30),
-            "Amazon" => Windows.UI.Color.FromArgb(62, 255, 153, 0),
-            "Flash" => Windows.UI.Color.FromArgb(62, 255, 116, 28),
-            _ => Windows.UI.Color.FromArgb(54, 157, 86, 232)
+            "Xbox" => (82, 196, 26),
+            "Steam" => (62, 139, 255),
+            "Epic" => (210, 210, 216),
+            "GOG" => (174, 76, 224),
+            "Ubisoft" => (36, 184, 224),
+            "Rockstar" => (255, 190, 30),
+            "Amazon" => (255, 153, 0),
+            "Flash" => (255, 116, 28),
+            _ => (157, 86, 232)
         };
-        LauncherLogoGlow.Background = new SolidColorBrush(accent);
 
-        var logoPath = Path.Combine(_root, "Assets", "Launchers", normalized, "Logo.png");
-        if (!File.Exists(logoPath))
-            logoPath = Path.Combine(_root, "Assets", "Launchers", "DirectExe", "Logo.png");
-        LauncherBrandLogo.Source = File.Exists(logoPath) ? CreateBitmap(logoPath) : null;
+        static byte Scale(int channel, double amount)
+            => (byte)Math.Clamp(
+                (int)Math.Round(channel * amount), 0, 255);
+
+        return Windows.UI.Color.FromArgb(
+            alpha,
+            Scale(red, brightness),
+            Scale(green, brightness),
+            Scale(blue, brightness));
     }
 
     private static BitmapImage? CreateBitmap(string path)
