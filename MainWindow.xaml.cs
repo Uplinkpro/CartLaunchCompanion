@@ -27,6 +27,11 @@ public sealed partial class MainWindow : Window
     private readonly Grid Root = new();
     private readonly Image BackgroundImage = new();
     private readonly Image LauncherBrandLogo = new();
+    private readonly Image AppBrandIcon = new();
+    private readonly TextBlock AppBrandTitle = new();
+    private readonly TextBlock AppBrandSubtitle = new();
+    private readonly Border LauncherLogoGlow = new();
+    private readonly Border CollectionPromptBar = new();
     private readonly Grid CollectionPage = new();
     private readonly Button ExitCollectionButton = new();
     private readonly GridView GamesGrid = new();
@@ -94,25 +99,32 @@ public sealed partial class MainWindow : Window
 
     private void ConfigureGameGridTemplates()
     {
-        // These templates are deliberately small and loaded after the Window exists.
-        // MainWindow itself remains fully code-generated, avoiding the startup XAML failure.
+        // The home screen is a curated cartridge shelf, not a large library browser.
+        // A single horizontal row keeps up to ten games readable from couch distance.
         GamesGrid.ItemsPanel = (ItemsPanelTemplate)XamlReader.Load(
             "<ItemsPanelTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'>" +
-            "<ItemsWrapGrid Orientation='Horizontal' HorizontalAlignment='Center' VerticalAlignment='Center'/>" +
+            "<ItemsWrapGrid Orientation='Horizontal' MaximumRowsOrColumns='1' HorizontalAlignment='Center' VerticalAlignment='Bottom'/>" +
             "</ItemsPanelTemplate>");
 
         GamesGrid.ItemTemplate = (DataTemplate)XamlReader.Load(
             "<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'>" +
-            "<Grid Background='#11161D'>" +
+            "<Grid>" +
+            "<Border Margin='8,10,8,22' Background='#FF171A20' BorderBrush='#556A6F7A' BorderThickness='1' CornerRadius='10'>" +
+            "<Grid>" +
+            "<Grid.RowDefinitions><RowDefinition Height='22'/><RowDefinition Height='*'/><RowDefinition Height='16'/></Grid.RowDefinitions>" +
+            "<Border Margin='14,8,48,5' Background='#FF090B0F' BorderBrush='#3F9DA3AE' BorderThickness='1' CornerRadius='3'/>" +
+            "<Ellipse Width='9' Height='9' Margin='0,9,12,0' HorizontalAlignment='Right' VerticalAlignment='Top' Fill='#FF080A0D' Stroke='#558A909B' StrokeThickness='1'/>" +
+            "<Border Grid.Row='1' Margin='10,2,10,4' Background='#FF080A0D' CornerRadius='4'>" +
             "<Image Source='{Binding CoverImage}' Stretch='UniformToFill'/>" +
-            "<Border VerticalAlignment='Bottom' Background='#D9000000' Padding='10,8'>" +
-            "<TextBlock Text='{Binding Name}' TextAlignment='Center' TextWrapping='Wrap' FontSize='16' FontWeight='SemiBold'/>" +
+            "</Border>" +
+            "<Rectangle Grid.Row='2' Margin='12,4,12,5' RadiusX='2' RadiusY='2' Fill='#FF090B0F'/>" +
+            "</Grid>" +
             "</Border>" +
             "</Grid>" +
             "</DataTemplate>");
 
         GamesGrid.HorizontalContentAlignment = HorizontalAlignment.Center;
-        GamesGrid.VerticalContentAlignment = VerticalAlignment.Center;
+        GamesGrid.VerticalContentAlignment = VerticalAlignment.Bottom;
     }
 
     private static void MakeSquare(Button button)
@@ -169,39 +181,136 @@ public sealed partial class MainWindow : Window
 
         CollectionPage.HorizontalAlignment = HorizontalAlignment.Stretch;
         CollectionPage.VerticalAlignment = VerticalAlignment.Stretch;
-        CollectionPage.RowDefinitions.Add(new RowDefinition { Height = new GridLength(72) });
+        CollectionPage.RowDefinitions.Add(new RowDefinition { Height = new GridLength(280) });
+        CollectionPage.RowDefinitions.Add(new RowDefinition { Height = new GridLength(92) });
         CollectionPage.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        CollectionPage.RowDefinitions.Add(new RowDefinition { Height = new GridLength(86) });
+
+        // Premium display-case lighting: a soft overhead beam and a restrained
+        // graphite floor. Launcher identity is carried by the logo glow.
+        var overheadLight = new Microsoft.UI.Xaml.Shapes.Rectangle
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Top,
+            Width = 760,
+            Height = 420,
+            IsHitTestVisible = false,
+            Fill = new RadialGradientBrush
+            {
+                Center = new Windows.Foundation.Point(0.5, 0),
+                GradientOrigin = new Windows.Foundation.Point(0.5, 0),
+                RadiusX = 0.58,
+                RadiusY = 1.0,
+                GradientStops =
+                {
+                    new GradientStop { Color = Windows.UI.Color.FromArgb(100, 119, 70, 210), Offset = 0 },
+                    new GradientStop { Color = Windows.UI.Color.FromArgb(30, 67, 36, 120), Offset = 0.48 },
+                    new GradientStop { Color = Windows.UI.Color.FromArgb(0, 0, 0, 0), Offset = 1 }
+                }
+            }
+        };
+        Grid.SetRowSpan(overheadLight, 3);
+        CollectionPage.Children.Add(overheadLight);
+
+        var brandStack = new StackPanel
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Spacing = 2,
+            Margin = new Thickness(0, 26, 0, 0)
+        };
+        AppBrandIcon.Width = 100;
+        AppBrandIcon.Height = 100;
+        AppBrandIcon.Stretch = Stretch.Uniform;
+        AppBrandIcon.Source = CreateBitmap(Path.Combine(_root, "Assets", "AppIcon.png"));
+        AppBrandIcon.HorizontalAlignment = HorizontalAlignment.Center;
+        brandStack.Children.Add(AppBrandIcon);
+
+        AppBrandTitle.Text = "CART LAUNCH";
+        AppBrandTitle.FontSize = 42;
+        AppBrandTitle.FontWeight = Microsoft.UI.Text.FontWeights.Bold;
+        AppBrandTitle.CharacterSpacing = 65;
+        AppBrandTitle.Foreground = new LinearGradientBrush
+        {
+            StartPoint = new Windows.Foundation.Point(0, 0),
+            EndPoint = new Windows.Foundation.Point(0, 1),
+            GradientStops =
+            {
+                new GradientStop { Color = Microsoft.UI.Colors.White, Offset = 0 },
+                new GradientStop { Color = Windows.UI.Color.FromArgb(255, 161, 164, 174), Offset = 0.52 },
+                new GradientStop { Color = Windows.UI.Color.FromArgb(255, 238, 239, 243), Offset = 1 }
+            }
+        };
+        brandStack.Children.Add(AppBrandTitle);
+
+        AppBrandSubtitle.Text = "COMPANION";
+        AppBrandSubtitle.FontSize = 21;
+        AppBrandSubtitle.FontWeight = Microsoft.UI.Text.FontWeights.SemiBold;
+        AppBrandSubtitle.CharacterSpacing = 430;
+        AppBrandSubtitle.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 157, 86, 232));
+        AppBrandSubtitle.HorizontalAlignment = HorizontalAlignment.Center;
+        brandStack.Children.Add(AppBrandSubtitle);
+        CollectionPage.Children.Add(brandStack);
 
         LauncherBrandLogo.HorizontalAlignment = HorizontalAlignment.Center;
         LauncherBrandLogo.VerticalAlignment = VerticalAlignment.Center;
-        LauncherBrandLogo.Margin = new Thickness(0, 4, 0, 4);
-        LauncherBrandLogo.Width = 320;
-        LauncherBrandLogo.Height = 60;
+        LauncherBrandLogo.Width = 92;
+        LauncherBrandLogo.Height = 62;
         LauncherBrandLogo.Stretch = Stretch.Uniform;
-        CollectionPage.Children.Add(LauncherBrandLogo);
+        LauncherBrandLogo.Opacity = 0.96;
+        LauncherLogoGlow.Width = 126;
+        LauncherLogoGlow.Height = 78;
+        LauncherLogoGlow.CornerRadius = new CornerRadius(39);
+        LauncherLogoGlow.HorizontalAlignment = HorizontalAlignment.Center;
+        LauncherLogoGlow.VerticalAlignment = VerticalAlignment.Center;
+        LauncherLogoGlow.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(42, 72, 139, 255));
+        LauncherLogoGlow.Child = LauncherBrandLogo;
+        Grid.SetRow(LauncherLogoGlow, 1);
+        CollectionPage.Children.Add(LauncherLogoGlow);
 
         ExitCollectionButton.Content = "EXIT";
         MakeSquare(ExitCollectionButton);
         ExitCollectionButton.HorizontalAlignment = HorizontalAlignment.Right;
-        ExitCollectionButton.VerticalAlignment = VerticalAlignment.Center;
-        ExitCollectionButton.Margin = new Thickness(0, 0, 32, 0);
-        ExitCollectionButton.Width = 120;
-        ExitCollectionButton.Height = 48;
+        ExitCollectionButton.VerticalAlignment = VerticalAlignment.Top;
+        ExitCollectionButton.Margin = new Thickness(0, 26, 30, 0);
+        ExitCollectionButton.Width = 104;
+        ExitCollectionButton.Height = 44;
+        ExitCollectionButton.Opacity = 0.72;
         ExitCollectionButton.Click += Exit_Click;
         CollectionPage.Children.Add(ExitCollectionButton);
 
-        Grid.SetRow(GamesGrid, 1);
+        Grid.SetRow(GamesGrid, 2);
         GamesGrid.IsItemClickEnabled = true;
         GamesGrid.SelectionMode = ListViewSelectionMode.Single;
         GamesGrid.IsTabStop = true;
-        GamesGrid.Padding = new Thickness(34, 8, 34, 36);
+        GamesGrid.Padding = new Thickness(28, 0, 28, 2);
         GamesGrid.HorizontalAlignment = HorizontalAlignment.Stretch;
         GamesGrid.VerticalAlignment = VerticalAlignment.Stretch;
         GamesGrid.ItemClick += GamesGrid_ItemClick;
+        GamesGrid.SelectionChanged += GamesGrid_SelectionChanged;
         GamesGrid.SizeChanged += GamesGrid_SizeChanged;
         CollectionPage.Children.Add(GamesGrid);
-        Root.Children.Add(CollectionPage);
 
+        var promptStack = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Spacing = 62
+        };
+        promptStack.Children.Add(CreateGamepadPrompt("A", "LAUNCH"));
+        promptStack.Children.Add(CreateGamepadPrompt("X", "DETAILS"));
+        promptStack.Children.Add(CreateGamepadPrompt("☰", "OPTIONS"));
+        CollectionPromptBar.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(218, 5, 7, 10));
+        CollectionPromptBar.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(90, 116, 121, 132));
+        CollectionPromptBar.BorderThickness = new Thickness(1);
+        CollectionPromptBar.CornerRadius = new CornerRadius(10);
+        CollectionPromptBar.Margin = new Thickness(140, 4, 140, 14);
+        CollectionPromptBar.Child = promptStack;
+        Grid.SetRow(CollectionPromptBar, 3);
+        CollectionPage.Children.Add(CollectionPromptBar);
+
+        Root.Children.Add(CollectionPage);
         DetailsPage.Visibility = Visibility.Collapsed;
         DetailsPage.Opacity = 0;
         DetailsPage.RowDefinitions.Add(new RowDefinition { Height = new GridLength(90) });
@@ -343,8 +452,10 @@ public sealed partial class MainWindow : Window
             _games.Add(game);
             _ = RefreshArtworkAsync(game);
         }
-        SetLauncherBackground(games.FirstOrDefault()?.Launcher ?? "Steam");
+        var firstGame = games.FirstOrDefault();
+        SetLauncherBackground(firstGame?.Launcher ?? "Steam");
         UpdateGameCardLayout(GamesGrid.ActualWidth);
+        if (firstGame is not null) GamesGrid.SelectedItem = firstGame;
         GamesGrid.Focus(FocusState.Programmatic);
     }
 
@@ -355,6 +466,12 @@ public sealed partial class MainWindow : Window
         game.HeaderImage = CreateBitmap(game.HeaderPath);
     }
 
+    private void GamesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (GamesGrid.SelectedItem is GameDefinition selected)
+            SetLauncherBackground(selected.Launcher);
+    }
+
     private void GamesGrid_SizeChanged(object sender, SizeChangedEventArgs e)
         => UpdateGameCardLayout(e.NewSize.Width);
 
@@ -362,37 +479,17 @@ public sealed partial class MainWindow : Window
     {
         if (GamesGrid.ItemsPanelRoot is not ItemsWrapGrid panel || _games.Count == 0) return;
 
-        var usableWidth = Math.Max(320, availableWidth - GamesGrid.Padding.Left - GamesGrid.Padding.Right);
-        var usableHeight = Math.Max(360, GamesGrid.ActualHeight - GamesGrid.Padding.Top - GamesGrid.Padding.Bottom);
-        var count = _games.Count;
+        var usableWidth = Math.Max(640, availableWidth - GamesGrid.Padding.Left - GamesGrid.Padding.Right);
+        var usableHeight = Math.Max(280, GamesGrid.ActualHeight - GamesGrid.Padding.Top - GamesGrid.Padding.Bottom);
+        var count = Math.Clamp(_games.Count, 1, 10);
+        var horizontalGapAllowance = count * 16.0;
+        var widthFromScreen = (usableWidth - horizontalGapAllowance) / count;
+        var widthFromHeight = usableHeight / 1.62;
+        var width = Math.Clamp(Math.Min(widthFromScreen, widthFromHeight), 112.0, 230.0);
 
-        var columns = count switch
-        {
-            1 => 1,
-            2 => 2,
-            3 or 4 => 4,
-            5 or 6 => 3,
-            _ => Math.Max(4, (int)Math.Floor(usableWidth / 280.0))
-        };
-
-        columns = Math.Clamp(columns, 1, count);
-        var rows = (int)Math.Ceiling(count / (double)columns);
-        var widthFromScreen = (usableWidth - columns * 20.0) / columns;
-        var heightFromScreen = (usableHeight - rows * 20.0) / rows;
-        var widthFromHeight = heightFromScreen / 1.5;
-
-        // Portrait cards remain large enough for couch viewing but never dominate the page.
-        var maximum = count switch
-        {
-            1 => 300.0,
-            2 => 280.0,
-            <= 6 => 250.0,
-            _ => 225.0
-        };
-
-        var width = Math.Clamp(Math.Min(widthFromScreen, widthFromHeight), 170.0, maximum);
+        panel.MaximumRowsOrColumns = 1;
         panel.ItemWidth = Math.Floor(width);
-        panel.ItemHeight = Math.Floor(width * 1.5);
+        panel.ItemHeight = Math.Floor(width * 1.58);
     }
 
     private async void GamesGrid_ItemClick(object sender, ItemClickEventArgs e)
@@ -1434,6 +1531,21 @@ public sealed partial class MainWindow : Window
         if (!File.Exists(path))
             path = Path.Combine(_root, "Assets", "Launchers", "DirectExe", "Background.png");
         BackgroundImage.Source = CreateBitmap(path);
+        BackgroundImage.Opacity = CollectionPage.Visibility == Visibility.Visible ? 0.16 : 0.50;
+
+        var accent = normalized switch
+        {
+            "Xbox" => Windows.UI.Color.FromArgb(62, 82, 196, 26),
+            "Steam" => Windows.UI.Color.FromArgb(62, 62, 139, 255),
+            "Epic" => Windows.UI.Color.FromArgb(48, 210, 210, 216),
+            "GOG" => Windows.UI.Color.FromArgb(62, 174, 76, 224),
+            "Ubisoft" => Windows.UI.Color.FromArgb(62, 36, 184, 224),
+            "Rockstar" => Windows.UI.Color.FromArgb(62, 255, 190, 30),
+            "Amazon" => Windows.UI.Color.FromArgb(62, 255, 153, 0),
+            "Flash" => Windows.UI.Color.FromArgb(62, 255, 116, 28),
+            _ => Windows.UI.Color.FromArgb(54, 157, 86, 232)
+        };
+        LauncherLogoGlow.Background = new SolidColorBrush(accent);
 
         var logoPath = Path.Combine(_root, "Assets", "Launchers", normalized, "Logo.png");
         if (!File.Exists(logoPath))
