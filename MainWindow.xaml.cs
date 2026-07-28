@@ -154,7 +154,7 @@ public sealed partial class MainWindow : Window
             "</StackPanel>" +
             "</Border>" +
             "<Rectangle Grid.Row='1' Fill='White'/>" +
-            "<Border Grid.Row='2' Background='#FF05070A' CornerRadius='0,0,3,3' ClipToBounds='True'>" +
+            "<Border Grid.Row='2' Background='#FF05070A' CornerRadius='0,0,3,3'>" +
             "<Image Source='{Binding CoverImage}' Stretch='Uniform' HorizontalAlignment='Center' VerticalAlignment='Center'/>" +
             "</Border>" +
             "</Grid>" +
