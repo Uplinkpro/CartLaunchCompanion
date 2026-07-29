@@ -17,20 +17,20 @@
         </Border>
 
         <Canvas x:Name="HazeLayer"
-                Width="980"
-                Height="560"
+                Width="1050"
+                Height="570"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
-                Opacity="0.09">
-            <Ellipse Width="420"
-                     Height="125"
-                     Canvas.Left="70"
+                Opacity="0.12">
+            <Ellipse Width="460"
+                     Height="135"
+                     Canvas.Left="50"
                      Canvas.Top="120"
                      Fill="{Binding SelectedGame.BeamCenterColor}" />
-            <Ellipse Width="520"
-                     Height="150"
-                     Canvas.Left="360"
-                     Canvas.Top="260"
+            <Ellipse Width="550"
+                     Height="160"
+                     Canvas.Left="420"
+                     Canvas.Top="280"
                      Fill="{Binding SelectedGame.BeamCenterColor}" />
         </Canvas>
 
@@ -39,7 +39,7 @@
                 Height="620"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
-                Opacity="0.48">
+                Opacity="0.50">
             <Border.Background>
                 <RadialGradientBrush Center="50%,0%"
                                      GradientOrigin="50%,0%"
@@ -58,7 +58,7 @@
                 Height="590"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
-                Opacity="0.72">
+                Opacity="0.74">
             <Border.Background>
                 <LinearGradientBrush StartPoint="50%,0%"
                                      EndPoint="50%,100%">
@@ -91,7 +91,7 @@
                     Height="155"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Top"
-                    Opacity="0.55">
+                    Opacity="0.58">
                 <Border.Background>
                     <RadialGradientBrush Center="50%,0%"
                                          GradientOrigin="50%,0%"

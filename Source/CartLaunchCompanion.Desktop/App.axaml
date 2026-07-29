@@ -1,4 +1,4 @@
-<Application xmlns="https://github.com/avaloniaui"
+﻿<Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="CartLaunchCompanion.Desktop.App"
              xmlns:local="using:CartLaunchCompanion.Desktop"
@@ -20,6 +20,7 @@
             <Setter Property="MinWidth" Value="188" />
             <Setter Property="Height" Value="52" />
             <Setter Property="Padding" Value="16,7" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="CornerRadius" Value="6" />
             <Setter Property="Background" Value="#D90A0C10" />
             <Setter Property="BorderBrush" Value="#38FFFFFF" />
@@ -105,3 +106,4 @@
         </Style>
     </Application.Styles>
 </Application>
+
