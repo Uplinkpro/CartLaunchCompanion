@@ -1,4 +1,4 @@
-name: Avalonia CI
+﻿name: Avalonia CI
 
 on:
   push:
@@ -30,10 +30,10 @@ jobs:
 
     steps:
       - name: Check out source
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install .NET 10 SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
           cache: true
@@ -68,3 +68,5 @@ jobs:
           path: TestResults
           if-no-files-found: ignore
           retention-days: 14
+
+
