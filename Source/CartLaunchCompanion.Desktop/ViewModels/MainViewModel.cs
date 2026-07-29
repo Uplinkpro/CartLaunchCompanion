@@ -324,12 +324,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         switch (action)
         {
-            // B/Back opens Exit from Home and confirms it here.
             case LauncherAction.Back:
                 _exitApplication();
                 break;
 
-            // A/Confirm cancels the Exit confirmation.
             case LauncherAction.Confirm:
                 CancelExitConfirmation();
                 break;

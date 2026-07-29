@@ -1,13 +1,15 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:CartLaunchCompanion.Desktop.ViewModels"
+             xmlns:controls="using:CartLaunchCompanion.Desktop.Controls"
              x:Class="CartLaunchCompanion.Desktop.Views.MetadataView"
              x:DataType="vm:MainViewModel"
              Focusable="True">
 
 
-    <Grid Background="#050608"
+    <Grid Background="#030406"
           RowDefinitions="2.6*,3.4*,Auto">
+        <controls:StudioScene Grid.RowSpan="3" />
 
         <!-- Wide 3840x1240-style background presentation. -->
         <Grid Grid.Row="0"
@@ -15,9 +17,9 @@
             <Image Source="{Binding SelectedGame.BackgroundImage}"
                    Stretch="UniformToFill"
                    IsVisible="{Binding SelectedGame.HasBackground}"
-                   Opacity="0.82" />
+                   Opacity="0.58" />
 
-            <Border Background="#AA050608" />
+            <Border Background="#B8030406" />
 
             <Border>
                 <Border.Background>
@@ -200,6 +202,7 @@
             </ScrollViewer>
 
             <Border Grid.Column="2"
+                    Classes="glass-panel"
                     Height="248"
                     VerticalAlignment="Bottom"
                     CornerRadius="10"

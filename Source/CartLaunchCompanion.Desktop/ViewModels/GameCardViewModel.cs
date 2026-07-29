@@ -2,6 +2,7 @@ using Avalonia.Media.Imaging;
 using CartLaunchCompanion.Core.Configuration;
 using CartLaunchCompanion.Core.Library;
 using CommunityToolkit.Mvvm.Input;
+using CartLaunchCompanion.Desktop.Themes;
 
 namespace CartLaunchCompanion.Desktop.ViewModels;
 
@@ -38,22 +39,20 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
         Entry.LaunchTarget?.Launcher.ToString()
         ?? "Unavailable";
 
-    public string AccentColor =>
-        Entry.LaunchTarget?.Launcher switch
-        {
-            LauncherKind.Xbox => "#35A936",
-            LauncherKind.Steam => "#3E8BFF",
-            LauncherKind.Epic => "#A9ABB2",
-            LauncherKind.Heroic => "#E89A2D",
-            LauncherKind.GOG => "#A94FDC",
-            LauncherKind.Ubisoft => "#24B8E0",
-            LauncherKind.Rockstar => "#E0A623",
-            LauncherKind.Amazon => "#FF9900",
-            LauncherKind.Flatpak => "#4A90D9",
-            LauncherKind.Wine => "#8A64D6",
-            LauncherKind.Proton => "#6A8FFF",
-            _ => "#9D56E8"
-        };
+    public LauncherKind LauncherKind =>
+        Entry.LaunchTarget?.Launcher
+        ?? LauncherKind.Custom;
+
+    public LauncherTheme Theme =>
+        LauncherThemeCatalog.Get(LauncherKind);
+
+    public string AccentColor => Theme.Accent;
+    public string AccentBrightColor => Theme.AccentBright;
+    public string AccentMutedColor => Theme.AccentMuted;
+    public string BeamCenterColor => Theme.BeamCenter;
+    public string BeamEdgeColor => Theme.BeamEdge;
+    public string FloorLightColor => Theme.FloorLight;
+    public string GlyphForegroundColor => Theme.GlyphForeground;
 
     public Bitmap? CoverImage { get; }
     public Bitmap? BackgroundImage { get; }

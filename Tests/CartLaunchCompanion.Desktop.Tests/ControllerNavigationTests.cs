@@ -89,7 +89,7 @@ public sealed class ControllerNavigationTests
     }
 
     [Fact]
-    public async Task ExitConfirmation_ConfirmCancelsAndReturnsHome()
+    public async Task ExitConfirmation_ConfirmCancels()
     {
         var viewModel = CreateViewModel();
         await viewModel.LoadAsync();

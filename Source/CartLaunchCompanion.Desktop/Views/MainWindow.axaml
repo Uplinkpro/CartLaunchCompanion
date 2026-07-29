@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:CartLaunchCompanion.Desktop.ViewModels"
         xmlns:views="using:CartLaunchCompanion.Desktop.Views"
+        xmlns:controls="using:CartLaunchCompanion.Desktop.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
@@ -16,64 +17,70 @@
         WindowStartupLocation="CenterScreen"
         Title="Cart Launch Companion 2.0">
 
-    <Grid Background="#050608">
+    <Grid Background="#030406">
         <views:HomeView IsVisible="{Binding IsHomeVisible}" />
         <views:MetadataView IsVisible="{Binding IsMetadataVisible}" />
 
-        <Border IsVisible="{Binding IsExitVisible}"
-                Background="#E8050608"
-                ZIndex="500">
+        <Grid IsVisible="{Binding IsExitVisible}"
+              ZIndex="500">
+            <controls:StudioScene />
+
+            <Border Background="#B2030406" />
+
             <Grid RowDefinitions="*,Auto"
                   Margin="42">
+                <Border Grid.Row="0"
+                        Classes="glass-panel"
+                        Width="620"
+                        Height="310"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Padding="42">
+                    <StackPanel HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="16">
+                        <Border Width="86"
+                                Height="70"
+                                CornerRadius="11"
+                                BorderBrush="#E5E8EDF3"
+                                BorderThickness="3"
+                                Background="#0B0D11">
+                            <Grid RowDefinitions="*,13"
+                                  Margin="9">
+                                <Border Grid.Row="0"
+                                        Margin="8,3,8,5"
+                                        CornerRadius="4"
+                                        BorderBrush="#E5E8EDF3"
+                                        BorderThickness="2" />
 
-                <StackPanel Grid.Row="0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Spacing="16">
+                                <StackPanel Grid.Row="1"
+                                            Orientation="Horizontal"
+                                            HorizontalAlignment="Center"
+                                            Spacing="3">
+                                    <Border Width="6" Height="10" Background="#E5E8EDF3" />
+                                    <Border Width="6" Height="10" Background="#E5E8EDF3" />
+                                    <Border Width="6" Height="10" Background="#E5E8EDF3" />
+                                    <Border Width="6" Height="10" Background="#E5E8EDF3" />
+                                    <Border Width="6" Height="10" Background="#E5E8EDF3" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
 
-                    <Border Width="86"
-                            Height="70"
-                            CornerRadius="11"
-                            BorderBrush="#DDE5E8F0"
-                            BorderThickness="3"
-                            Background="#0B0D11">
-                        <Grid RowDefinitions="*,13"
-                              Margin="9">
-                            <Border Grid.Row="0"
-                                    Margin="8,3,8,5"
-                                    CornerRadius="4"
-                                    BorderBrush="#DDE5E8F0"
-                                    BorderThickness="2" />
+                        <TextBlock Classes="chrome-title"
+                                   Text="EXIT CART LAUNCH COMPANION?"
+                                   HorizontalAlignment="Center"
+                                   FontSize="30" />
 
-                            <StackPanel Grid.Row="1"
-                                        Orientation="Horizontal"
-                                        HorizontalAlignment="Center"
-                                        Spacing="3">
-                                <Border Width="6" Height="10" Background="#DDE5E8F0" />
-                                <Border Width="6" Height="10" Background="#DDE5E8F0" />
-                                <Border Width="6" Height="10" Background="#DDE5E8F0" />
-                                <Border Width="6" Height="10" Background="#DDE5E8F0" />
-                                <Border Width="6" Height="10" Background="#DDE5E8F0" />
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-
-                    <TextBlock Text="EXIT CART LAUNCH COMPANION?"
-                               HorizontalAlignment="Center"
-                               Foreground="White"
-                               FontSize="30"
-                               FontWeight="Bold" />
-
-                    <TextBlock Text="Press B again to exit, or A to cancel."
-                               HorizontalAlignment="Center"
-                               Foreground="#AFFFFFFF"
-                               FontSize="15" />
-                </StackPanel>
+                        <TextBlock Classes="muted"
+                                   Text="Press B again to exit, or A to cancel."
+                                   HorizontalAlignment="Center"
+                                   FontSize="15" />
+                    </StackPanel>
+                </Border>
 
                 <Grid Grid.Row="1"
                       ColumnDefinitions="220,24,220"
                       HorizontalAlignment="Center">
-
                     <Button Grid.Column="0"
                             Classes="action"
                             Command="{Binding CancelExitCommand}">
@@ -90,6 +97,7 @@
                                            Foreground="White"
                                            FontWeight="Bold" />
                             </Border>
+
                             <TextBlock Text="CANCEL"
                                        VerticalAlignment="Center" />
                         </StackPanel>
@@ -111,12 +119,13 @@
                                            Foreground="White"
                                            FontWeight="Bold" />
                             </Border>
+
                             <TextBlock Text="EXIT"
                                        VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </Grid>
             </Grid>
-        </Border>
+        </Grid>
     </Grid>
 </Window>

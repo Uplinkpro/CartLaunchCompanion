@@ -1,12 +1,14 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:CartLaunchCompanion.Desktop.ViewModels"
+             xmlns:controls="using:CartLaunchCompanion.Desktop.Controls"
              x:Class="CartLaunchCompanion.Desktop.Views.HomeView"
              x:DataType="vm:MainViewModel"
              Focusable="True">
 
 
-    <Grid Background="#050608">
+    <Grid Background="#030406">
+        <controls:StudioScene />
 
         <!-- Home: browse only. -->
         <Grid IsVisible="{Binding IsHomeVisible}"
@@ -52,7 +54,7 @@
 
                 <TextBlock Text="COMPANION 2.0"
                            HorizontalAlignment="Center"
-                           Foreground="#A16AE8"
+                           Foreground="{Binding SelectedGame.AccentBrightColor}"
                            FontSize="15"
                            FontWeight="SemiBold"
                            LetterSpacing="5" />
@@ -62,11 +64,7 @@
                         HorizontalAlignment="Center"
                         Spacing="2"
                         Margin="0,4,0,12">
-                <TextBlock Text="{Binding PlatformName, StringFormat='Running on {0}'}"
-                           HorizontalAlignment="Center"
-                           Foreground="#99FFFFFF"
-                           FontSize="13" />
-                <TextBlock Text="{Binding StatusMessage}"
+<TextBlock Text="{Binding StatusMessage}"
                            HorizontalAlignment="Center"
                            Foreground="#B8FFFFFF"
                            FontSize="13" />
@@ -114,8 +112,8 @@
                                             Width="194"
                                             Height="326"
                                             CornerRadius="7"
-                                            Background="#080A0E"
-                                            BorderBrush="{Binding AccentColor}"
+                                            Background="#F207090D"
+                                            BorderBrush="{Binding AccentBrightColor}"
                                             BorderThickness="2"
                                             Opacity="0.92">
                                         <Grid RowDefinitions="30,3,*">

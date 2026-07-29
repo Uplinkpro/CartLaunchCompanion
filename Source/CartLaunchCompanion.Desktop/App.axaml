@@ -11,36 +11,42 @@
         <FluentTheme />
 
         <Style Selector="Window">
-            <Setter Property="Background" Value="#050608" />
-            <Setter Property="FontFamily" Value="avares://Avalonia.Fonts.Inter/Assets#Inter" />
+            <Setter Property="Background" Value="#030406" />
+            <Setter Property="FontFamily"
+                    Value="avares://Avalonia.Fonts.Inter/Assets#Inter" />
         </Style>
 
         <Style Selector="Button.action">
             <Setter Property="MinWidth" Value="188" />
-            <Setter Property="Height" Value="54" />
-            <Setter Property="Padding" Value="18,8" />
-            <Setter Property="CornerRadius" Value="27" />
-            <Setter Property="Background" Value="#E60B0D11" />
-            <Setter Property="BorderBrush" Value="#55FFFFFF" />
+            <Setter Property="Height" Value="52" />
+            <Setter Property="Padding" Value="16,7" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Background" Value="#D90A0C10" />
+            <Setter Property="BorderBrush" Value="#38FFFFFF" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Foreground" Value="#F8FAFC" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontSize" Value="14" />
         </Style>
 
         <Style Selector="Button.action:pointerover">
-            <Setter Property="Background" Value="#FF181B22" />
-            <Setter Property="BorderBrush" Value="#AAFFFFFF" />
+            <Setter Property="Background" Value="#F014171D" />
+            <Setter Property="BorderBrush" Value="#88FFFFFF" />
+        </Style>
+
+        <Style Selector="Button.action:focus">
+            <Setter Property="BorderBrush" Value="#E6FFFFFF" />
+            <Setter Property="BorderThickness" Value="2" />
         </Style>
 
         <Style Selector="Button.exit-action">
-            <Setter Property="Background" Value="#A62E0B0E" />
-            <Setter Property="BorderBrush" Value="#E05A3036" />
+            <Setter Property="Background" Value="#D22C0B10" />
+            <Setter Property="BorderBrush" Value="#E45C3238" />
             <Setter Property="BorderThickness" Value="2" />
         </Style>
 
         <Style Selector="Button.exit-action:pointerover">
-            <Setter Property="Background" Value="#D63E1015" />
+            <Setter Property="Background" Value="#F13C1117" />
             <Setter Property="BorderBrush" Value="#FFFF6B72" />
         </Style>
 
@@ -53,13 +59,34 @@
             <Setter Property="VerticalContentAlignment" Value="Stretch" />
         </Style>
 
+        <Style Selector="Button.game-card Border.card-frame">
+            <Setter Property="Opacity" Value="0.82" />
+        </Style>
+
         <Style Selector="Button.game-card:pointerover Border.card-frame">
             <Setter Property="Opacity" Value="1" />
+            <Setter Property="BorderThickness" Value="2" />
         </Style>
 
         <Style Selector="Button.game-card:focus Border.card-frame">
             <Setter Property="BorderThickness" Value="3" />
             <Setter Property="Opacity" Value="1" />
+        </Style>
+
+        <Style Selector="Border.glass-panel">
+            <Setter Property="Background" Value="#D90A0C10" />
+            <Setter Property="BorderBrush" Value="#2CFFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+
+        <Style Selector="TextBlock.chrome-title">
+            <Setter Property="Foreground" Value="#F5F7FA" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+
+        <Style Selector="TextBlock.muted">
+            <Setter Property="Foreground" Value="#9FFFFFFF" />
         </Style>
     </Application.Styles>
 </Application>

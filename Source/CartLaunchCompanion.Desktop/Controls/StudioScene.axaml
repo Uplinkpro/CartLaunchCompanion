@@ -1,0 +1,101 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:CartLaunchCompanion.Desktop.ViewModels"
+             x:Class="CartLaunchCompanion.Desktop.Controls.StudioScene"
+             x:DataType="vm:MainViewModel"
+             IsHitTestVisible="False">
+
+    <Grid Background="#030406">
+        <!-- Very restrained vertical room gradient. -->
+        <Border>
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0%,0%"
+                                     EndPoint="0%,100%">
+                    <GradientStop Color="#050609"
+                                  Offset="0" />
+                    <GradientStop Color="#020305"
+                                  Offset="0.63" />
+                    <GradientStop Color="#07080B"
+                                  Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
+        </Border>
+
+        <!-- Wide atmospheric beam. -->
+        <Border Width="920"
+                Height="620"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Opacity="0.48">
+            <Border.Background>
+                <RadialGradientBrush Center="50%,0%"
+                                     GradientOrigin="50%,0%"
+                                     RadiusX="0.60" RadiusY="0.60">
+                    <GradientStop Color="{Binding SelectedGame.BeamCenterColor}"
+                                  Offset="0" />
+                    <GradientStop Color="{Binding SelectedGame.BeamEdgeColor}"
+                                  Offset="1" />
+                </RadialGradientBrush>
+            </Border.Background>
+        </Border>
+
+        <!-- Narrow light core. -->
+        <Border Width="380"
+                Height="590"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Opacity="0.72">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="50%,0%"
+                                     EndPoint="50%,100%">
+                    <GradientStop Color="{Binding SelectedGame.BeamCenterColor}"
+                                  Offset="0" />
+                    <GradientStop Color="{Binding SelectedGame.BeamEdgeColor}"
+                                  Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
+        </Border>
+
+        <!-- Separate floor plane rather than a tinted background. -->
+        <Grid VerticalAlignment="Bottom"
+              Height="205">
+            <Border>
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0%,0%"
+                                         EndPoint="0%,100%">
+                        <GradientStop Color="#090B0F"
+                                      Offset="0" />
+                        <GradientStop Color="#030406"
+                                      Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+
+            <Border Height="1"
+                    VerticalAlignment="Top"
+                    Background="#28FFFFFF" />
+
+            <Border Width="740"
+                    Height="155"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Top"
+                    Opacity="0.55">
+                <Border.Background>
+                    <RadialGradientBrush Center="50%,0%"
+                                         GradientOrigin="50%,0%"
+                                         RadiusX="0.65" RadiusY="0.65">
+                        <GradientStop Color="{Binding SelectedGame.FloorLightColor}"
+                                      Offset="0" />
+                        <GradientStop Color="#00000000"
+                                      Offset="1" />
+                    </RadialGradientBrush>
+                </Border.Background>
+            </Border>
+        </Grid>
+
+        <!-- Edge vignette. -->
+        <Border BorderBrush="#65000000"
+                BorderThickness="80,30,80,55" />
+    </Grid>
+</UserControl>
+
