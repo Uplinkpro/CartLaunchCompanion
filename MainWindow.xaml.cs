@@ -34,6 +34,7 @@ public sealed partial class MainWindow : Window
     private readonly Microsoft.UI.Xaml.Shapes.Rectangle HomeOverheadLight = new();
     private readonly Microsoft.UI.Xaml.Shapes.Rectangle HomeLightCore = new();
     private readonly Microsoft.UI.Xaml.Shapes.Rectangle HomeShelfGlow = new();
+    private readonly Microsoft.UI.Xaml.Shapes.Rectangle HomeSelectedReflection = new();
     private readonly Button HomeDetailsButton = new();
     private readonly Button HomeExitButton = new();
     private readonly Border CollectionPromptBar = new();
@@ -157,7 +158,10 @@ public sealed partial class MainWindow : Window
             "</Border>" +
             "<Rectangle Grid.Row='1' Fill='White'/>" +
             "<Border Grid.Row='2' Background='#FF05070A' CornerRadius='0,0,3,3'>" +
+            "<Grid>" +
             "<Image Source='{Binding CoverImage}' Stretch='Uniform' HorizontalAlignment='Center' VerticalAlignment='Center'/>" +
+            "<Rectangle Height='16' VerticalAlignment='Bottom' Fill='{Binding CardBorderBrush}' Opacity='0.14'/>" +
+            "</Grid>" +
             "</Border>" +
             "</Grid>" +
             "</Border>" +
@@ -547,6 +551,19 @@ public sealed partial class MainWindow : Window
         HomeShelfGlow.Fill = CreateLauncherShelfGlowBrush("Steam");
         Grid.SetRow(HomeShelfGlow, 2);
         CollectionPage.Children.Add(HomeShelfGlow);
+
+        HomeSelectedReflection.HorizontalAlignment =
+            HorizontalAlignment.Center;
+        HomeSelectedReflection.VerticalAlignment =
+            VerticalAlignment.Bottom;
+        HomeSelectedReflection.Width = 260;
+        HomeSelectedReflection.Height = 72;
+        HomeSelectedReflection.IsHitTestVisible = false;
+        HomeSelectedReflection.Opacity = 0.18;
+        HomeSelectedReflection.Fill =
+            CreateSelectedReflectionBrush("Steam");
+        Grid.SetRow(HomeSelectedReflection, 2);
+        CollectionPage.Children.Add(HomeSelectedReflection);
 
         var brandStack = new StackPanel
         {
@@ -1196,15 +1213,110 @@ public sealed partial class MainWindow : Window
             transform.CenterX = container.ActualWidth / 2;
             transform.CenterY = container.ActualHeight / 2;
 
-            // Keep selection restrained. The cover remains centered and the
-            // launcher color—not a generic purple frame—identifies focus.
-            transform.ScaleX = isSelected ? 1.025 : 1;
-            transform.ScaleY = isSelected ? 1.025 : 1;
-            transform.TranslateY = isSelected ? -5 : 0;
-            container.Opacity = isSelected ? 1 : 0.87;
-
             Canvas.SetZIndex(container, isSelected ? 10 : 0);
+
+            _ = AnimateCardStateAsync(
+                container,
+                transform,
+                isSelected ? 1.025 : 1,
+                isSelected ? -5 : 0,
+                isSelected ? 1 : 0.87,
+                isSelected ? 155 : 130);
         }
+
+        var selectedLauncher =
+            LaunchService.NormalizeLauncher(selected.Launcher);
+
+        HomeSelectedReflection.Fill =
+            CreateSelectedReflectionBrush(selectedLauncher);
+
+        _ = PulseSelectedReflectionAsync();
+    }
+
+    private static async Task AnimateCardStateAsync(
+        FrameworkElement container,
+        CompositeTransform transform,
+        double scale,
+        double translateY,
+        double opacity,
+        int durationMilliseconds)
+    {
+        var duration = TimeSpan.FromMilliseconds(durationMilliseconds);
+        var easing = new QuadraticEase
+        {
+            EasingMode = EasingMode.EaseOut
+        };
+
+        var storyboard = new Storyboard();
+
+        AddTransformAnimation(
+            storyboard,
+            transform,
+            "ScaleX",
+            scale,
+            duration,
+            easing);
+        AddTransformAnimation(
+            storyboard,
+            transform,
+            "ScaleY",
+            scale,
+            duration,
+            easing);
+        AddTransformAnimation(
+            storyboard,
+            transform,
+            "TranslateY",
+            translateY,
+            duration,
+            easing);
+
+        var opacityAnimation = new DoubleAnimation
+        {
+            To = opacity,
+            Duration = duration,
+            EasingFunction = easing,
+            EnableDependentAnimation = true
+        };
+
+        Storyboard.SetTarget(opacityAnimation, container);
+        Storyboard.SetTargetProperty(opacityAnimation, "Opacity");
+        storyboard.Children.Add(opacityAnimation);
+
+        var completion = new TaskCompletionSource();
+        storyboard.Completed += (_, _) => completion.TrySetResult();
+        storyboard.Begin();
+
+        await completion.Task;
+    }
+
+    private async Task PulseSelectedReflectionAsync()
+    {
+        await AnimateAsync(
+            HomeSelectedReflection,
+            new DoubleAnimation
+            {
+                To = 0.30,
+                Duration = TimeSpan.FromMilliseconds(115),
+                EasingFunction = new QuadraticEase
+                {
+                    EasingMode = EasingMode.EaseOut
+                },
+                EnableDependentAnimation = true
+            });
+
+        await AnimateAsync(
+            HomeSelectedReflection,
+            new DoubleAnimation
+            {
+                To = 0.18,
+                Duration = TimeSpan.FromMilliseconds(210),
+                EasingFunction = new QuadraticEase
+                {
+                    EasingMode = EasingMode.EaseInOut
+                },
+                EnableDependentAnimation = true
+            });
     }
 
     private void Root_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -1255,6 +1367,11 @@ public sealed partial class MainWindow : Window
         HomeShelfGlow.Height =
             Math.Clamp(150 * scale, 105, 220);
 
+        HomeSelectedReflection.Width =
+            Math.Clamp(260 * scale, 180, 390);
+        HomeSelectedReflection.Height =
+            Math.Clamp(72 * scale, 50, 108);
+
         var actionWidth = Math.Clamp(264 * scale, 228, 340);
         var actionHeight = Math.Clamp(72 * scale, 64, 92);
         HomeDetailsButton.Width = HomeExitButton.Width = actionWidth;
@@ -1284,10 +1401,46 @@ public sealed partial class MainWindow : Window
 
     private async Task CrossFadeLauncherThemeAsync(string launcher)
     {
-        var fadeOut = new DoubleAnimation
+        await Task.WhenAll(
+            AnimateAsync(
+                HomeOverheadLight,
+                CreateOpacityAnimation(0.18, 85)),
+            AnimateAsync(
+                HomeLightCore,
+                CreateOpacityAnimation(0.22, 85)),
+            AnimateAsync(
+                HomeShelfGlow,
+                CreateOpacityAnimation(0.12, 85)),
+            AnimateAsync(
+                LauncherLogoGlow,
+                CreateOpacityAnimation(0.28, 85)));
+
+        SetLauncherBackground(launcher);
+
+        await Task.WhenAll(
+            AnimateAsync(
+                HomeOverheadLight,
+                CreateOpacityAnimation(0.62, 190)),
+            AnimateAsync(
+                HomeLightCore,
+                CreateOpacityAnimation(0.72, 190)),
+            AnimateAsync(
+                HomeShelfGlow,
+                CreateOpacityAnimation(0.48, 190)),
+            AnimateAsync(
+                LauncherLogoGlow,
+                CreateOpacityAnimation(1, 160)));
+
+        await PulseLauncherBadgeAsync();
+    }
+
+    private static DoubleAnimation CreateOpacityAnimation(
+        double opacity,
+        int durationMilliseconds)
+        => new()
         {
-            To = 0.18,
-            Duration = TimeSpan.FromMilliseconds(85),
+            To = opacity,
+            Duration = TimeSpan.FromMilliseconds(durationMilliseconds),
             EasingFunction = new QuadraticEase
             {
                 EasingMode = EasingMode.EaseInOut
@@ -1295,72 +1448,15 @@ public sealed partial class MainWindow : Window
             EnableDependentAnimation = true
         };
 
-        await Task.WhenAll(
-            AnimateAsync(HomeOverheadLight, fadeOut),
-            AnimateAsync(
-                HomeLightCore,
-                new DoubleAnimation
-                {
-                    To = 0.22,
-                    Duration = TimeSpan.FromMilliseconds(85),
-                    EasingFunction = new QuadraticEase
-                    {
-                        EasingMode = EasingMode.EaseInOut
-                    },
-                    EnableDependentAnimation = true
-                }),
-            AnimateAsync(
-                HomeShelfGlow,
-                new DoubleAnimation
-                {
-                    To = 0.12,
-                    Duration = TimeSpan.FromMilliseconds(85),
-                    EasingFunction = new QuadraticEase
-                    {
-                        EasingMode = EasingMode.EaseInOut
-                    },
-                    EnableDependentAnimation = true
-                }));
+    private async Task PulseLauncherBadgeAsync()
+    {
+        await AnimateAsync(
+            LauncherLogoGlow,
+            CreateOpacityAnimation(0.88, 95));
 
-        SetLauncherBackground(launcher);
-
-        await Task.WhenAll(
-            AnimateAsync(
-                HomeOverheadLight,
-                new DoubleAnimation
-                {
-                    To = 0.62,
-                    Duration = TimeSpan.FromMilliseconds(190),
-                    EasingFunction = new QuadraticEase
-                    {
-                        EasingMode = EasingMode.EaseInOut
-                    },
-                    EnableDependentAnimation = true
-                }),
-            AnimateAsync(
-                HomeLightCore,
-                new DoubleAnimation
-                {
-                    To = 0.72,
-                    Duration = TimeSpan.FromMilliseconds(190),
-                    EasingFunction = new QuadraticEase
-                    {
-                        EasingMode = EasingMode.EaseInOut
-                    },
-                    EnableDependentAnimation = true
-                }),
-            AnimateAsync(
-                HomeShelfGlow,
-                new DoubleAnimation
-                {
-                    To = 0.48,
-                    Duration = TimeSpan.FromMilliseconds(190),
-                    EasingFunction = new QuadraticEase
-                    {
-                        EasingMode = EasingMode.EaseInOut
-                    },
-                    EnableDependentAnimation = true
-                }));
+        await AnimateAsync(
+            LauncherLogoGlow,
+            CreateOpacityAnimation(1, 145));
     }
 
     private void GamesGrid_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -2896,6 +2992,44 @@ public sealed partial class MainWindow : Window
                         18,
                         0.65),
                     Offset = 0.50
+                },
+                new GradientStop
+                {
+                    Color = Windows.UI.Color.FromArgb(0, 0, 0, 0),
+                    Offset = 1
+                }
+            }
+        };
+    }
+
+    private static Brush CreateSelectedReflectionBrush(
+        string launcher)
+    {
+        var normalized = LaunchService.NormalizeLauncher(launcher);
+
+        return new RadialGradientBrush
+        {
+            Center = new Windows.Foundation.Point(0.5, 0.5),
+            GradientOrigin = new Windows.Foundation.Point(0.5, 0.5),
+            RadiusX = 0.5,
+            RadiusY = 0.5,
+            GradientStops =
+            {
+                new GradientStop
+                {
+                    Color = GetLauncherAccentColor(
+                        normalized,
+                        72,
+                        1.02),
+                    Offset = 0
+                },
+                new GradientStop
+                {
+                    Color = GetLauncherAccentColor(
+                        normalized,
+                        24,
+                        0.72),
+                    Offset = 0.52
                 },
                 new GradientStop
                 {
