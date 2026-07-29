@@ -61,16 +61,31 @@
 
         <Style Selector="Button.game-card Border.card-frame">
             <Setter Property="Opacity" Value="0.82" />
+            <Setter Property="RenderTransform"
+                    Value="scale(1) translate(0px, 0px)" />
+            <Setter Property="RenderTransformOrigin" Value="50%,50%" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity"
+                                      Duration="0:0:0.18" />
+                    <TransformOperationsTransition Property="RenderTransform"
+                                                   Duration="0:0:0.18" />
+                </Transitions>
+            </Setter>
         </Style>
 
         <Style Selector="Button.game-card:pointerover Border.card-frame">
             <Setter Property="Opacity" Value="1" />
             <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="RenderTransform"
+                    Value="scale(1.025) translate(0px, -5px)" />
         </Style>
 
         <Style Selector="Button.game-card:focus Border.card-frame">
             <Setter Property="BorderThickness" Value="3" />
             <Setter Property="Opacity" Value="1" />
+            <Setter Property="RenderTransform"
+                    Value="scale(1.04) translate(0px, -8px)" />
         </Style>
 
         <Style Selector="Border.glass-panel">
