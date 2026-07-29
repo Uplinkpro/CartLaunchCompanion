@@ -17,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0AB3BF05
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CartLaunchCompanion.Core.Tests", "Tests\CartLaunchCompanion.Core.Tests\CartLaunchCompanion.Core.Tests.csproj", "{88796506-D359-4D76-931F-B04967CE72E4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CartLaunchCompanion.Desktop.Tests", "Tests\CartLaunchCompanion.Desktop.Tests\CartLaunchCompanion.Desktop.Tests.csproj", "{12AB2727-67F6-435C-A645-19F8683014DD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +89,18 @@ Global
 		{88796506-D359-4D76-931F-B04967CE72E4}.Release|x64.Build.0 = Release|Any CPU
 		{88796506-D359-4D76-931F-B04967CE72E4}.Release|x86.ActiveCfg = Release|Any CPU
 		{88796506-D359-4D76-931F-B04967CE72E4}.Release|x86.Build.0 = Release|Any CPU
+		{12AB2727-67F6-435C-A645-19F8683014DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{12AB2727-67F6-435C-A645-19F8683014DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{12AB2727-67F6-435C-A645-19F8683014DD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{12AB2727-67F6-435C-A645-19F8683014DD}.Debug|x64.Build.0 = Debug|Any CPU
+		{12AB2727-67F6-435C-A645-19F8683014DD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{12AB2727-67F6-435C-A645-19F8683014DD}.Debug|x86.Build.0 = Debug|Any CPU
+		{12AB2727-67F6-435C-A645-19F8683014DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{12AB2727-67F6-435C-A645-19F8683014DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{12AB2727-67F6-435C-A645-19F8683014DD}.Release|x64.ActiveCfg = Release|Any CPU
+		{12AB2727-67F6-435C-A645-19F8683014DD}.Release|x64.Build.0 = Release|Any CPU
+		{12AB2727-67F6-435C-A645-19F8683014DD}.Release|x86.ActiveCfg = Release|Any CPU
+		{12AB2727-67F6-435C-A645-19F8683014DD}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -97,5 +111,6 @@ Global
 		{7BD2F78A-BD49-4EBC-AB36-4E799AEC6B14} = {B8EFCA5F-814F-285C-A8CB-F00F14650265}
 		{C2D781F0-EF19-4230-9126-936D8A601321} = {B8EFCA5F-814F-285C-A8CB-F00F14650265}
 		{88796506-D359-4D76-931F-B04967CE72E4} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{12AB2727-67F6-435C-A645-19F8683014DD} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal
