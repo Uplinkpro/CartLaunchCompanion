@@ -17,20 +17,20 @@
         </Border>
 
         <Canvas x:Name="HazeLayer"
-                Width="1050"
-                Height="570"
+                Width="1080"
+                Height="580"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
-                Opacity="0.12">
-            <Ellipse Width="460"
-                     Height="135"
-                     Canvas.Left="50"
-                     Canvas.Top="120"
+                Opacity="0.13">
+            <Ellipse Width="480"
+                     Height="145"
+                     Canvas.Left="30"
+                     Canvas.Top="105"
                      Fill="{Binding SelectedGame.BeamCenterColor}" />
-            <Ellipse Width="550"
-                     Height="160"
-                     Canvas.Left="420"
-                     Canvas.Top="280"
+            <Ellipse Width="580"
+                     Height="170"
+                     Canvas.Left="430"
+                     Canvas.Top="275"
                      Fill="{Binding SelectedGame.BeamCenterColor}" />
         </Canvas>
 
@@ -39,7 +39,7 @@
                 Height="620"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
-                Opacity="0.50">
+                Opacity="0.52">
             <Border.Background>
                 <RadialGradientBrush Center="50%,0%"
                                      GradientOrigin="50%,0%"
@@ -58,7 +58,7 @@
                 Height="590"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
-                Opacity="0.74">
+                Opacity="0.76">
             <Border.Background>
                 <LinearGradientBrush StartPoint="50%,0%"
                                      EndPoint="50%,100%">
@@ -91,7 +91,7 @@
                     Height="155"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Top"
-                    Opacity="0.58">
+                    Opacity="0.60">
                 <Border.Background>
                     <RadialGradientBrush Center="50%,0%"
                                          GradientOrigin="50%,0%"

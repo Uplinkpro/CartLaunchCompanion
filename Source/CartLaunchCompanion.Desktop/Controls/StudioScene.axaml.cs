@@ -7,41 +7,50 @@ namespace CartLaunchCompanion.Desktop.Controls;
 
 public partial class StudioScene : UserControl
 {
-    private readonly DispatcherTimer _animationTimer;
+    private readonly DispatcherTimer _timer;
     private readonly Stopwatch _clock = new();
 
-    private TranslateTransform? _wideBeamTransform;
-    private TranslateTransform? _coreBeamTransform;
+    private TranslateTransform? _wideTransform;
+    private TranslateTransform? _coreTransform;
     private TranslateTransform? _hazeTransform;
 
     public StudioScene()
     {
         InitializeComponent();
 
-        _animationTimer = new DispatcherTimer
+        _timer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(33)
+            Interval = TimeSpan.FromMilliseconds(30)
         };
 
-        _animationTimer.Tick += OnAnimationTick;
+        _timer.Tick += OnTick;
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
     }
 
-    private bool ReduceMotion =>
-        AnimationPreferenceParser.IsReducedMotionValue(
-            Environment.GetEnvironmentVariable("CLC_REDUCE_MOTION"));
+    private static bool ReduceMotion
+    {
+        get
+        {
+            var value = Environment.GetEnvironmentVariable(
+                "CLC_REDUCE_MOTION");
+
+            return string.Equals(value, "1", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase);
+        }
+    }
 
     private void OnLoaded(
         object? sender,
         Avalonia.Interactivity.RoutedEventArgs e)
     {
-        _wideBeamTransform = new TranslateTransform();
-        _coreBeamTransform = new TranslateTransform();
+        _wideTransform = new TranslateTransform();
+        _coreTransform = new TranslateTransform();
         _hazeTransform = new TranslateTransform();
 
-        WideBeam.RenderTransform = _wideBeamTransform;
-        CoreBeam.RenderTransform = _coreBeamTransform;
+        WideBeam.RenderTransform = _wideTransform;
+        CoreBeam.RenderTransform = _coreTransform;
         HazeLayer.RenderTransform = _hazeTransform;
 
         if (ReduceMotion)
@@ -51,72 +60,52 @@ public partial class StudioScene : UserControl
         }
 
         _clock.Restart();
-        _animationTimer.Start();
-
-        // Apply the first non-zero frame immediately so the scene does not
-        // appear static during startup.
-        ApplyFrame(0.75);
+        ApplyFrame(1.0);
+        _timer.Start();
     }
 
     private void OnUnloaded(
         object? sender,
         Avalonia.Interactivity.RoutedEventArgs e)
     {
-        _animationTimer.Stop();
+        _timer.Stop();
         _clock.Stop();
     }
 
-    private void OnAnimationTick(
-        object? sender,
-        EventArgs e)
+    private void OnTick(object? sender, EventArgs e)
     {
-        ApplyFrame(_clock.Elapsed.TotalSeconds);
+        ApplyFrame(_clock.Elapsed.TotalSeconds + 1.0);
     }
 
     private void ApplyFrame(double seconds)
     {
-        var wideWave = Math.Sin(seconds * Math.PI / 4.5);
-        var coreWave = Math.Sin(seconds * Math.PI / 3.2 + 0.9);
-        var hazeWave = Math.Sin(seconds * Math.PI / 6.5 + 0.4);
+        var wide = Math.Sin(seconds * 0.85);
+        var core = Math.Sin((seconds * 1.15) + 0.9);
+        var haze = Math.Sin((seconds * 0.55) + 0.4);
 
-        if (_wideBeamTransform is not null)
-            _wideBeamTransform.X = wideWave * 34.0;
+        if (_wideTransform is not null)
+            _wideTransform.X = wide * 46.0;
 
-        if (_coreBeamTransform is not null)
-            _coreBeamTransform.X = coreWave * 14.0;
+        if (_coreTransform is not null)
+            _coreTransform.X = core * 20.0;
 
         if (_hazeTransform is not null)
         {
-            _hazeTransform.X = hazeWave * 42.0;
-            _hazeTransform.Y = wideWave * 8.0;
+            _hazeTransform.X = haze * 58.0;
+            _hazeTransform.Y = wide * 10.0;
         }
 
-        WideBeam.Opacity = 0.49 + (wideWave * 0.06);
-        CoreBeam.Opacity = 0.72 + (coreWave * 0.07);
-        HazeLayer.Opacity = 0.11 + (hazeWave * 0.035);
-        FloorLight.Opacity = 0.56 + (wideWave * 0.07);
+        WideBeam.Opacity = 0.52 + (wide * 0.09);
+        CoreBeam.Opacity = 0.74 + (core * 0.10);
+        HazeLayer.Opacity = 0.13 + (haze * 0.05);
+        FloorLight.Opacity = 0.59 + (wide * 0.10);
     }
 
     private void ApplyStaticState()
     {
-        _animationTimer.Stop();
-        _clock.Stop();
-
-        if (_wideBeamTransform is not null)
-            _wideBeamTransform.X = 0;
-
-        if (_coreBeamTransform is not null)
-            _coreBeamTransform.X = 0;
-
-        if (_hazeTransform is not null)
-        {
-            _hazeTransform.X = 0;
-            _hazeTransform.Y = 0;
-        }
-
-        WideBeam.Opacity = 0.50;
-        CoreBeam.Opacity = 0.74;
-        HazeLayer.Opacity = 0.10;
-        FloorLight.Opacity = 0.58;
+        WideBeam.Opacity = 0.52;
+        CoreBeam.Opacity = 0.76;
+        HazeLayer.Opacity = 0.11;
+        FloorLight.Opacity = 0.60;
     }
 }
