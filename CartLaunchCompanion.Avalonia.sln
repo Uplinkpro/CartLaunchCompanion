@@ -13,6 +13,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CartLaunchCompanion.Platfor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CartLaunchCompanion.Platform.Linux", "Source\CartLaunchCompanion.Platform.Linux\CartLaunchCompanion.Platform.Linux.csproj", "{C2D781F0-EF19-4230-9126-936D8A601321}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CartLaunchCompanion.Core.Tests", "Tests\CartLaunchCompanion.Core.Tests\CartLaunchCompanion.Core.Tests.csproj", "{88796506-D359-4D76-931F-B04967CE72E4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,6 +75,18 @@ Global
 		{C2D781F0-EF19-4230-9126-936D8A601321}.Release|x64.Build.0 = Release|Any CPU
 		{C2D781F0-EF19-4230-9126-936D8A601321}.Release|x86.ActiveCfg = Release|Any CPU
 		{C2D781F0-EF19-4230-9126-936D8A601321}.Release|x86.Build.0 = Release|Any CPU
+		{88796506-D359-4D76-931F-B04967CE72E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88796506-D359-4D76-931F-B04967CE72E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88796506-D359-4D76-931F-B04967CE72E4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{88796506-D359-4D76-931F-B04967CE72E4}.Debug|x64.Build.0 = Debug|Any CPU
+		{88796506-D359-4D76-931F-B04967CE72E4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{88796506-D359-4D76-931F-B04967CE72E4}.Debug|x86.Build.0 = Debug|Any CPU
+		{88796506-D359-4D76-931F-B04967CE72E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88796506-D359-4D76-931F-B04967CE72E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88796506-D359-4D76-931F-B04967CE72E4}.Release|x64.ActiveCfg = Release|Any CPU
+		{88796506-D359-4D76-931F-B04967CE72E4}.Release|x64.Build.0 = Release|Any CPU
+		{88796506-D359-4D76-931F-B04967CE72E4}.Release|x86.ActiveCfg = Release|Any CPU
+		{88796506-D359-4D76-931F-B04967CE72E4}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -80,5 +96,6 @@ Global
 		{DA1A3045-37E2-455E-98E3-AFF316DE388C} = {B8EFCA5F-814F-285C-A8CB-F00F14650265}
 		{7BD2F78A-BD49-4EBC-AB36-4E799AEC6B14} = {B8EFCA5F-814F-285C-A8CB-F00F14650265}
 		{C2D781F0-EF19-4230-9126-936D8A601321} = {B8EFCA5F-814F-285C-A8CB-F00F14650265}
+		{88796506-D359-4D76-931F-B04967CE72E4} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

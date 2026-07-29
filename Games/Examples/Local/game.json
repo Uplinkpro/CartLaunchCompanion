@@ -1,0 +1,68 @@
+{
+  "$schema": "../../../Schemas/game.schema.json",
+  "formatVersion": 2,
+  "game": {
+    "name": "Example Local Game",
+    "sortName": "",
+    "description": "",
+    "developer": "",
+    "publisher": "",
+    "genre": "",
+    "releaseDate": "",
+    "players": ""
+  },
+  "artwork": {
+    "cover": "Artwork/Cover.jpg",
+    "background": "Artwork/Background.jpg",
+    "logo": "Artwork/Logo.png",
+    "icon": "Artwork/Icon.png",
+    "trailer": "Media/Trailer.mp4",
+    "steamMetadataId": "",
+    "downloadMissingArtwork": true,
+    "coverUrl": "",
+    "backgroundUrl": "",
+    "logoUrl": "",
+    "iconUrl": "",
+    "trailerUrl": ""
+  },
+  "launch": {
+    "preferredPlatform": "automatic",
+    "windows": {
+      "enabled": true,
+      "launcher": "local",
+      "steamId": "",
+      "xboxAppId": "",
+      "epicAppName": "",
+      "gogGameId": "",
+      "ubisoftGameId": "",
+      "rockstarGameId": "",
+      "amazonGameId": "",
+      "executable": "Game/ExampleGame.exe",
+      "arguments": "",
+      "workingDirectory": "Game",
+      "processName": "ExampleGame",
+      "uri": ""
+    },
+    "linux": {
+      "enabled": true,
+      "launcher": "local",
+      "steamId": "",
+      "heroicGameId": "",
+      "flatpakAppId": "",
+      "executable": "Game/ExampleGame",
+      "arguments": "",
+      "workingDirectory": "Game",
+      "processName": "ExampleGame",
+      "uri": "",
+      "compatibilityTool": "",
+      "winePrefix": ""
+    }
+  },
+  "behavior": {
+    "restoreLauncherAfterExit": true,
+    "hideWhileGameRuns": true,
+    "processStartTimeoutSeconds": 120,
+    "processExitPollSeconds": 2
+  },
+  "notes": ""
+}
