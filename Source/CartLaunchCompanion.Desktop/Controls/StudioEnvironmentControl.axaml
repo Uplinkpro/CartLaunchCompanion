@@ -1,0 +1,201 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:CartLaunchCompanion.Desktop.ViewModels"
+             x:Class="CartLaunchCompanion.Desktop.Controls.StudioEnvironmentControl"
+             x:DataType="vm:MainViewModel"
+             IsHitTestVisible="False">
+
+    <Grid Background="#020305">
+        <!-- Deep room -->
+        <Border>
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0%,0%"
+                                     EndPoint="0%,100%">
+                    <GradientStop Color="#06070A" Offset="0" />
+                    <GradientStop Color="#020305" Offset="0.60" />
+                    <GradientStop Color="#08090D" Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
+        </Border>
+
+        <!-- Barely visible light volume; no hard cone geometry. -->
+        <Border x:Name="AmbientWash"
+                Width="900"
+                Height="610"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Opacity="0.22">
+            <Border.Background>
+                <RadialGradientBrush Center="50%,5%"
+                                     GradientOrigin="50%,0%"
+                                     RadiusX="0.62"
+                                     RadiusY="0.88">
+                    <GradientStop Color="{Binding SelectedGame.BeamCenterColor,
+                                                  FallbackValue=#509D56E8}"
+                                  Offset="0" />
+                    <GradientStop Color="{Binding SelectedGame.FloorLightColor,
+                                                  FallbackValue=#209D56E8}"
+                                  Offset="0.48" />
+                    <GradientStop Color="#00000000"
+                                  Offset="1" />
+                </RadialGradientBrush>
+            </Border.Background>
+        </Border>
+
+        <!-- Small halo behind the branding / selected content. -->
+        <Border x:Name="ContentHalo"
+                Width="560"
+                Height="360"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Margin="0,65,0,0"
+                Opacity="0.18">
+            <Border.Background>
+                <RadialGradientBrush Center="50%,45%"
+                                     GradientOrigin="50%,45%"
+                                     RadiusX="0.62"
+                                     RadiusY="0.70">
+                    <GradientStop Color="{Binding SelectedGame.AccentBrightColor,
+                                                  FallbackValue=#38C08AFF}"
+                                  Offset="0" />
+                    <GradientStop Color="#00000000"
+                                  Offset="1" />
+                </RadialGradientBrush>
+            </Border.Background>
+        </Border>
+
+        <!-- Atmosphere is made from broad, soft radial fields rather than bands. -->
+        <Canvas Width="1280"
+                Height="650"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top">
+
+            <Border x:Name="FogLeft"
+                    Width="620"
+                    Height="330"
+                    Canvas.Left="35"
+                    Canvas.Top="155"
+                    Opacity="0.09">
+                <Border.Background>
+                    <RadialGradientBrush Center="50%,50%"
+                                         GradientOrigin="50%,50%"
+                                         RadiusX="0.58"
+                                         RadiusY="0.58">
+                        <GradientStop Color="{Binding SelectedGame.BeamCenterColor,
+                                                      FallbackValue=#409D56E8}"
+                                      Offset="0" />
+                        <GradientStop Color="#00000000"
+                                      Offset="1" />
+                    </RadialGradientBrush>
+                </Border.Background>
+            </Border>
+
+            <Border x:Name="FogRight"
+                    Width="690"
+                    Height="370"
+                    Canvas.Left="570"
+                    Canvas.Top="265"
+                    Opacity="0.075">
+                <Border.Background>
+                    <RadialGradientBrush Center="50%,50%"
+                                         GradientOrigin="50%,50%"
+                                         RadiusX="0.58"
+                                         RadiusY="0.58">
+                        <GradientStop Color="{Binding SelectedGame.FloorLightColor,
+                                                      FallbackValue=#309D56E8}"
+                                      Offset="0" />
+                        <GradientStop Color="#00000000"
+                                      Offset="1" />
+                    </RadialGradientBrush>
+                </Border.Background>
+            </Border>
+
+            <!-- Sparse illuminated dust -->
+            <Canvas x:Name="DustNear"
+                    Width="1280"
+                    Height="620"
+                    Opacity="0.22">
+                <Ellipse Width="2" Height="2" Canvas.Left="530" Canvas.Top="120" Fill="#D8FFFFFF" />
+                <Ellipse Width="3" Height="3" Canvas.Left="690" Canvas.Top="185" Fill="#B8FFFFFF" />
+                <Ellipse Width="2" Height="2" Canvas.Left="610" Canvas.Top="245" Fill="#C8FFFFFF" />
+                <Ellipse Width="2" Height="2" Canvas.Left="755" Canvas.Top="310" Fill="#A8FFFFFF" />
+                <Ellipse Width="3" Height="3" Canvas.Left="500" Canvas.Top="355" Fill="#B8FFFFFF" />
+                <Ellipse Width="2" Height="2" Canvas.Left="660" Canvas.Top="420" Fill="#C8FFFFFF" />
+                <Ellipse Width="2" Height="2" Canvas.Left="790" Canvas.Top="485" Fill="#A8FFFFFF" />
+                <Ellipse Width="3" Height="3" Canvas.Left="570" Canvas.Top="535" Fill="#B8FFFFFF" />
+            </Canvas>
+
+            <Canvas x:Name="DustFar"
+                    Width="1280"
+                    Height="620"
+                    Opacity="0.11">
+                <Ellipse Width="1.5" Height="1.5" Canvas.Left="440" Canvas.Top="170" Fill="#B8FFFFFF" />
+                <Ellipse Width="2" Height="2" Canvas.Left="830" Canvas.Top="220" Fill="#A8FFFFFF" />
+                <Ellipse Width="1.5" Height="1.5" Canvas.Left="720" Canvas.Top="380" Fill="#B8FFFFFF" />
+                <Ellipse Width="2" Height="2" Canvas.Left="460" Canvas.Top="470" Fill="#98FFFFFF" />
+            </Canvas>
+        </Canvas>
+
+        <!-- Floor plane -->
+        <Grid VerticalAlignment="Bottom"
+              Height="215">
+            <Border>
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0%,0%"
+                                         EndPoint="0%,100%">
+                        <GradientStop Color="#0B0D11" Offset="0" />
+                        <GradientStop Color="#030406" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+
+            <Border Height="1"
+                    VerticalAlignment="Top"
+                    Background="#24FFFFFF" />
+
+            <Border x:Name="FloorBloomOuter"
+                    Width="940"
+                    Height="190"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Top"
+                    Opacity="0.25">
+                <Border.Background>
+                    <RadialGradientBrush Center="50%,0%"
+                                         GradientOrigin="50%,0%"
+                                         RadiusX="0.74"
+                                         RadiusY="0.78">
+                        <GradientStop Color="{Binding SelectedGame.FloorLightColor,
+                                                      FallbackValue=#309D56E8}"
+                                      Offset="0" />
+                        <GradientStop Color="#00000000"
+                                      Offset="1" />
+                    </RadialGradientBrush>
+                </Border.Background>
+            </Border>
+
+            <Border x:Name="FloorBloomInner"
+                    Width="520"
+                    Height="115"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Top"
+                    Opacity="0.30">
+                <Border.Background>
+                    <RadialGradientBrush Center="50%,0%"
+                                         GradientOrigin="50%,0%"
+                                         RadiusX="0.68"
+                                         RadiusY="0.72">
+                        <GradientStop Color="{Binding SelectedGame.AccentBrightColor,
+                                                      FallbackValue=#50C08AFF}"
+                                      Offset="0" />
+                        <GradientStop Color="#00000000"
+                                      Offset="1" />
+                    </RadialGradientBrush>
+                </Border.Background>
+            </Border>
+        </Grid>
+
+        <!-- Edge falloff -->
+        <Border BorderBrush="#7A000000"
+                BorderThickness="105,42,105,72" />
+    </Grid>
+</UserControl>

@@ -8,7 +8,7 @@
 
 
     <Grid Background="#030406">
-        <controls:StudioLightingControl />
+        <controls:StudioEnvironmentControl />
 
         <!-- Home: browse only. -->
         <Grid IsVisible="{Binding IsHomeVisible}"
@@ -282,4 +282,5 @@
         </Grid>
     </Grid>
 </UserControl>
+
 

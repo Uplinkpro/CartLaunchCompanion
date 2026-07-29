@@ -23,7 +23,7 @@
 
         <Grid IsVisible="{Binding IsExitVisible}"
               ZIndex="500">
-            <controls:StudioLightingControl />
+            <controls:StudioEnvironmentControl />
 
             <Border Background="#B2030406" />
 
@@ -129,4 +129,5 @@
         </Grid>
     </Grid>
 </Window>
+
 
