@@ -49,21 +49,11 @@
                                         Orientation="Horizontal"
                                         HorizontalAlignment="Center"
                                         Spacing="3">
-                                <Border Width="6"
-                                        Height="10"
-                                        Background="#DDE5E8F0" />
-                                <Border Width="6"
-                                        Height="10"
-                                        Background="#DDE5E8F0" />
-                                <Border Width="6"
-                                        Height="10"
-                                        Background="#DDE5E8F0" />
-                                <Border Width="6"
-                                        Height="10"
-                                        Background="#DDE5E8F0" />
-                                <Border Width="6"
-                                        Height="10"
-                                        Background="#DDE5E8F0" />
+                                <Border Width="6" Height="10" Background="#DDE5E8F0" />
+                                <Border Width="6" Height="10" Background="#DDE5E8F0" />
+                                <Border Width="6" Height="10" Background="#DDE5E8F0" />
+                                <Border Width="6" Height="10" Background="#DDE5E8F0" />
+                                <Border Width="6" Height="10" Background="#DDE5E8F0" />
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -74,7 +64,7 @@
                                FontSize="30"
                                FontWeight="Bold" />
 
-                    <TextBlock Text="Your game library and configuration remain unchanged."
+                    <TextBlock Text="Press B again to exit, or A to cancel."
                                HorizontalAlignment="Center"
                                Foreground="#AFFFFFFF"
                                FontSize="15" />
@@ -93,14 +83,13 @@
                             <Border Width="30"
                                     Height="30"
                                     CornerRadius="15"
-                                    Background="#C83B40">
-                                <TextBlock Text="{Binding BackPrompt}"
+                                    Background="#2E9B32">
+                                <TextBlock Text="{Binding ConfirmPrompt}"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
                                            Foreground="White"
                                            FontWeight="Bold" />
                             </Border>
-
                             <TextBlock Text="CANCEL"
                                        VerticalAlignment="Center" />
                         </StackPanel>
@@ -115,14 +104,13 @@
                             <Border Width="30"
                                     Height="30"
                                     CornerRadius="15"
-                                    Background="#2E9B32">
-                                <TextBlock Text="{Binding ConfirmPrompt}"
+                                    Background="#C83B40">
+                                <TextBlock Text="{Binding BackPrompt}"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
                                            Foreground="White"
                                            FontWeight="Bold" />
                             </Border>
-
                             <TextBlock Text="EXIT"
                                        VerticalAlignment="Center" />
                         </StackPanel>

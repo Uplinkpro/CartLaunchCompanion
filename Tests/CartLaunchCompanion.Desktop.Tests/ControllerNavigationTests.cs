@@ -61,11 +61,13 @@ public sealed class ControllerNavigationTests
     }
 
     [Fact]
-    public async Task Home_Back_OpensExitAndBackCancels()
+    public async Task Home_Back_OpensExitAndBackConfirmsExit()
     {
-        var viewModel = CreateViewModel();
-        await viewModel.LoadAsync();
+        var exitCalled = false;
+        var viewModel = CreateViewModel(
+            exitApplication: () => exitCalled = true);
 
+        await viewModel.LoadAsync();
         var timestamp = DateTimeOffset.UtcNow;
 
         await viewModel.HandleInputAsync(
@@ -75,10 +77,33 @@ public sealed class ControllerNavigationTests
                 timestamp));
 
         Assert.True(viewModel.IsExitVisible);
+        Assert.False(exitCalled);
 
         await viewModel.HandleInputAsync(
             new LauncherInputEvent(
                 LauncherAction.Back,
+                InputDeviceKind.Controller,
+                timestamp.AddMilliseconds(300)));
+
+        Assert.True(exitCalled);
+    }
+
+    [Fact]
+    public async Task ExitConfirmation_ConfirmCancelsAndReturnsHome()
+    {
+        var viewModel = CreateViewModel();
+        await viewModel.LoadAsync();
+        var timestamp = DateTimeOffset.UtcNow;
+
+        await viewModel.HandleInputAsync(
+            new LauncherInputEvent(
+                LauncherAction.Back,
+                InputDeviceKind.Controller,
+                timestamp));
+
+        await viewModel.HandleInputAsync(
+            new LauncherInputEvent(
+                LauncherAction.Confirm,
                 InputDeviceKind.Controller,
                 timestamp.AddMilliseconds(300)));
 
@@ -110,13 +135,14 @@ public sealed class ControllerNavigationTests
     }
 
     private static MainViewModel CreateViewModel(
-        int gameCount = 1)
+        int gameCount = 1,
+        Action? exitApplication = null)
         => new(
             new StubLibraryService(gameCount),
             new StubLaunchService(),
             PortablePaths.FromRoot(Path.GetTempPath()),
             PlatformKind.Windows,
-            () => { },
+            exitApplication ?? (() => { }),
             _ => { });
 
     private sealed class StubLaunchService
