@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:CartLaunchCompanion.Desktop.ViewModels"
              x:Class="CartLaunchCompanion.Desktop.Controls.StudioScene"
@@ -48,20 +48,25 @@
 
             <!-- Narrow bright center -->
             <Path x:Name="CoreBeam"
-                  Data="M 515,0 L 585,0 L 745,560 L 355,560 Z"
-                  Opacity="0.48">
+                  Data="M 525,0 L 575,0 L 690,545 L 410,545 Z"
+                  Stroke="{Binding SelectedGame.AccentBrightColor,
+                                   FallbackValue=#E4D0FF}"
+                  StrokeThickness="1.5"
+                  Opacity="0.78">
                 <Path.Fill>
                     <LinearGradientBrush StartPoint="50%,0%"
                                          EndPoint="50%,100%">
-                        <GradientStop Color="{Binding SelectedGame.AccentBrightColor,
-                                                      FallbackValue=#D7B6FF}"
+                        <GradientStop Color="#F2FFFFFF"
                                       Offset="0" />
+                        <GradientStop Color="{Binding SelectedGame.AccentBrightColor,
+                                                      FallbackValue=#E0C6FF}"
+                                      Offset="0.20" />
                         <GradientStop Color="{Binding SelectedGame.BeamCenterColor,
-                                                      FallbackValue=#909D56E8}"
-                                      Offset="0.38" />
+                                                      FallbackValue=#B09D56E8}"
+                                      Offset="0.56" />
                         <GradientStop Color="{Binding SelectedGame.FloorLightColor,
-                                                      FallbackValue=#409D56E8}"
-                                      Offset="0.76" />
+                                                      FallbackValue=#509D56E8}"
+                                      Offset="0.82" />
                         <GradientStop Color="#009D56E8"
                                       Offset="1" />
                     </LinearGradientBrush>
@@ -70,10 +75,10 @@
 
             <!-- Thin central shaft for clear visibility -->
             <Path x:Name="BeamShaft"
-                  Data="M 535,0 L 565,0 L 630,500 L 470,500 Z"
+                  Data="M 542,0 L 558,0 L 610,485 L 490,485 Z"
                   Fill="{Binding SelectedGame.AccentBrightColor,
                                  FallbackValue=#CFA4FF}"
-                  Opacity="0.16" />
+                  Opacity="0.28" />
         </Canvas>
 
         <!-- Separate floor -->
@@ -118,3 +123,4 @@
                 BorderThickness="80,30,80,55" />
     </Grid>
 </UserControl>
+

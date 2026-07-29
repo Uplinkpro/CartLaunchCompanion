@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -87,22 +87,23 @@ public partial class StudioScene : UserControl
             _wideTransform.X = wide * 42.0;
 
         if (_coreTransform is not null)
-            _coreTransform.X = core * 22.0;
+            _coreTransform.X = core * 30.0;
 
         if (_shaftTransform is not null)
-            _shaftTransform.X = shaft * 12.0;
+            _shaftTransform.X = shaft * 18.0;
 
         WideBeam.Opacity = 0.23 + (wide * 0.045);
-        CoreBeam.Opacity = 0.46 + (core * 0.075);
-        BeamShaft.Opacity = 0.15 + (shaft * 0.035);
+        CoreBeam.Opacity = 0.76 + (core * 0.13);
+        BeamShaft.Opacity = 0.27 + (shaft * 0.06);
         FloorLight.Opacity = 0.60 + (wide * 0.11);
     }
 
     private void ApplyStaticState()
     {
         WideBeam.Opacity = 0.24;
-        CoreBeam.Opacity = 0.48;
-        BeamShaft.Opacity = 0.16;
+        CoreBeam.Opacity = 0.78;
+        BeamShaft.Opacity = 0.28;
         FloorLight.Opacity = 0.62;
     }
 }
+
