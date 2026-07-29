@@ -16,65 +16,67 @@
             </Border.Background>
         </Border>
 
-        <Canvas x:Name="HazeLayer"
-                Width="1080"
-                Height="580"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Top"
-                Opacity="0.14">
-            <Ellipse Width="500"
-                     Height="150"
-                     Canvas.Left="20"
-                     Canvas.Top="100"
-                     Fill="{Binding SelectedGame.BeamCenterColor,
-                                    FallbackValue=#709D56E8}" />
-            <Ellipse Width="600"
-                     Height="175"
-                     Canvas.Left="420"
-                     Canvas.Top="275"
-                     Fill="{Binding SelectedGame.BeamCenterColor,
-                                    FallbackValue=#709D56E8}" />
-        </Canvas>
-
-        <Border x:Name="WideBeam"
-                Width="920"
+        <!-- Clearly visible wide cone -->
+        <Canvas Width="1100"
                 Height="620"
                 HorizontalAlignment="Center"
-                VerticalAlignment="Top"
-                Opacity="0.54">
-            <Border.Background>
-                <RadialGradientBrush Center="50%,0%"
-                                     GradientOrigin="50%,0%"
-                                     RadiusX="0.60"
-                                     RadiusY="0.60">
-                    <GradientStop Color="{Binding SelectedGame.BeamCenterColor,
-                                                  FallbackValue=#709D56E8}"
-                                  Offset="0" />
-                    <GradientStop Color="{Binding SelectedGame.BeamEdgeColor,
-                                                  FallbackValue=#009D56E8}"
-                                  Offset="1" />
-                </RadialGradientBrush>
-            </Border.Background>
-        </Border>
+                VerticalAlignment="Top">
+            <Polygon x:Name="WideBeam"
+                     Points="470,0 630,0 950,590 150,590"
+                     Opacity="0.34">
+                <Polygon.Fill>
+                    <LinearGradientBrush StartPoint="50%,0%"
+                                         EndPoint="50%,100%">
+                        <GradientStop Color="{Binding SelectedGame.BeamCenterColor,
+                                                      FallbackValue=#709D56E8}"
+                                      Offset="0" />
+                        <GradientStop Color="{Binding SelectedGame.FloorLightColor,
+                                                      FallbackValue=#309D56E8}"
+                                      Offset="0.55" />
+                        <GradientStop Color="#009D56E8"
+                                      Offset="1" />
+                    </LinearGradientBrush>
+                </Polygon.Fill>
+            </Polygon>
 
-        <Border x:Name="CoreBeam"
-                Width="380"
-                Height="590"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Top"
-                Opacity="0.78">
-            <Border.Background>
-                <LinearGradientBrush StartPoint="50%,0%"
-                                     EndPoint="50%,100%">
-                    <GradientStop Color="{Binding SelectedGame.BeamCenterColor,
-                                                  FallbackValue=#709D56E8}"
-                                  Offset="0" />
-                    <GradientStop Color="{Binding SelectedGame.BeamEdgeColor,
-                                                  FallbackValue=#009D56E8}"
-                                  Offset="1" />
-                </LinearGradientBrush>
-            </Border.Background>
-        </Border>
+            <!-- Bright narrow core -->
+            <Polygon x:Name="CoreBeam"
+                     Points="515,0 585,0 730,565 370,565"
+                     Opacity="0.56">
+                <Polygon.Fill>
+                    <LinearGradientBrush StartPoint="50%,0%"
+                                         EndPoint="50%,100%">
+                        <GradientStop Color="{Binding SelectedGame.AccentBrightColor,
+                                                      FallbackValue=#C08AFF}"
+                                      Offset="0" />
+                        <GradientStop Color="{Binding SelectedGame.BeamCenterColor,
+                                                      FallbackValue=#709D56E8}"
+                                      Offset="0.45" />
+                        <GradientStop Color="#009D56E8"
+                                      Offset="1" />
+                    </LinearGradientBrush>
+                </Polygon.Fill>
+            </Polygon>
+
+            <!-- Soft moving haze inside the beam -->
+            <Canvas x:Name="HazeLayer"
+                    Width="1100"
+                    Height="580"
+                    Opacity="0.15">
+                <Ellipse Width="500"
+                         Height="145"
+                         Canvas.Left="120"
+                         Canvas.Top="145"
+                         Fill="{Binding SelectedGame.BeamCenterColor,
+                                        FallbackValue=#709D56E8}" />
+                <Ellipse Width="570"
+                         Height="165"
+                         Canvas.Left="420"
+                         Canvas.Top="320"
+                         Fill="{Binding SelectedGame.BeamCenterColor,
+                                        FallbackValue=#709D56E8}" />
+            </Canvas>
+        </Canvas>
 
         <Grid VerticalAlignment="Bottom"
               Height="205">

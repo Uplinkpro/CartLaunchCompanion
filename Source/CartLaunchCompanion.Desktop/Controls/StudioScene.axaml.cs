@@ -60,10 +60,7 @@ public partial class StudioScene : UserControl
         }
 
         _clock.Restart();
-
-        // Start on a visible non-zero frame.
-        ApplyFrame(1.25);
-
+        ApplyFrame(1.0);
         _timer.Start();
     }
 
@@ -77,41 +74,38 @@ public partial class StudioScene : UserControl
 
     private void OnTick(object? sender, EventArgs e)
     {
-        ApplyFrame(_clock.Elapsed.TotalSeconds + 1.25);
+        ApplyFrame(_clock.Elapsed.TotalSeconds + 1.0);
     }
 
     private void ApplyFrame(double seconds)
     {
-        var wide = Math.Sin(seconds * 0.95);
-        var core = Math.Sin((seconds * 1.30) + 0.85);
-        var haze = Math.Sin((seconds * 0.62) + 0.35);
+        var wide = Math.Sin(seconds * 0.72);
+        var core = Math.Sin((seconds * 1.05) + 0.8);
+        var haze = Math.Sin((seconds * 0.48) + 0.35);
 
         if (_wideTransform is not null)
-            _wideTransform.X = wide * 58.0;
+            _wideTransform.X = wide * 54.0;
 
         if (_coreTransform is not null)
-            _coreTransform.X = core * 26.0;
+            _coreTransform.X = core * 24.0;
 
         if (_hazeTransform is not null)
         {
-            _hazeTransform.X = haze * 72.0;
-            _hazeTransform.Y = wide * 12.0;
+            _hazeTransform.X = haze * 70.0;
+            _hazeTransform.Y = wide * 10.0;
         }
 
-        WideBeam.Opacity = 0.54 + (wide * 0.11);
-        CoreBeam.Opacity = 0.76 + (core * 0.12);
-        HazeLayer.Opacity = 0.14 + (haze * 0.06);
+        WideBeam.Opacity = 0.34 + (wide * 0.08);
+        CoreBeam.Opacity = 0.56 + (core * 0.12);
+        HazeLayer.Opacity = 0.15 + (haze * 0.05);
         FloorLight.Opacity = 0.61 + (wide * 0.12);
     }
 
     private void ApplyStaticState()
     {
-        _timer.Stop();
-        _clock.Stop();
-
-        WideBeam.Opacity = 0.54;
-        CoreBeam.Opacity = 0.78;
-        HazeLayer.Opacity = 0.12;
+        WideBeam.Opacity = 0.34;
+        CoreBeam.Opacity = 0.56;
+        HazeLayer.Opacity = 0.13;
         FloorLight.Opacity = 0.62;
     }
 }
