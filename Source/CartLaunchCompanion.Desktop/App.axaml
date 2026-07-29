@@ -11,7 +11,7 @@
         <FluentTheme />
 
         <Style Selector="Window">
-            <Setter Property="Background" Value="#030406" />
+            <Setter Property="Background" Value="#000000" />
             <Setter Property="FontFamily"
                     Value="avares://Avalonia.Fonts.Inter/Assets#Inter" />
         </Style>
@@ -23,7 +23,7 @@
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="CornerRadius" Value="6" />
-            <Setter Property="Background" Value="#D90A0C10" />
+            <Setter Property="Background" Value="#E0000000" />
             <Setter Property="BorderBrush" Value="#38FFFFFF" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Foreground" Value="#F8FAFC" />
@@ -32,7 +32,7 @@
         </Style>
 
         <Style Selector="Button.action:pointerover">
-            <Setter Property="Background" Value="#F014171D" />
+            <Setter Property="Background" Value="#F0080808" />
             <Setter Property="BorderBrush" Value="#88FFFFFF" />
         </Style>
 
@@ -42,7 +42,7 @@
         </Style>
 
         <Style Selector="Button.exit-action">
-            <Setter Property="Background" Value="#D22C0B10" />
+            <Setter Property="Background" Value="#E0180004" />
             <Setter Property="BorderBrush" Value="#E45C3238" />
             <Setter Property="BorderThickness" Value="2" />
         </Style>
@@ -91,7 +91,7 @@
         </Style>
 
         <Style Selector="Border.glass-panel">
-            <Setter Property="Background" Value="#D90A0C10" />
+            <Setter Property="Background" Value="#E0000000" />
             <Setter Property="BorderBrush" Value="#2CFFFFFF" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="8" />
@@ -107,6 +107,7 @@
         </Style>
     </Application.Styles>
 </Application>
+
 
 
 

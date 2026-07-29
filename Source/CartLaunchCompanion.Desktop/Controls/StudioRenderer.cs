@@ -8,35 +8,46 @@ using CartLaunchCompanion.Desktop.ViewModels;
 namespace CartLaunchCompanion.Desktop.Controls;
 
 /// <summary>
-/// Custom-drawn atmospheric background for Cart Launch Companion.
+/// OLED-first CRT studio renderer.
 ///
-/// The renderer intentionally draws light indirectly:
-/// room exposure, fog volumes, floor bloom, a content halo, and dust.
-/// It does not draw visible beam polygons.
+/// The base canvas is literal black. Atmosphere, phosphor glow, scanlines,
+/// mask texture, dust, grain, and floor reflection are drawn only where
+/// needed so large OLED regions remain fully unlit.
 /// </summary>
 public sealed class StudioRenderer : Control
 {
-    private const int TargetFrameMilliseconds = 33;
-    private const int ParticleCount = 52;
+    private const int TargetFrameMilliseconds = 40;
+    private const int ParticleCount = 34;
+    private const int GrainPointCount = 150;
 
     private readonly DispatcherTimer _timer;
     private readonly Stopwatch _clock = new();
     private readonly DustParticle[] _particles;
+    private readonly GrainPoint[] _grainPoints;
 
-    private readonly SolidColorBrush _roomTopBrush =
-        new(Color.Parse("#06070A"));
-
-    private readonly SolidColorBrush _roomBottomBrush =
-        new(Color.Parse("#020305"));
-
-    private readonly SolidColorBrush _floorBrush =
-        new(Color.Parse("#080A0E"));
+    private readonly SolidColorBrush _blackBrush =
+        new(Color.Parse("#000000"));
 
     private readonly SolidColorBrush _horizonBrush =
-        new(Color.Parse("#28FFFFFF"));
+        new(Color.Parse("#20FFFFFF"));
 
     private readonly SolidColorBrush _dustBrush =
-        new(Color.Parse("#D8FFFFFF"));
+        new(Color.Parse("#D0FFFFFF"));
+
+    private readonly SolidColorBrush _scanlineBrush =
+        new(Color.Parse("#12000000"));
+
+    private readonly SolidColorBrush _grainBrush =
+        new(Color.Parse("#78FFFFFF"));
+
+    private readonly SolidColorBrush _redMaskBrush =
+        new(Color.Parse("#08FF4050"));
+
+    private readonly SolidColorBrush _greenMaskBrush =
+        new(Color.Parse("#0840FF70"));
+
+    private readonly SolidColorBrush _blueMaskBrush =
+        new(Color.Parse("#084080FF"));
 
     public StudioRenderer()
     {
@@ -44,6 +55,7 @@ public sealed class StudioRenderer : Control
         ClipToBounds = true;
 
         _particles = CreateParticles();
+        _grainPoints = CreateGrainPoints();
 
         _timer = new DispatcherTimer
         {
@@ -63,18 +75,9 @@ public sealed class StudioRenderer : Control
             var value = Environment.GetEnvironmentVariable(
                 "CLC_REDUCE_MOTION");
 
-            return string.Equals(
-                       value,
-                       "1",
-                       StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(
-                       value,
-                       "true",
-                       StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(
-                       value,
-                       "yes",
-                       StringComparison.OrdinalIgnoreCase);
+            return string.Equals(value, "1", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase);
         }
     }
 
@@ -93,30 +96,24 @@ public sealed class StudioRenderer : Control
             : _clock.Elapsed.TotalSeconds;
 
         var accent = ResolveAccentColor();
-        var accentBright = Lighten(accent, 0.35);
-        var accentMuted = WithAlpha(accent, 0.16);
+        var accentBright = Lighten(accent, 0.32);
 
-        DrawRoom(context, width, height);
-        DrawAmbientExposure(
+        DrawTrueBlackBase(context, width, height);
+
+        DrawLocalizedPhosphorBloom(
             context,
             width,
             height,
             time,
-            accentMuted);
+            accent,
+            accentBright);
 
-        DrawFog(
+        DrawAtmosphere(
             context,
             width,
             height,
             time,
             accent);
-
-        DrawContentHalo(
-            context,
-            width,
-            height,
-            time,
-            accentBright);
 
         DrawDust(
             context,
@@ -132,99 +129,87 @@ public sealed class StudioRenderer : Control
             accent,
             accentBright);
 
+        DrawCrtMask(context, width, height);
+        DrawScanlines(context, width, height);
+        DrawFilmGrain(context, width, height, time);
         DrawVignette(context, width, height);
     }
 
-    private void DrawRoom(
+    private void DrawTrueBlackBase(
         DrawingContext context,
         double width,
         double height)
     {
         context.FillRectangle(
-            _roomBottomBrush,
+            _blackBrush,
             new Rect(0, 0, width, height));
-
-        using (context.PushOpacity(0.70))
-        {
-            context.FillRectangle(
-                _roomTopBrush,
-                new Rect(0, 0, width, height * 0.58));
-        }
     }
 
-    private static void DrawAmbientExposure(
+    private static void DrawLocalizedPhosphorBloom(
         DrawingContext context,
         double width,
         double height,
         double time,
-        Color color)
+        Color accent,
+        Color accentBright)
     {
-        var wave = Math.Sin(time * 0.18);
-        var center = new Point(
-            (width * 0.50) + (wave * 5.0),
-            height * 0.30);
+        var drift = Math.Sin(time * 0.15);
+        var pulse = Math.Sin((time * 0.21) + 0.9);
 
         DrawSoftEllipse(
             context,
-            center,
-            width * 0.34,
-            height * 0.42,
-            color,
-            12,
-            0.012);
+            new Point(
+                (width * 0.50) + (drift * 4.0),
+                height * 0.235),
+            width * 0.19,
+            height * 0.17,
+            WithAlpha(accent, 0.20),
+            14,
+            0.010);
+
+        DrawSoftEllipse(
+            context,
+            new Point(
+                (width * 0.50) + (pulse * 2.0),
+                height * 0.235),
+            width * 0.105,
+            height * 0.085,
+            WithAlpha(accentBright, 0.16),
+            10,
+            0.010);
     }
 
-    private static void DrawFog(
+    private static void DrawAtmosphere(
         DrawingContext context,
         double width,
         double height,
         double time,
         Color accent)
     {
-        var leftWave = Math.Sin((time * 0.13) + 0.3);
-        var rightWave = Math.Sin((time * 0.11) + 1.4);
+        var left = Math.Sin((time * 0.10) + 0.4);
+        var right = Math.Sin((time * 0.09) + 1.5);
 
         DrawSoftEllipse(
             context,
             new Point(
-                (width * 0.35) + (leftWave * 28.0),
-                height * 0.42),
-            width * 0.29,
-            height * 0.20,
-            WithAlpha(accent, 0.10),
-            10,
-            0.008);
+                (width * 0.36) + (left * 18.0),
+                height * 0.45),
+            width * 0.21,
+            height * 0.105,
+            WithAlpha(accent, 0.055),
+            9,
+            0.006);
 
         DrawSoftEllipse(
             context,
             new Point(
-                (width * 0.68) + (rightWave * 32.0),
-                height * 0.57),
-            width * 0.33,
-            height * 0.22,
-            WithAlpha(accent, 0.08),
-            10,
-            0.007);
-    }
-
-    private static void DrawContentHalo(
-        DrawingContext context,
-        double width,
-        double height,
-        double time,
-        Color color)
-    {
-        var pulse = Math.Sin((time * 0.23) + 0.8);
-        var radiusScale = 1.0 + (pulse * 0.025);
-
-        DrawSoftEllipse(
-            context,
-            new Point(width * 0.50, height * 0.245),
-            width * 0.19 * radiusScale,
-            height * 0.18 * radiusScale,
-            WithAlpha(color, 0.12),
-            10,
-            0.010);
+                (width * 0.66) + (right * 21.0),
+                height * 0.55),
+            width * 0.24,
+            height * 0.115,
+            WithAlpha(accent, 0.045),
+            9,
+            0.005);
     }
 
     private void DrawDust(
@@ -235,11 +220,10 @@ public sealed class StudioRenderer : Control
     {
         foreach (var particle in _particles)
         {
-            var normalizedY =
-                PositiveModulo(
-                    particle.StartY -
-                    (time * particle.Speed),
-                    1.0);
+            var normalizedY = PositiveModulo(
+                particle.StartY -
+                (time * particle.Speed),
+                1.0);
 
             var drift =
                 Math.Sin(
@@ -251,10 +235,9 @@ public sealed class StudioRenderer : Control
                 (particle.StartX * width) +
                 (drift * width);
 
-            var y = normalizedY * height * 0.78;
+            var y = normalizedY * height * 0.74;
 
-            var fade =
-                Math.Sin(normalizedY * Math.PI);
+            var fade = Math.Sin(normalizedY * Math.PI);
 
             var opacity =
                 particle.Opacity *
@@ -281,48 +264,114 @@ public sealed class StudioRenderer : Control
         Color accentBright)
     {
         var floorTop = height * 0.755;
-        var floorHeight = height - floorTop;
 
-        context.FillRectangle(
-            _floorBrush,
-            new Rect(
-                0,
-                floorTop,
-                width,
-                floorHeight));
-
+        // The floor remains true black; only the horizon and localized
+        // reflections illuminate pixels.
         context.FillRectangle(
             _horizonBrush,
-            new Rect(
-                0,
-                floorTop,
-                width,
-                1));
+            new Rect(0, floorTop, width, 1));
 
-        var wave = Math.Sin(time * 0.18);
-        var pulse = Math.Sin((time * 0.23) + 0.8);
+        var drift = Math.Sin(time * 0.15);
+        var pulse = Math.Sin((time * 0.21) + 0.9);
 
         DrawSoftEllipse(
             context,
             new Point(
-                (width * 0.50) + (wave * 6.0),
-                floorTop + 6),
-            width * 0.30,
-            height * 0.105,
-            WithAlpha(accent, 0.20),
-            12,
-            0.014);
+                (width * 0.50) + (drift * 5.0),
+                floorTop + 3),
+            width * 0.29,
+            height * 0.075,
+            WithAlpha(accent, 0.16),
+            13,
+            0.010);
 
         DrawSoftEllipse(
             context,
             new Point(
-                (width * 0.50) + (pulse * 3.0),
-                floorTop + 4),
-            width * 0.17,
-            height * 0.065,
-            WithAlpha(accentBright, 0.18),
+                (width * 0.50) + (pulse * 2.0),
+                floorTop + 2),
+            width * 0.14,
+            height * 0.040,
+            WithAlpha(accentBright, 0.15),
             10,
-            0.014);
+            0.010);
+    }
+
+    private void DrawScanlines(
+        DrawingContext context,
+        double width,
+        double height)
+    {
+        const double spacing = 4.0;
+
+        for (var y = 1.0; y < height; y += spacing)
+        {
+            context.FillRectangle(
+                _scanlineBrush,
+                new Rect(0, y, width, 1));
+        }
+    }
+
+    private void DrawCrtMask(
+        DrawingContext context,
+        double width,
+        double height)
+    {
+        // Extremely faint RGB phosphor triads. They should add character
+        // only at close viewing distance, not tint the image.
+        const double triadWidth = 9.0;
+
+        using (context.PushOpacity(0.16))
+        {
+            for (var x = 0.0; x < width; x += triadWidth)
+            {
+                context.FillRectangle(
+                    _redMaskBrush,
+                    new Rect(x, 0, 1, height));
+
+                context.FillRectangle(
+                    _greenMaskBrush,
+                    new Rect(x + 3, 0, 1, height));
+
+                context.FillRectangle(
+                    _blueMaskBrush,
+                    new Rect(x + 6, 0, 1, height));
+            }
+        }
+    }
+
+    private void DrawFilmGrain(
+        DrawingContext context,
+        double width,
+        double height,
+        double time)
+    {
+        var frameOffset =
+            ReduceMotion
+                ? 0
+                : (int)(time * 12.0);
+
+        foreach (var point in _grainPoints)
+        {
+            var x = PositiveModulo(
+                point.X + (frameOffset * point.StepX),
+                1.0) * width;
+
+            var y = PositiveModulo(
+                point.Y + (frameOffset * point.StepY),
+                1.0) * height;
+
+            using (context.PushOpacity(point.Opacity))
+            {
+                context.FillRectangle(
+                    _grainBrush,
+                    new Rect(
+                        x,
+                        y,
+                        point.Size,
+                        point.Size));
+            }
+        }
     }
 
     private static void DrawVignette(
@@ -330,33 +379,29 @@ public sealed class StudioRenderer : Control
         double width,
         double height)
     {
-        var vignetteBrush =
+        var brush =
             new SolidColorBrush(
-                Color.Parse("#22000000"));
+                Color.Parse("#4A000000"));
 
-        var side = Math.Max(42.0, width * 0.075);
-        var top = Math.Max(22.0, height * 0.045);
-        var bottom = Math.Max(36.0, height * 0.08);
+        var side = Math.Max(48.0, width * 0.085);
+        var top = Math.Max(26.0, height * 0.050);
+        var bottom = Math.Max(42.0, height * 0.085);
 
         context.FillRectangle(
-            vignetteBrush,
+            brush,
             new Rect(0, 0, side, height));
 
         context.FillRectangle(
-            vignetteBrush,
+            brush,
             new Rect(width - side, 0, side, height));
 
         context.FillRectangle(
-            vignetteBrush,
+            brush,
             new Rect(0, 0, width, top));
 
         context.FillRectangle(
-            vignetteBrush,
-            new Rect(
-                0,
-                height - bottom,
-                width,
-                bottom));
+            brush,
+            new Rect(0, height - bottom, width, bottom));
     }
 
     private static void DrawSoftEllipse(
@@ -373,31 +418,23 @@ public sealed class StudioRenderer : Control
             var progress =
                 layer / (double)layers;
 
-            var layerRadiusX =
-                radiusX * progress;
-
-            var layerRadiusY =
-                radiusY * progress;
-
             var centerWeight =
                 1.0 - progress;
 
             var opacity =
                 opacityPerLayer *
-                (0.55 + (centerWeight * 1.45));
+                (0.45 + (centerWeight * 1.55));
 
             var brush =
                 new SolidColorBrush(
-                    WithAlpha(
-                        color,
-                        opacity));
+                    WithAlpha(color, opacity));
 
             context.DrawEllipse(
                 brush,
                 null,
                 center,
-                layerRadiusX,
-                layerRadiusY);
+                radiusX * progress,
+                radiusY * progress);
         }
     }
 
@@ -421,8 +458,7 @@ public sealed class StudioRenderer : Control
     private static DustParticle[] CreateParticles()
     {
         var random = new Random(4172026);
-        var result =
-            new DustParticle[ParticleCount];
+        var result = new DustParticle[ParticleCount];
 
         for (var index = 0;
              index < result.Length;
@@ -430,29 +466,58 @@ public sealed class StudioRenderer : Control
         {
             result[index] = new DustParticle(
                 StartX:
-                    0.28 +
-                    (random.NextDouble() * 0.44),
+                    0.30 +
+                    (random.NextDouble() * 0.40),
                 StartY:
                     random.NextDouble(),
                 Size:
-                    0.7 +
-                    (random.NextDouble() * 1.25),
+                    0.55 +
+                    (random.NextDouble() * 0.90),
                 Speed:
-                    0.004 +
-                    (random.NextDouble() * 0.010),
-                DriftAmount:
                     0.003 +
                     (random.NextDouble() * 0.008),
+                DriftAmount:
+                    0.002 +
+                    (random.NextDouble() * 0.006),
                 DriftSpeed:
-                    0.12 +
-                    (random.NextDouble() * 0.20),
+                    0.10 +
+                    (random.NextDouble() * 0.17),
                 Phase:
                     random.NextDouble() *
                     Math.PI *
                     2.0,
                 Opacity:
-                    0.05 +
-                    (random.NextDouble() * 0.16));
+                    0.035 +
+                    (random.NextDouble() * 0.105));
+        }
+
+        return result;
+    }
+
+    private static GrainPoint[] CreateGrainPoints()
+    {
+        var random = new Random(902104);
+        var result = new GrainPoint[GrainPointCount];
+
+        for (var index = 0;
+             index < result.Length;
+             index++)
+        {
+            result[index] = new GrainPoint(
+                X: random.NextDouble(),
+                Y: random.NextDouble(),
+                Size:
+                    0.35 +
+                    (random.NextDouble() * 0.80),
+                Opacity:
+                    0.006 +
+                    (random.NextDouble() * 0.018),
+                StepX:
+                    0.0007 +
+                    (random.NextDouble() * 0.0020),
+                StepY:
+                    0.0005 +
+                    (random.NextDouble() * 0.0016));
         }
 
         return result;
@@ -480,14 +545,11 @@ public sealed class StudioRenderer : Control
         Color color,
         double alpha)
     {
-        var byteAlpha =
+        return Color.FromArgb(
             (byte)Math.Clamp(
                 Math.Round(alpha * 255.0),
                 0,
-                255);
-
-        return Color.FromArgb(
-            byteAlpha,
+                255),
             color.R,
             color.G,
             color.B);
@@ -542,4 +604,12 @@ public sealed class StudioRenderer : Control
         double DriftSpeed,
         double Phase,
         double Opacity);
+
+    private sealed record GrainPoint(
+        double X,
+        double Y,
+        double Size,
+        double Opacity,
+        double StepX,
+        double StepY);
 }
