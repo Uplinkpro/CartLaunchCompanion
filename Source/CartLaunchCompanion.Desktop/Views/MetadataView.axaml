@@ -1,0 +1,338 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:CartLaunchCompanion.Desktop.ViewModels"
+             x:Class="CartLaunchCompanion.Desktop.Views.MetadataView"
+             x:DataType="vm:MainViewModel"
+             Focusable="True">
+
+    <UserControl.KeyBindings>
+        <KeyBinding Gesture="Enter"
+                    Command="{Binding ConfirmLaunchCommand}" />
+        <KeyBinding Gesture="Escape"
+                    Command="{Binding ReturnHomeCommand}" />
+        <KeyBinding Gesture="X"
+                    Command="{Binding TrailerCommand}" />
+        <KeyBinding Gesture="Space"
+                    Command="{Binding TrailerCommand}" />
+    </UserControl.KeyBindings>
+
+    <Grid Background="#050608"
+          RowDefinitions="2.6*,3.4*,Auto">
+
+        <!-- Wide 3840x1240-style background presentation. -->
+        <Grid Grid.Row="0"
+              Grid.RowSpan="2">
+            <Image Source="{Binding SelectedGame.BackgroundImage}"
+                   Stretch="UniformToFill"
+                   IsVisible="{Binding SelectedGame.HasBackground}"
+                   Opacity="0.82" />
+
+            <Border Background="#AA050608" />
+
+            <Border>
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0%,0%"
+                                         EndPoint="0%,100%">
+                        <GradientStop Color="#19000000"
+                                      Offset="0" />
+                        <GradientStop Color="#66050608"
+                                      Offset="0.55" />
+                        <GradientStop Color="#FF050608"
+                                      Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="0"
+              ColumnDefinitions="*,Auto"
+              Margin="56,36,56,0">
+            <StackPanel VerticalAlignment="Top"
+                        Spacing="8">
+                <TextBlock Text="CART LAUNCH COMPANION"
+                           Foreground="#CCFFFFFF"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           LetterSpacing="3" />
+
+                <TextBlock Text="{Binding SelectedGame.Name}"
+                           MaxWidth="900"
+                           TextWrapping="Wrap"
+                           Foreground="White"
+                           FontSize="48"
+                           FontWeight="Bold" />
+
+                <Image Source="{Binding SelectedGame.LogoImage}"
+                       MaxWidth="360"
+                       MaxHeight="120"
+                       HorizontalAlignment="Left"
+                       Stretch="Uniform"
+                       IsVisible="{Binding SelectedGame.HasLogo}" />
+            </StackPanel>
+
+            <Border Grid.Column="1"
+                    Width="128"
+                    Height="80"
+                    Margin="0,18,28,0"
+                    CornerRadius="40"
+                    Background="#B20A0C10"
+                    BorderBrush="{Binding SelectedGame.AccentColor}"
+                    BorderThickness="2">
+                <StackPanel HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="2">
+                    <Border Width="28"
+                            Height="28"
+                            CornerRadius="14"
+                            BorderBrush="#F0FFFFFF"
+                            BorderThickness="3" />
+                    <TextBlock Text="{Binding SelectedGame.Launcher}"
+                               Foreground="White"
+                               FontSize="12"
+                               FontWeight="SemiBold" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="1"
+              ColumnDefinitions="300,*,440"
+              ColumnSpacing="30"
+              Margin="56,12,56,22">
+
+            <Border Grid.Column="0"
+                    Width="280"
+                    Height="420"
+                    VerticalAlignment="Bottom"
+                    CornerRadius="8"
+                    Background="#0A0C10"
+                    BorderBrush="{Binding SelectedGame.AccentColor}"
+                    BorderThickness="2">
+                <Grid>
+                    <Image Source="{Binding SelectedGame.CoverImage}"
+                           Stretch="Uniform"
+                           IsVisible="{Binding SelectedGame.HasCover}" />
+
+                    <StackPanel HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="12"
+                                IsVisible="{Binding SelectedGame.HasNoCover}">
+                        <Border Width="92"
+                                Height="92"
+                                CornerRadius="46"
+                                BorderBrush="{Binding SelectedGame.AccentColor}"
+                                BorderThickness="3">
+                            <TextBlock Text="{Binding SelectedGame.Initials}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="White"
+                                       FontSize="30"
+                                       FontWeight="Bold" />
+                        </Border>
+                        <TextBlock Text="COVER ART MISSING"
+                                   Foreground="#AFFFFFFF"
+                                   FontSize="12"
+                                   FontWeight="SemiBold" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <ScrollViewer Grid.Column="1"
+                          VerticalScrollBarVisibility="Auto">
+                <StackPanel VerticalAlignment="Bottom"
+                            Spacing="17"
+                            Margin="0,42,0,8">
+                    <TextBlock Text="{Binding SelectedGame.DescriptionDisplay}"
+                               MaxWidth="680"
+                               TextWrapping="Wrap"
+                               Foreground="#E6FFFFFF"
+                               FontSize="17"
+                               LineHeight="25" />
+
+                    <Grid ColumnDefinitions="Auto,*"
+                          RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                          ColumnSpacing="20"
+                          RowSpacing="8">
+                        <TextBlock Grid.Row="0"
+                                   Text="DEVELOPER"
+                                   Foreground="{Binding SelectedGame.AccentColor}"
+                                   FontSize="12"
+                                   FontWeight="Bold" />
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="1"
+                                   Text="{Binding SelectedGame.DeveloperDisplay}"
+                                   Foreground="White" />
+
+                        <TextBlock Grid.Row="1"
+                                   Text="PUBLISHER"
+                                   Foreground="{Binding SelectedGame.AccentColor}"
+                                   FontSize="12"
+                                   FontWeight="Bold" />
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   Text="{Binding SelectedGame.PublisherDisplay}"
+                                   Foreground="White" />
+
+                        <TextBlock Grid.Row="2"
+                                   Text="GENRE"
+                                   Foreground="{Binding SelectedGame.AccentColor}"
+                                   FontSize="12"
+                                   FontWeight="Bold" />
+                        <TextBlock Grid.Row="2"
+                                   Grid.Column="1"
+                                   Text="{Binding SelectedGame.GenreDisplay}"
+                                   Foreground="White" />
+
+                        <TextBlock Grid.Row="3"
+                                   Text="RELEASED"
+                                   Foreground="{Binding SelectedGame.AccentColor}"
+                                   FontSize="12"
+                                   FontWeight="Bold" />
+                        <TextBlock Grid.Row="3"
+                                   Grid.Column="1"
+                                   Text="{Binding SelectedGame.ReleaseDateDisplay}"
+                                   Foreground="White" />
+
+                        <TextBlock Grid.Row="4"
+                                   Text="PLAYERS"
+                                   Foreground="{Binding SelectedGame.AccentColor}"
+                                   FontSize="12"
+                                   FontWeight="Bold" />
+                        <TextBlock Grid.Row="4"
+                                   Grid.Column="1"
+                                   Text="{Binding SelectedGame.PlayersDisplay}"
+                                   Foreground="White" />
+                    </Grid>
+
+                    <TextBlock Text="{Binding MetadataStatus}"
+                               Foreground="#AFFFFFFF"
+                               FontSize="13" />
+                </StackPanel>
+            </ScrollViewer>
+
+            <Border Grid.Column="2"
+                    Height="248"
+                    VerticalAlignment="Bottom"
+                    CornerRadius="10"
+                    Background="#E20A0C10"
+                    BorderBrush="#44FFFFFF"
+                    BorderThickness="1">
+                <Grid>
+                    <StackPanel HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="12">
+                        <Border Width="64"
+                                Height="64"
+                                CornerRadius="32"
+                                BorderBrush="{Binding SelectedGame.AccentColor}"
+                                BorderThickness="2">
+                            <TextBlock Text="▶"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="White"
+                                       FontSize="26" />
+                        </Border>
+
+                        <TextBlock Text="TRAILER"
+                                   HorizontalAlignment="Center"
+                                   Foreground="White"
+                                   FontWeight="Bold"
+                                   LetterSpacing="2" />
+
+                        <TextBlock Text="{Binding SelectedGame.TrailerStatus}"
+                                   HorizontalAlignment="Center"
+                                   Foreground="#AFFFFFFF"
+                                   FontSize="13" />
+
+                        <TextBlock Text="Press X or Space"
+                                   HorizontalAlignment="Center"
+                                   Foreground="#70FFFFFF"
+                                   FontSize="12" />
+                    </StackPanel>
+
+                    <Border Background="#663E8BFF"
+                            IsVisible="{Binding IsTrailerPlaceholderActive}">
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Spacing="10">
+                            <TextBlock Text="TRAILER PLAYBACK"
+                                       Foreground="White"
+                                       FontSize="18"
+                                       FontWeight="Bold" />
+                            <TextBlock Text="Cross-platform video arrives in the media phase."
+                                       Foreground="#DFFFFFFF"
+                                       FontSize="13" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="2"
+                Background="#D9040609"
+                BorderBrush="#22FFFFFF"
+                BorderThickness="0,1,0,0"
+                Padding="24,13">
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Spacing="16">
+                <Button Classes="action"
+                        Command="{Binding ConfirmLaunchCommand}"
+                        IsEnabled="{Binding SelectedGame.IsLaunchable}">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="10">
+                        <Border Width="30"
+                                Height="30"
+                                CornerRadius="15"
+                                Background="#2E9B32">
+                            <TextBlock Text="A"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="White"
+                                       FontWeight="Bold" />
+                        </Border>
+                        <TextBlock Text="LAUNCH"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <Button Classes="action"
+                        Command="{Binding ReturnHomeCommand}">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="10">
+                        <Border Width="30"
+                                Height="30"
+                                CornerRadius="15"
+                                Background="#C83B40">
+                            <TextBlock Text="B"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="White"
+                                       FontWeight="Bold" />
+                        </Border>
+                        <TextBlock Text="BACK"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <Button Classes="action"
+                        Command="{Binding TrailerCommand}">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="10">
+                        <Border Width="30"
+                                Height="30"
+                                CornerRadius="15"
+                                Background="#267BD9">
+                            <TextBlock Text="X"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="White"
+                                       FontWeight="Bold" />
+                        </Border>
+                        <TextBlock Text="TRAILER"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

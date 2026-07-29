@@ -1,0 +1,276 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:CartLaunchCompanion.Desktop.ViewModels"
+             x:Class="CartLaunchCompanion.Desktop.Views.HomeView"
+             x:DataType="vm:MainViewModel"
+             Focusable="True">
+
+    <UserControl.KeyBindings>
+        <KeyBinding Gesture="Escape"
+                    Command="{Binding ExitCommand}" />
+        <KeyBinding Gesture="F5"
+                    Command="{Binding ReloadCommand}" />
+    </UserControl.KeyBindings>
+
+    <Grid Background="#050608">
+
+        <!-- Home: browse only. -->
+        <Grid IsVisible="{Binding IsHomeVisible}"
+              RowDefinitions="Auto,Auto,*,Auto,Auto"
+              Margin="32">
+
+            <StackPanel Grid.Row="0"
+                        HorizontalAlignment="Center"
+                        Spacing="4"
+                        Margin="0,22,0,8">
+                <Border Width="74"
+                        Height="60"
+                        CornerRadius="10"
+                        BorderBrush="#DDE5E8F0"
+                        BorderThickness="3"
+                        Background="#0B0D11">
+                    <Grid RowDefinitions="*,12"
+                          Margin="8">
+                        <Border Grid.Row="0"
+                                Margin="8,3,8,5"
+                                CornerRadius="4"
+                                BorderBrush="#DDE5E8F0"
+                                BorderThickness="2" />
+                        <StackPanel Grid.Row="1"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    Spacing="3">
+                            <Border Width="5" Height="9" Background="#DDE5E8F0" />
+                            <Border Width="5" Height="9" Background="#DDE5E8F0" />
+                            <Border Width="5" Height="9" Background="#DDE5E8F0" />
+                            <Border Width="5" Height="9" Background="#DDE5E8F0" />
+                            <Border Width="5" Height="9" Background="#DDE5E8F0" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <TextBlock Text="CART LAUNCH"
+                           HorizontalAlignment="Center"
+                           Foreground="#F5F7FA"
+                           FontSize="34"
+                           FontWeight="Bold"
+                           LetterSpacing="2" />
+
+                <TextBlock Text="COMPANION 2.0"
+                           HorizontalAlignment="Center"
+                           Foreground="#A16AE8"
+                           FontSize="15"
+                           FontWeight="SemiBold"
+                           LetterSpacing="5" />
+            </StackPanel>
+
+            <StackPanel Grid.Row="1"
+                        HorizontalAlignment="Center"
+                        Spacing="2"
+                        Margin="0,4,0,12">
+                <TextBlock Text="{Binding PlatformName, StringFormat='Running on {0}'}"
+                           HorizontalAlignment="Center"
+                           Foreground="#99FFFFFF"
+                           FontSize="13" />
+                <TextBlock Text="{Binding StatusMessage}"
+                           HorizontalAlignment="Center"
+                           Foreground="#B8FFFFFF"
+                           FontSize="13" />
+            </StackPanel>
+
+            <Grid Grid.Row="2">
+
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto"
+                              IsVisible="{Binding HasGames}">
+                    <ItemsControl ItemsSource="{Binding Games}"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           MaxWidth="1180" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:GameCardViewModel">
+                                <Button Classes="game-card"
+                                        Command="{Binding OpenCommand}"
+                                        ToolTip.Tip="{Binding Name}">
+                                    <Border Classes="card-frame"
+                                            Width="194"
+                                            Height="326"
+                                            CornerRadius="7"
+                                            Background="#080A0E"
+                                            BorderBrush="{Binding AccentColor}"
+                                            BorderThickness="2"
+                                            Opacity="0.92">
+                                        <Grid RowDefinitions="30,3,*">
+                                            <Border Grid.Row="0"
+                                                    Background="{Binding AccentColor}"
+                                                    CornerRadius="5,5,0,0">
+                                                <StackPanel Orientation="Horizontal"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            Spacing="7">
+                                                    <Border Width="14"
+                                                            Height="14"
+                                                            CornerRadius="7"
+                                                            BorderBrush="White"
+                                                            BorderThickness="2" />
+                                                    <TextBlock Text="{Binding Launcher}"
+                                                               Foreground="White"
+                                                               FontSize="11"
+                                                               FontWeight="SemiBold" />
+                                                </StackPanel>
+                                            </Border>
+
+                                            <Border Grid.Row="1"
+                                                    Background="White" />
+
+                                            <Grid Grid.Row="2"
+                                                  Background="#0A0C10">
+                                                <Image Source="{Binding CoverImage}"
+                                                       Stretch="Uniform"
+                                                       IsVisible="{Binding HasCover}" />
+
+                                                <StackPanel HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            Spacing="10"
+                                                            IsVisible="{Binding HasNoCover}">
+                                                    <Border Width="82"
+                                                            Height="82"
+                                                            CornerRadius="41"
+                                                            BorderBrush="{Binding AccentColor}"
+                                                            BorderThickness="2">
+                                                        <TextBlock Text="{Binding Initials}"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"
+                                                                   Foreground="White"
+                                                                   FontSize="28"
+                                                                   FontWeight="Bold" />
+                                                    </Border>
+                                                    <TextBlock Text="{Binding Name}"
+                                                               MaxWidth="150"
+                                                               TextAlignment="Center"
+                                                               TextWrapping="Wrap"
+                                                               Foreground="#DDE5E8F0"
+                                                               FontSize="13"
+                                                               FontWeight="SemiBold" />
+                                                </StackPanel>
+
+                                                <Border VerticalAlignment="Bottom"
+                                                        Height="28"
+                                                        Background="#D9000000">
+                                                    <TextBlock Text="{Binding Name}"
+                                                               Margin="8,0"
+                                                               VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               Foreground="White"
+                                                               FontSize="12"
+                                                               FontWeight="SemiBold" />
+                                                </Border>
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <StackPanel IsVisible="{Binding HasNoGames}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="12">
+                    <TextBlock Text="NO GAMES FOUND"
+                               HorizontalAlignment="Center"
+                               Foreground="White"
+                               FontSize="24"
+                               FontWeight="Bold" />
+                    <TextBlock Text="Copy a game folder from Games/Examples into Games, then press F5."
+                               MaxWidth="560"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               Foreground="#AFFFFFFF"
+                               FontSize="15" />
+                    <TextBlock Text="{Binding PortableRoot}"
+                               MaxWidth="760"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               Foreground="#7FFFFFFF"
+                               FontSize="12" />
+                    <Button Classes="action"
+                            Content="REFRESH LIBRARY"
+                            Command="{Binding ReloadCommand}"
+                            HorizontalAlignment="Center" />
+                </StackPanel>
+
+                <StackPanel IsVisible="{Binding IsLoading}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="12">
+                    <ProgressBar IsIndeterminate="True"
+                                 Width="260"
+                                 Height="6" />
+                    <TextBlock Text="LOADING LIBRARY"
+                               HorizontalAlignment="Center"
+                               Foreground="#BFFFFFFF"
+                               FontWeight="SemiBold" />
+                </StackPanel>
+            </Grid>
+
+            <Border Grid.Row="3"
+                    Height="1"
+                    Background="#22FFFFFF"
+                    Margin="80,8,80,12" />
+
+            <StackPanel Grid.Row="4"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Spacing="14">
+                <Button Classes="action"
+                        Command="{Binding SelectedGame.OpenCommand}"
+                        IsEnabled="{Binding HasSelectedGame}">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="10">
+                        <Border Width="30"
+                                Height="30"
+                                CornerRadius="15"
+                                Background="#2E9B32">
+                            <TextBlock Text="A"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="White"
+                                       FontWeight="Bold" />
+                        </Border>
+                        <TextBlock Text="VIEW DETAILS"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <Button Classes="action"
+                        Command="{Binding ExitCommand}">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="10">
+                        <Border Width="30"
+                                Height="30"
+                                CornerRadius="15"
+                                Background="#C83B40">
+                            <TextBlock Text="B"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="White"
+                                       FontWeight="Bold" />
+                        </Border>
+                        <TextBlock Text="EXIT"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

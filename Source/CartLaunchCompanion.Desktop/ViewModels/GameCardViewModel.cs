@@ -1,0 +1,146 @@
+using Avalonia.Media.Imaging;
+using CartLaunchCompanion.Core.Configuration;
+using CartLaunchCompanion.Core.Library;
+using CommunityToolkit.Mvvm.Input;
+
+namespace CartLaunchCompanion.Desktop.ViewModels;
+
+public sealed class GameCardViewModel : ViewModelBase, IDisposable
+{
+    private readonly Action<GameCardViewModel> _openGame;
+
+    public GameCardViewModel(
+        GameLibraryEntry entry,
+        Action<GameCardViewModel> openGame)
+    {
+        Entry = entry;
+        _openGame = openGame;
+
+        OpenCommand = new RelayCommand(
+            () => _openGame(this));
+
+        CoverImage = TryLoadBitmap(entry.CoverPath);
+        BackgroundImage = TryLoadBitmap(entry.BackgroundPath);
+        LogoImage = TryLoadBitmap(entry.LogoPath);
+    }
+
+    public GameLibraryEntry Entry { get; }
+
+    public string Name => Entry.Configuration.Game.Name;
+    public string Description => Entry.Configuration.Game.Description;
+    public string Developer => Entry.Configuration.Game.Developer;
+    public string Publisher => Entry.Configuration.Game.Publisher;
+    public string Genre => Entry.Configuration.Game.Genre;
+    public string ReleaseDate => Entry.Configuration.Game.ReleaseDate;
+    public string Players => Entry.Configuration.Game.Players;
+
+    public string Launcher =>
+        Entry.LaunchTarget?.Launcher.ToString()
+        ?? "Unavailable";
+
+    public string AccentColor =>
+        Entry.LaunchTarget?.Launcher switch
+        {
+            LauncherKind.Xbox => "#35A936",
+            LauncherKind.Steam => "#3E8BFF",
+            LauncherKind.Epic => "#A9ABB2",
+            LauncherKind.Heroic => "#E89A2D",
+            LauncherKind.GOG => "#A94FDC",
+            LauncherKind.Ubisoft => "#24B8E0",
+            LauncherKind.Rockstar => "#E0A623",
+            LauncherKind.Amazon => "#FF9900",
+            LauncherKind.Flatpak => "#4A90D9",
+            LauncherKind.Wine => "#8A64D6",
+            LauncherKind.Proton => "#6A8FFF",
+            _ => "#9D56E8"
+        };
+
+    public Bitmap? CoverImage { get; }
+    public Bitmap? BackgroundImage { get; }
+    public Bitmap? LogoImage { get; }
+
+    public bool HasCover => CoverImage is not null;
+    public bool HasNoCover => CoverImage is null;
+    public bool HasBackground => BackgroundImage is not null;
+    public bool HasLogo => LogoImage is not null;
+    public bool HasTrailer => Entry.TrailerPath is not null;
+    public bool IsLaunchable => Entry.IsLaunchable;
+
+    public string DeveloperDisplay =>
+        string.IsNullOrWhiteSpace(Developer)
+            ? "Developer not listed"
+            : Developer;
+
+    public string PublisherDisplay =>
+        string.IsNullOrWhiteSpace(Publisher)
+            ? "Publisher not listed"
+            : Publisher;
+
+    public string GenreDisplay =>
+        string.IsNullOrWhiteSpace(Genre)
+            ? "Genre not listed"
+            : Genre;
+
+    public string ReleaseDateDisplay =>
+        string.IsNullOrWhiteSpace(ReleaseDate)
+            ? "Release date not listed"
+            : ReleaseDate;
+
+    public string PlayersDisplay =>
+        string.IsNullOrWhiteSpace(Players)
+            ? "Players not listed"
+            : Players;
+
+    public string DescriptionDisplay =>
+        string.IsNullOrWhiteSpace(Description)
+            ? "No description is available for this game."
+            : Description;
+
+    public string TrailerStatus =>
+        HasTrailer
+            ? "Trailer ready"
+            : "No local trailer configured";
+
+    public string Initials
+    {
+        get
+        {
+            var words = Name
+                .Split(
+                    ' ',
+                    StringSplitOptions.RemoveEmptyEntries |
+                    StringSplitOptions.TrimEntries);
+
+            return string.Concat(
+                words.Take(2).Select(
+                    word => char.ToUpperInvariant(word[0])));
+        }
+    }
+
+    public IRelayCommand OpenCommand { get; }
+
+    public void Dispose()
+    {
+        CoverImage?.Dispose();
+        BackgroundImage?.Dispose();
+        LogoImage?.Dispose();
+    }
+
+    private static Bitmap? TryLoadBitmap(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) ||
+            !File.Exists(path))
+        {
+            return null;
+        }
+
+        try
+        {
+            return new Bitmap(path);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+}

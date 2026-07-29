@@ -2,14 +2,53 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="CartLaunchCompanion.Desktop.App"
              xmlns:local="using:CartLaunchCompanion.Desktop"
-             RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
-
+             RequestedThemeVariant="Dark">
     <Application.DataTemplates>
         <local:ViewLocator />
     </Application.DataTemplates>
 
     <Application.Styles>
         <FluentTheme />
+
+        <Style Selector="Window">
+            <Setter Property="Background" Value="#050608" />
+            <Setter Property="FontFamily" Value="avares://Avalonia.Fonts.Inter/Assets#Inter" />
+        </Style>
+
+        <Style Selector="Button.action">
+            <Setter Property="MinWidth" Value="188" />
+            <Setter Property="Height" Value="54" />
+            <Setter Property="Padding" Value="18,8" />
+            <Setter Property="CornerRadius" Value="27" />
+            <Setter Property="Background" Value="#E60B0D11" />
+            <Setter Property="BorderBrush" Value="#55FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="15" />
+        </Style>
+
+        <Style Selector="Button.action:pointerover">
+            <Setter Property="Background" Value="#FF181B22" />
+            <Setter Property="BorderBrush" Value="#AAFFFFFF" />
+        </Style>
+
+        <Style Selector="Button.game-card">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="10" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        </Style>
+
+        <Style Selector="Button.game-card:pointerover Border.card-frame">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+
+        <Style Selector="Button.game-card:focus Border.card-frame">
+            <Setter Property="BorderThickness" Value="3" />
+            <Setter Property="Opacity" Value="1" />
+        </Style>
     </Application.Styles>
 </Application>

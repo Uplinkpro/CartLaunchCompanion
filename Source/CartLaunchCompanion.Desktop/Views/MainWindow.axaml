@@ -1,22 +1,22 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:CartLaunchCompanion.Desktop.ViewModels"
+        xmlns:views="using:CartLaunchCompanion.Desktop.Views"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d"
+        d:DesignWidth="1280"
+        d:DesignHeight="720"
         x:Class="CartLaunchCompanion.Desktop.Views.MainWindow"
         x:DataType="vm:MainViewModel"
-        Icon="/Assets/avalonia-logo.ico"
-        Title="CartLaunchCompanion.Desktop">
-
-    <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainViewModel />
-    </Design.DataContext>
-
-    <TextBox Text="{Binding Greeting}"
-             HorizontalAlignment="Center"
-             VerticalAlignment="Center" />
-
+        Width="1280"
+        Height="720"
+        MinWidth="960"
+        MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        Title="Cart Launch Companion 2.0">
+    <Grid Background="#050608">
+        <views:HomeView IsVisible="{Binding IsHomeVisible}" />
+        <views:MetadataView IsVisible="{Binding IsMetadataVisible}" />
+    </Grid>
 </Window>
