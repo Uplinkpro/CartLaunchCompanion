@@ -12,12 +12,7 @@ public sealed class MetadataNavigationTests
     [Fact]
     public async Task OpenCommand_MovesFromHomeToMetadata()
     {
-        var library = new StubLibraryService();
-        var viewModel = new MainViewModel(
-            library,
-            PortablePaths.FromRoot(Path.GetTempPath()),
-            PlatformKind.Windows,
-            () => { });
+        var viewModel = CreateViewModel();
 
         await viewModel.LoadAsync();
 
@@ -32,11 +27,7 @@ public sealed class MetadataNavigationTests
     [Fact]
     public async Task ReturnHomeCommand_RestoresHome()
     {
-        var viewModel = new MainViewModel(
-            new StubLibraryService(),
-            PortablePaths.FromRoot(Path.GetTempPath()),
-            PlatformKind.Windows,
-            () => { });
+        var viewModel = CreateViewModel();
 
         await viewModel.LoadAsync();
         viewModel.Games[0].OpenCommand.Execute(null);
@@ -44,6 +35,55 @@ public sealed class MetadataNavigationTests
 
         Assert.True(viewModel.IsHomeVisible);
         Assert.False(viewModel.IsMetadataVisible);
+    }
+
+    [Fact]
+    public async Task ConfirmLaunchCommand_UsesLaunchService()
+    {
+        var launchService = new StubLaunchService();
+        var visibility = new List<bool>();
+
+        var viewModel = CreateViewModel(
+            launchService,
+            visible => visibility.Add(visible));
+
+        await viewModel.LoadAsync();
+        viewModel.Games[0].OpenCommand.Execute(null);
+
+        await viewModel.ConfirmLaunchCommand.ExecuteAsync(null);
+
+        Assert.Equal(1, launchService.CallCount);
+        Assert.Contains("started", viewModel.MetadataStatus);
+        Assert.Empty(visibility);
+    }
+
+    private static MainViewModel CreateViewModel(
+        IGameLaunchService? launchService = null,
+        Action<bool>? setVisible = null)
+        => new(
+            new StubLibraryService(),
+            launchService ?? new StubLaunchService(),
+            PortablePaths.FromRoot(Path.GetTempPath()),
+            PlatformKind.Windows,
+            () => { },
+            setVisible ?? (_ => { }));
+
+    private sealed class StubLaunchService
+        : IGameLaunchService
+    {
+        public int CallCount { get; private set; }
+
+        public Task<GameLaunchResult> LaunchAsync(
+            GameLaunchRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            CallCount++;
+
+            return Task.FromResult(
+                GameLaunchResult.Success(
+                    "Game started.",
+                    CompletedGameLaunchSession.Instance));
+        }
     }
 
     private sealed class StubLibraryService : IGameLibraryService

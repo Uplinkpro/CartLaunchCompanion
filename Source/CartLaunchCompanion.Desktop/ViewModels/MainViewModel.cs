@@ -1,3 +1,4 @@
+using CartLaunchCompanion.Core.Launching;
 using CartLaunchCompanion.Core.Library;
 using CartLaunchCompanion.Core.Platform;
 using CartLaunchCompanion.Core.Portable;
@@ -9,26 +10,39 @@ namespace CartLaunchCompanion.Desktop.ViewModels;
 public partial class MainViewModel : ViewModelBase, IDisposable
 {
     private readonly IGameLibraryService _libraryService;
+    private readonly IGameLaunchService _launchService;
     private readonly PortablePaths _portablePaths;
     private readonly PlatformKind _platform;
     private readonly Action _exitApplication;
+    private readonly Action<bool> _setWindowVisible;
 
     public MainViewModel(
         IGameLibraryService libraryService,
+        IGameLaunchService launchService,
         PortablePaths portablePaths,
         PlatformKind platform,
-        Action exitApplication)
+        Action exitApplication,
+        Action<bool> setWindowVisible)
     {
         _libraryService = libraryService;
+        _launchService = launchService;
         _portablePaths = portablePaths;
         _platform = platform;
         _exitApplication = exitApplication;
+        _setWindowVisible = setWindowVisible;
 
         ReloadCommand = new AsyncRelayCommand(LoadAsync);
         ExitCommand = new RelayCommand(_exitApplication);
-        ReturnHomeCommand = new RelayCommand(ReturnHome);
-        ConfirmLaunchCommand = new RelayCommand(ConfirmLaunch);
-        TrailerCommand = new RelayCommand(ToggleTrailerPlaceholder);
+        ReturnHomeCommand = new RelayCommand(
+            ReturnHome,
+            () => !IsLaunching);
+        ConfirmLaunchCommand = new AsyncRelayCommand(
+            ConfirmLaunchAsync,
+            () => SelectedGame?.IsLaunchable == true &&
+                  !IsLaunching);
+        TrailerCommand = new RelayCommand(
+            ToggleTrailerPlaceholder,
+            () => !IsLaunching);
     }
 
     public ObservableCollection<GameCardViewModel> Games { get; } = [];
@@ -45,6 +59,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     public partial bool IsLoading { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsLaunching { get; set; }
 
     [ObservableProperty]
     public partial bool IsHomeVisible { get; set; } = true;
@@ -64,8 +81,22 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public IAsyncRelayCommand ReloadCommand { get; }
     public IRelayCommand ExitCommand { get; }
     public IRelayCommand ReturnHomeCommand { get; }
-    public IRelayCommand ConfirmLaunchCommand { get; }
+    public IAsyncRelayCommand ConfirmLaunchCommand { get; }
     public IRelayCommand TrailerCommand { get; }
+
+    partial void OnSelectedGameChanged(
+        GameCardViewModel? value)
+    {
+        ConfirmLaunchCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(HasSelectedGame));
+    }
+
+    partial void OnIsLaunchingChanged(bool value)
+    {
+        ConfirmLaunchCommand.NotifyCanExecuteChanged();
+        ReturnHomeCommand.NotifyCanExecuteChanged();
+        TrailerCommand.NotifyCanExecuteChanged();
+    }
 
     public async Task LoadAsync()
     {
@@ -98,7 +129,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             OnPropertyChanged(nameof(HasGames));
             OnPropertyChanged(nameof(HasNoGames));
-            OnPropertyChanged(nameof(HasSelectedGame));
         }
         catch (Exception ex)
         {
@@ -114,20 +144,25 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private void OpenMetadata(GameCardViewModel game)
     {
+        if (IsLaunching)
+            return;
+
         SelectedGame = game;
         IsTrailerPlaceholderActive = false;
+
         MetadataStatus = game.IsLaunchable
             ? "Ready to launch."
             : "This game is not launchable on the current platform.";
 
         IsHomeVisible = false;
         IsMetadataVisible = true;
-
-        OnPropertyChanged(nameof(HasSelectedGame));
     }
 
     private void ReturnHome()
     {
+        if (IsLaunching)
+            return;
+
         IsTrailerPlaceholderActive = false;
         IsMetadataVisible = false;
         IsHomeVisible = true;
@@ -137,22 +172,92 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             : "No games found.";
     }
 
-    private void ConfirmLaunch()
+    private async Task ConfirmLaunchAsync()
     {
-        if (SelectedGame is null)
-            return;
+        var game = SelectedGame;
 
-        MetadataStatus = SelectedGame.IsLaunchable
-            ? "Launch handoff is prepared for Phase 5."
-            : "This game cannot be launched on the current platform.";
+        if (game?.Entry.LaunchTarget is null ||
+            !game.IsLaunchable ||
+            IsLaunching)
+        {
+            MetadataStatus =
+                "This game cannot be launched on the current platform.";
+            return;
+        }
+
+        IsLaunching = true;
+        IsTrailerPlaceholderActive = false;
+        MetadataStatus = $"Launching {game.Name}…";
+
+        var request = new GameLaunchRequest(
+            game.Name,
+            game.Entry.FolderPath,
+            game.Entry.LaunchTarget,
+            game.Entry.Configuration.Behavior);
+
+        try
+        {
+            var result =
+                await _launchService.LaunchAsync(request);
+
+            MetadataStatus = result.Message;
+
+            if (!result.Succeeded ||
+                result.Session is null)
+            {
+                return;
+            }
+
+            await using var session = result.Session;
+
+            var shouldHide =
+                request.Behavior.HideWhileGameRuns &&
+                session.CanMonitor;
+
+            if (shouldHide)
+                _setWindowVisible(false);
+
+            if (session.CanMonitor)
+                await session.WaitForExitAsync();
+
+            if (shouldHide &&
+                request.Behavior.RestoreLauncherAfterExit)
+            {
+                _setWindowVisible(true);
+                ReturnHome();
+            }
+            else if (!session.CanMonitor)
+            {
+                MetadataStatus = result.Message;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            MetadataStatus = "Launch monitoring was cancelled.";
+            _setWindowVisible(true);
+        }
+        catch (Exception ex)
+        {
+            MetadataStatus =
+                $"The launch failed: {ex.Message}";
+            _setWindowVisible(true);
+        }
+        finally
+        {
+            IsLaunching = false;
+        }
     }
 
     private void ToggleTrailerPlaceholder()
     {
-        if (SelectedGame is null)
+        if (SelectedGame is null ||
+            IsLaunching)
+        {
             return;
+        }
 
-        IsTrailerPlaceholderActive = !IsTrailerPlaceholderActive;
+        IsTrailerPlaceholderActive =
+            !IsTrailerPlaceholderActive;
 
         MetadataStatus = SelectedGame.HasTrailer
             ? IsTrailerPlaceholderActive

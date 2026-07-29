@@ -9,6 +9,8 @@ using CartLaunchCompanion.Core.Platform;
 using CartLaunchCompanion.Core.Portable;
 using CartLaunchCompanion.Desktop.ViewModels;
 using CartLaunchCompanion.Desktop.Views;
+using CartLaunchCompanion.Platform.Linux;
+using CartLaunchCompanion.Platform.Windows;
 
 namespace CartLaunchCompanion.Desktop;
 
@@ -36,16 +38,48 @@ public partial class App : Application
                 new GamePathResolver(),
                 new LaunchTargetSelector());
 
+            IGameLaunchService launchService =
+                platformService.Current switch
+                {
+                    PlatformKind.Windows =>
+                        new WindowsGameLaunchService(),
+
+                    PlatformKind.Linux =>
+                        new LinuxGameLaunchService(),
+
+                    _ => new UnsupportedGameLaunchService()
+                };
+
+            MainWindow? mainWindow = null;
+
             var viewModel = new MainViewModel(
                 libraryService,
+                launchService,
                 portablePaths,
                 platformService.Current,
-                () => desktop.Shutdown());
+                () => desktop.Shutdown(),
+                visible =>
+                {
+                    if (mainWindow is null)
+                        return;
 
-            desktop.MainWindow = new MainWindow
+                    if (visible)
+                    {
+                        mainWindow.Show();
+                        mainWindow.Activate();
+                    }
+                    else
+                    {
+                        mainWindow.Hide();
+                    }
+                });
+
+            mainWindow = new MainWindow
             {
                 DataContext = viewModel
             };
+
+            desktop.MainWindow = mainWindow;
 
             base.OnFrameworkInitializationCompleted();
 
@@ -54,5 +88,16 @@ public partial class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private sealed class UnsupportedGameLaunchService
+        : IGameLaunchService
+    {
+        public Task<GameLaunchResult> LaunchAsync(
+            GameLaunchRequest request,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult(
+                GameLaunchResult.Failure(
+                    "The current operating system is unsupported."));
     }
 }

@@ -267,6 +267,37 @@
             </Border>
         </Grid>
 
+
+        <Border Grid.Row="0"
+                Grid.RowSpan="2"
+                Background="#D9050608"
+                IsVisible="{Binding IsLaunching}"
+                ZIndex="100">
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="18">
+                <ProgressBar IsIndeterminate="True"
+                             Width="320"
+                             Height="6" />
+                <TextBlock Text="LAUNCHING"
+                           HorizontalAlignment="Center"
+                           Foreground="White"
+                           FontSize="24"
+                           FontWeight="Bold"
+                           LetterSpacing="4" />
+                <TextBlock Text="{Binding SelectedGame.Name}"
+                           HorizontalAlignment="Center"
+                           Foreground="#CFFFFFFF"
+                           FontSize="17" />
+                <TextBlock Text="{Binding MetadataStatus}"
+                           MaxWidth="660"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           Foreground="#AFFFFFFF"
+                           FontSize="13" />
+            </StackPanel>
+        </Border>
+
         <Border Grid.Row="2"
                 Background="#D9040609"
                 BorderBrush="#22FFFFFF"
@@ -277,7 +308,7 @@
                         Spacing="16">
                 <Button Classes="action"
                         Command="{Binding ConfirmLaunchCommand}"
-                        IsEnabled="{Binding SelectedGame.IsLaunchable}">
+                        IsEnabled="{Binding ConfirmLaunchCommand.CanExecute}">
                     <StackPanel Orientation="Horizontal"
                                 Spacing="10">
                         <Border Width="30"
