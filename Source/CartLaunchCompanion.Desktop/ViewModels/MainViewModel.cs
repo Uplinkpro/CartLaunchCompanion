@@ -1,3 +1,4 @@
+using CartLaunchCompanion.Core.Input;
 using CartLaunchCompanion.Core.Launching;
 using CartLaunchCompanion.Core.Library;
 using CartLaunchCompanion.Core.Platform;
@@ -16,6 +17,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly Action _exitApplication;
     private readonly Action<bool> _setWindowVisible;
 
+    private DateTimeOffset _lastInputAt = DateTimeOffset.MinValue;
+    private LauncherAction _lastInputAction = LauncherAction.None;
+
     public MainViewModel(
         IGameLibraryService libraryService,
         IGameLaunchService launchService,
@@ -32,17 +36,27 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _setWindowVisible = setWindowVisible;
 
         ReloadCommand = new AsyncRelayCommand(LoadAsync);
-        ExitCommand = new RelayCommand(_exitApplication);
+        ExitCommand = new RelayCommand(OpenExitConfirmation);
+        ConfirmExitCommand = new RelayCommand(_exitApplication);
+        CancelExitCommand = new RelayCommand(CancelExitConfirmation);
+
         ReturnHomeCommand = new RelayCommand(
             ReturnHome,
             () => !IsLaunching);
+
         ConfirmLaunchCommand = new AsyncRelayCommand(
             ConfirmLaunchAsync,
             () => SelectedGame?.IsLaunchable == true &&
                   !IsLaunching);
+
         TrailerCommand = new RelayCommand(
             ToggleTrailerPlaceholder,
             () => !IsLaunching);
+
+        OpenSelectedGameCommand = new RelayCommand(
+            OpenSelectedMetadata,
+            () => SelectedGame is not null &&
+                  !IsLaunching);
     }
 
     public ObservableCollection<GameCardViewModel> Games { get; } = [];
@@ -70,7 +84,24 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public partial bool IsMetadataVisible { get; set; }
 
     [ObservableProperty]
+    public partial bool IsExitVisible { get; set; }
+
+    [ObservableProperty]
     public partial bool IsTrailerPlaceholderActive { get; set; }
+
+    [ObservableProperty]
+    public partial InputDeviceKind LastInputDevice { get; set; } =
+        InputDeviceKind.Keyboard;
+
+    [ObservableProperty]
+    public partial bool IsControllerConnected { get; set; }
+
+    [ObservableProperty]
+    public partial string ControllerStatus { get; set; } =
+        "Controller service starting…";
+
+    [ObservableProperty]
+    public partial string LastControllerAction { get; set; } = "None";
 
     public bool HasGames => Games.Count > 0;
     public bool HasNoGames => !HasGames && !IsLoading;
@@ -78,24 +109,51 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public string PortableRoot => _portablePaths.Root;
     public string PlatformName => _platform.ToString();
 
+    public string ConfirmPrompt =>
+        LastInputDevice is InputDeviceKind.Controller or InputDeviceKind.Remote
+            ? "A"
+            : "ENTER";
+
+    public string BackPrompt =>
+        LastInputDevice is InputDeviceKind.Controller or InputDeviceKind.Remote
+            ? "B"
+            : "ESC";
+
+    public string TrailerPrompt =>
+        LastInputDevice is InputDeviceKind.Controller or InputDeviceKind.Remote
+            ? "X"
+            : "X / SPACE";
+
     public IAsyncRelayCommand ReloadCommand { get; }
     public IRelayCommand ExitCommand { get; }
+    public IRelayCommand ConfirmExitCommand { get; }
+    public IRelayCommand CancelExitCommand { get; }
     public IRelayCommand ReturnHomeCommand { get; }
     public IAsyncRelayCommand ConfirmLaunchCommand { get; }
     public IRelayCommand TrailerCommand { get; }
+    public IRelayCommand OpenSelectedGameCommand { get; }
 
     partial void OnSelectedGameChanged(
         GameCardViewModel? value)
     {
         ConfirmLaunchCommand.NotifyCanExecuteChanged();
+        OpenSelectedGameCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(HasSelectedGame));
     }
 
     partial void OnIsLaunchingChanged(bool value)
     {
         ConfirmLaunchCommand.NotifyCanExecuteChanged();
+        OpenSelectedGameCommand.NotifyCanExecuteChanged();
         ReturnHomeCommand.NotifyCanExecuteChanged();
         TrailerCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnLastInputDeviceChanged(InputDeviceKind value)
+    {
+        OnPropertyChanged(nameof(ConfirmPrompt));
+        OnPropertyChanged(nameof(BackPrompt));
+        OnPropertyChanged(nameof(TrailerPrompt));
     }
 
     public async Task LoadAsync()
@@ -142,6 +200,174 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
     }
 
+    public void UpdateControllerConnection(
+        bool connected,
+        string description)
+    {
+        IsControllerConnected = connected;
+        ControllerStatus = description;
+
+        if (connected)
+            LastInputDevice = InputDeviceKind.Controller;
+    }
+
+    public void UpdateControllerDiagnostic(string diagnostic)
+    {
+        ControllerStatus = diagnostic;
+    }
+
+    public async Task HandleInputAsync(
+        LauncherInputEvent input)
+    {
+        LastInputDevice = input.Device;
+
+        if (input.Device == InputDeviceKind.Controller)
+            LastControllerAction = input.Action.ToString();
+
+        if (ShouldDebounce(input))
+            return;
+
+        _lastInputAction = input.Action;
+        _lastInputAt = input.Timestamp;
+
+        if (IsLaunching)
+            return;
+
+        if (IsExitVisible)
+        {
+            HandleExitInput(input.Action);
+            return;
+        }
+
+        if (IsMetadataVisible)
+        {
+            await HandleMetadataInputAsync(input.Action);
+            return;
+        }
+
+        if (IsHomeVisible)
+            HandleHomeInput(input.Action);
+    }
+
+    private bool ShouldDebounce(LauncherInputEvent input)
+    {
+        if (input.Action is LauncherAction.None)
+            return true;
+
+        if (input.Action != _lastInputAction)
+            return false;
+
+        var elapsed = input.Timestamp - _lastInputAt;
+
+        var minimumDelay =
+            input.Action is
+                LauncherAction.NavigateLeft or
+                LauncherAction.NavigateRight or
+                LauncherAction.NavigateUp or
+                LauncherAction.NavigateDown
+                ? TimeSpan.FromMilliseconds(115)
+                : TimeSpan.FromMilliseconds(250);
+
+        return elapsed < minimumDelay;
+    }
+
+    private void HandleHomeInput(LauncherAction action)
+    {
+        switch (action)
+        {
+            case LauncherAction.NavigateLeft:
+                MoveSelection(-1);
+                break;
+
+            case LauncherAction.NavigateRight:
+                MoveSelection(1);
+                break;
+
+            case LauncherAction.NavigateUp:
+                MoveSelection(-GetRowStride());
+                break;
+
+            case LauncherAction.NavigateDown:
+                MoveSelection(GetRowStride());
+                break;
+
+            case LauncherAction.Confirm:
+                OpenSelectedMetadata();
+                break;
+
+            case LauncherAction.Back:
+                OpenExitConfirmation();
+                break;
+        }
+    }
+
+    private async Task HandleMetadataInputAsync(
+        LauncherAction action)
+    {
+        switch (action)
+        {
+            case LauncherAction.Confirm:
+                await ConfirmLaunchAsync();
+                break;
+
+            case LauncherAction.Back:
+                ReturnHome();
+                break;
+
+            case LauncherAction.Trailer:
+                ToggleTrailerPlaceholder();
+                break;
+        }
+    }
+
+    private void HandleExitInput(LauncherAction action)
+    {
+        switch (action)
+        {
+            case LauncherAction.Confirm:
+                _exitApplication();
+                break;
+
+            case LauncherAction.Back:
+                CancelExitConfirmation();
+                break;
+        }
+    }
+
+    private void MoveSelection(int delta)
+    {
+        if (Games.Count == 0)
+            return;
+
+        var currentIndex = SelectedGame is null
+            ? 0
+            : Games.IndexOf(SelectedGame);
+
+        if (currentIndex < 0)
+            currentIndex = 0;
+
+        var nextIndex = Math.Clamp(
+            currentIndex + delta,
+            0,
+            Games.Count - 1);
+
+        SelectedGame = Games[nextIndex];
+    }
+
+    private int GetRowStride()
+    {
+        if (Games.Count <= 5)
+            return Games.Count;
+
+        return (int)Math.Ceiling(Games.Count / 2.0);
+    }
+
+    private void OpenSelectedMetadata()
+    {
+        if (SelectedGame is not null)
+            OpenMetadata(SelectedGame);
+    }
+
     private void OpenMetadata(GameCardViewModel game)
     {
         if (IsLaunching)
@@ -149,6 +375,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         SelectedGame = game;
         IsTrailerPlaceholderActive = false;
+        IsExitVisible = false;
 
         MetadataStatus = game.IsLaunchable
             ? "Ready to launch."
@@ -164,12 +391,26 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
 
         IsTrailerPlaceholderActive = false;
+        IsExitVisible = false;
         IsMetadataVisible = false;
         IsHomeVisible = true;
 
         StatusMessage = HasGames
             ? $"{Games.Count} game{(Games.Count == 1 ? "" : "s")} loaded."
             : "No games found.";
+    }
+
+    private void OpenExitConfirmation()
+    {
+        if (IsLaunching)
+            return;
+
+        IsExitVisible = true;
+    }
+
+    private void CancelExitConfirmation()
+    {
+        IsExitVisible = false;
     }
 
     private async Task ConfirmLaunchAsync()
@@ -225,10 +466,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             {
                 _setWindowVisible(true);
                 ReturnHome();
-            }
-            else if (!session.CanMonitor)
-            {
-                MetadataStatus = result.Message;
             }
         }
         catch (OperationCanceledException)

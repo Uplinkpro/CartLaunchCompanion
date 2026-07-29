@@ -33,6 +33,17 @@
             <Setter Property="BorderBrush" Value="#AAFFFFFF" />
         </Style>
 
+        <Style Selector="Button.exit-action">
+            <Setter Property="Background" Value="#A62E0B0E" />
+            <Setter Property="BorderBrush" Value="#E05A3036" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+
+        <Style Selector="Button.exit-action:pointerover">
+            <Setter Property="Background" Value="#D63E1015" />
+            <Setter Property="BorderBrush" Value="#FFFF6B72" />
+        </Style>
+
         <Style Selector="Button.game-card">
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="10" />

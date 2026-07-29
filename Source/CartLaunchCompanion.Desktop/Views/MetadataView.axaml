@@ -5,16 +5,6 @@
              x:DataType="vm:MainViewModel"
              Focusable="True">
 
-    <UserControl.KeyBindings>
-        <KeyBinding Gesture="Enter"
-                    Command="{Binding ConfirmLaunchCommand}" />
-        <KeyBinding Gesture="Escape"
-                    Command="{Binding ReturnHomeCommand}" />
-        <KeyBinding Gesture="X"
-                    Command="{Binding TrailerCommand}" />
-        <KeyBinding Gesture="Space"
-                    Command="{Binding TrailerCommand}" />
-    </UserControl.KeyBindings>
 
     <Grid Background="#050608"
           RowDefinitions="2.6*,3.4*,Auto">
@@ -315,7 +305,7 @@
                                 Height="30"
                                 CornerRadius="15"
                                 Background="#2E9B32">
-                            <TextBlock Text="A"
+                            <TextBlock Text="{Binding ConfirmPrompt}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        Foreground="White"
@@ -334,7 +324,7 @@
                                 Height="30"
                                 CornerRadius="15"
                                 Background="#C83B40">
-                            <TextBlock Text="B"
+                            <TextBlock Text="{Binding BackPrompt}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        Foreground="White"
@@ -353,7 +343,7 @@
                                 Height="30"
                                 CornerRadius="15"
                                 Background="#267BD9">
-                            <TextBlock Text="X"
+                            <TextBlock Text="{Binding TrailerPrompt}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        Foreground="White"

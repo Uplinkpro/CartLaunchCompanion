@@ -5,12 +5,6 @@
              x:DataType="vm:MainViewModel"
              Focusable="True">
 
-    <UserControl.KeyBindings>
-        <KeyBinding Gesture="Escape"
-                    Command="{Binding ExitCommand}" />
-        <KeyBinding Gesture="F5"
-                    Command="{Binding ReloadCommand}" />
-    </UserControl.KeyBindings>
 
     <Grid Background="#050608">
 
@@ -76,6 +70,22 @@
                            HorizontalAlignment="Center"
                            Foreground="#B8FFFFFF"
                            FontSize="13" />
+
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Spacing="8">
+                    <Border Width="8"
+                            Height="8"
+                            CornerRadius="4"
+                            Background="{Binding SelectedGame.AccentColor}" />
+                    <TextBlock Text="{Binding ControllerStatus}"
+                               Foreground="#8FFFFFFF"
+                               FontSize="12" />
+                    <TextBlock Text="{Binding LastControllerAction, StringFormat='Last: {0}'}"
+                               Foreground="#62FFFFFF"
+                               FontSize="12"
+                               IsVisible="{Binding IsControllerConnected}" />
+                </StackPanel>
             </StackPanel>
 
             <Grid Grid.Row="2">
@@ -233,7 +243,7 @@
                         HorizontalAlignment="Center"
                         Spacing="14">
                 <Button Classes="action"
-                        Command="{Binding SelectedGame.OpenCommand}"
+                        Command="{Binding OpenSelectedGameCommand}"
                         IsEnabled="{Binding HasSelectedGame}">
                     <StackPanel Orientation="Horizontal"
                                 Spacing="10">
@@ -241,7 +251,7 @@
                                 Height="30"
                                 CornerRadius="15"
                                 Background="#2E9B32">
-                            <TextBlock Text="A"
+                            <TextBlock Text="{Binding ConfirmPrompt}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        Foreground="White"
@@ -260,7 +270,7 @@
                                 Height="30"
                                 CornerRadius="15"
                                 Background="#C83B40">
-                            <TextBlock Text="B"
+                            <TextBlock Text="{Binding BackPrompt}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        Foreground="White"

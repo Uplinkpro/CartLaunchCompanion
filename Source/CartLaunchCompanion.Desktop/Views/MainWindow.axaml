@@ -15,8 +15,136 @@
         MinHeight="600"
         WindowStartupLocation="CenterScreen"
         Title="Cart Launch Companion 2.0">
+
     <Grid Background="#050608">
         <views:HomeView IsVisible="{Binding IsHomeVisible}" />
         <views:MetadataView IsVisible="{Binding IsMetadataVisible}" />
+
+        <Border IsVisible="{Binding IsExitVisible}"
+                Background="#E8050608"
+                ZIndex="500">
+            <Grid RowDefinitions="*,Auto"
+                  Margin="42">
+                <StackPanel Grid.Row="0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="16">
+                    <Border Width="86"
+                            Height="70"
+                            CornerRadius="11"
+                            BorderBrush="#DDE5E8F0"
+                            BorderThickness="3"
+                            Background="#0B0D11">
+                        <Grid RowDefinitions="*,13"
+                              Margin="9">
+                            <Border Grid.Row="0"
+                                    Margin="8,3,8,5"
+                                    CornerRadius="4"
+                                    BorderBrush="#DDE5E8F0"
+                                    BorderThickness="2" />
+                            <Grid Grid.Row="1"
+                      ColumnDefinitions="220,24,220"
+                      HorizontalAlignment="Center">
+                    <Button Grid.Column="0"
+                            Classes="action"
+                            Command="{Binding CancelExitCommand}">
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    Spacing="10">
+                            <Border Width="30"
+                                    Height="30"
+                                    CornerRadius="15"
+                                    Background="#C83B40">
+                                <TextBlock Text="{Binding BackPrompt}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Foreground="White"
+                                           FontWeight="Bold" />
+                            </Border>
+                            <TextBlock Text="CANCEL"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Grid.Column="2"
+                            Classes="action exit-action"
+                            Command="{Binding ConfirmExitCommand}">
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    Spacing="10">
+                            <Border Width="30"
+                                    Height="30"
+                                    CornerRadius="15"
+                                    Background="#2E9B32">
+                                <TextBlock Text="{Binding ConfirmPrompt}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Foreground="White"
+                                           FontWeight="Bold" />
+                            </Border>
+                            <TextBlock Text="EXIT"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Grid>
+                    </Border>
+
+                    <TextBlock Text="EXIT CART LAUNCH COMPANION?"
+                               HorizontalAlignment="Center"
+                               Foreground="White"
+                               FontSize="30"
+                               FontWeight="Bold" />
+
+                    <TextBlock Text="Your game library and configuration remain unchanged."
+                               HorizontalAlignment="Center"
+                               Foreground="#AFFFFFFF"
+                               FontSize="15" />
+                </StackPanel>
+
+                <StackPanel Grid.Row="1"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Spacing="16">
+                    <Button Classes="action"
+                            Command="{Binding ConfirmExitCommand}">
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="10">
+                            <Border Width="30"
+                                    Height="30"
+                                    CornerRadius="15"
+                                    Background="#2E9B32">
+                                <TextBlock Text="{Binding ConfirmPrompt}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Foreground="White"
+                                           FontWeight="Bold" />
+                            </Border>
+                            <TextBlock Text="EXIT"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Classes="action"
+                            Command="{Binding CancelExitCommand}">
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="10">
+                            <Border Width="30"
+                                    Height="30"
+                                    CornerRadius="15"
+                                    Background="#C83B40">
+                                <TextBlock Text="{Binding BackPrompt}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Foreground="White"
+                                           FontWeight="Bold" />
+                            </Border>
+                            <TextBlock Text="CANCEL"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
     </Grid>
 </Window>

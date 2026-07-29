@@ -28,4 +28,8 @@
     <ProjectReference Include="..\CartLaunchCompanion.Platform.Windows\CartLaunchCompanion.Platform.Windows.csproj" />
     <ProjectReference Include="..\CartLaunchCompanion.Platform.Linux\CartLaunchCompanion.Platform.Linux.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="ppy.SDL3-CS" Version="2026.722.0" />
+  </ItemGroup>
 </Project>
+

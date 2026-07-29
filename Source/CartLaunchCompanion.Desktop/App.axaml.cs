@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using CartLaunchCompanion.Desktop.Input;
 using CartLaunchCompanion.Core.Configuration.Migration;
 using CartLaunchCompanion.Core.Configuration.Validation;
 using CartLaunchCompanion.Core.Launching;
@@ -78,6 +79,24 @@ public partial class App : Application
             {
                 DataContext = viewModel
             };
+
+            var controllerService = new SdlControllerService();
+
+            controllerService.InputReceived += async (_, input) =>
+                await viewModel.HandleInputAsync(input);
+
+            controllerService.ConnectionChanged += (_, connection) =>
+                viewModel.UpdateControllerConnection(
+                    connection.Connected,
+                    connection.Description);
+
+            controllerService.DiagnosticChanged += (_, diagnostic) =>
+                viewModel.UpdateControllerDiagnostic(diagnostic);
+
+            desktop.Exit += async (_, _) =>
+                await controllerService.DisposeAsync();
+
+            controllerService.Start();
 
             desktop.MainWindow = mainWindow;
 
