@@ -21,17 +21,19 @@
                 Height="580"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
-                Opacity="0.13">
-            <Ellipse Width="480"
-                     Height="145"
-                     Canvas.Left="30"
-                     Canvas.Top="105"
-                     Fill="{Binding SelectedGame.BeamCenterColor}" />
-            <Ellipse Width="580"
-                     Height="170"
-                     Canvas.Left="430"
+                Opacity="0.14">
+            <Ellipse Width="500"
+                     Height="150"
+                     Canvas.Left="20"
+                     Canvas.Top="100"
+                     Fill="{Binding SelectedGame.BeamCenterColor,
+                                    FallbackValue=#709D56E8}" />
+            <Ellipse Width="600"
+                     Height="175"
+                     Canvas.Left="420"
                      Canvas.Top="275"
-                     Fill="{Binding SelectedGame.BeamCenterColor}" />
+                     Fill="{Binding SelectedGame.BeamCenterColor,
+                                    FallbackValue=#709D56E8}" />
         </Canvas>
 
         <Border x:Name="WideBeam"
@@ -39,15 +41,17 @@
                 Height="620"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
-                Opacity="0.52">
+                Opacity="0.54">
             <Border.Background>
                 <RadialGradientBrush Center="50%,0%"
                                      GradientOrigin="50%,0%"
                                      RadiusX="0.60"
                                      RadiusY="0.60">
-                    <GradientStop Color="{Binding SelectedGame.BeamCenterColor}"
+                    <GradientStop Color="{Binding SelectedGame.BeamCenterColor,
+                                                  FallbackValue=#709D56E8}"
                                   Offset="0" />
-                    <GradientStop Color="{Binding SelectedGame.BeamEdgeColor}"
+                    <GradientStop Color="{Binding SelectedGame.BeamEdgeColor,
+                                                  FallbackValue=#009D56E8}"
                                   Offset="1" />
                 </RadialGradientBrush>
             </Border.Background>
@@ -58,13 +62,15 @@
                 Height="590"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
-                Opacity="0.76">
+                Opacity="0.78">
             <Border.Background>
                 <LinearGradientBrush StartPoint="50%,0%"
                                      EndPoint="50%,100%">
-                    <GradientStop Color="{Binding SelectedGame.BeamCenterColor}"
+                    <GradientStop Color="{Binding SelectedGame.BeamCenterColor,
+                                                  FallbackValue=#709D56E8}"
                                   Offset="0" />
-                    <GradientStop Color="{Binding SelectedGame.BeamEdgeColor}"
+                    <GradientStop Color="{Binding SelectedGame.BeamEdgeColor,
+                                                  FallbackValue=#009D56E8}"
                                   Offset="1" />
                 </LinearGradientBrush>
             </Border.Background>
@@ -91,13 +97,14 @@
                     Height="155"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Top"
-                    Opacity="0.60">
+                    Opacity="0.62">
                 <Border.Background>
                     <RadialGradientBrush Center="50%,0%"
                                          GradientOrigin="50%,0%"
                                          RadiusX="0.65"
                                          RadiusY="0.65">
-                        <GradientStop Color="{Binding SelectedGame.FloorLightColor}"
+                        <GradientStop Color="{Binding SelectedGame.FloorLightColor,
+                                                      FallbackValue=#309D56E8}"
                                       Offset="0" />
                         <GradientStop Color="#00000000"
                                       Offset="1" />
