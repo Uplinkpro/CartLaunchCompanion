@@ -9,7 +9,7 @@
 
     <Grid Background="#030406"
           RowDefinitions="2.6*,3.4*,Auto">
-        <controls:StudioEnvironmentControl Grid.RowSpan="3" />
+        <controls:StudioRenderer Grid.RowSpan="3" />
 
         <!-- Wide 3840x1240-style background presentation. -->
         <Grid Grid.Row="0"
@@ -360,5 +360,6 @@
         </Border>
     </Grid>
 </UserControl>
+
 
 
