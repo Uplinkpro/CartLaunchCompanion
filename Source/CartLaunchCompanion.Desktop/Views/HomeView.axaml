@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:CartLaunchCompanion.Desktop.ViewModels"
              xmlns:controls="using:CartLaunchCompanion.Desktop.Controls"
@@ -8,7 +8,7 @@
 
 
     <Grid Background="#030406">
-        <controls:StudioScene />
+        <controls:StudioLightingControl />
 
         <!-- Home: browse only. -->
         <Grid IsVisible="{Binding IsHomeVisible}"
@@ -282,3 +282,4 @@
         </Grid>
     </Grid>
 </UserControl>
+

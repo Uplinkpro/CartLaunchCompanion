@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:CartLaunchCompanion.Desktop.ViewModels"
              xmlns:controls="using:CartLaunchCompanion.Desktop.Controls"
@@ -9,7 +9,7 @@
 
     <Grid Background="#030406"
           RowDefinitions="2.6*,3.4*,Auto">
-        <controls:StudioScene Grid.RowSpan="3" />
+        <controls:StudioLightingControl Grid.RowSpan="3" />
 
         <!-- Wide 3840x1240-style background presentation. -->
         <Grid Grid.Row="0"
@@ -218,7 +218,7 @@
                                 CornerRadius="32"
                                 BorderBrush="{Binding SelectedGame.AccentColor}"
                                 BorderThickness="2">
-                            <TextBlock Text="▶"
+                            <TextBlock Text="â–¶"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        Foreground="White"
@@ -360,3 +360,4 @@
         </Border>
     </Grid>
 </UserControl>
+

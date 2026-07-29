@@ -1,4 +1,4 @@
-<Window xmlns="https://github.com/avaloniaui"
+﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:CartLaunchCompanion.Desktop.ViewModels"
         xmlns:views="using:CartLaunchCompanion.Desktop.Views"
@@ -23,7 +23,7 @@
 
         <Grid IsVisible="{Binding IsExitVisible}"
               ZIndex="500">
-            <controls:StudioScene />
+            <controls:StudioLightingControl />
 
             <Border Background="#B2030406" />
 
@@ -129,3 +129,4 @@
         </Grid>
     </Grid>
 </Window>
+
