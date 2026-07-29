@@ -4,46 +4,31 @@
              x:Class="CartLaunchCompanion.Desktop.Controls.StudioScene"
              x:DataType="vm:MainViewModel"
              IsHitTestVisible="False">
+
     <Grid Background="#030406">
+
         <Border>
             <Border.Background>
                 <LinearGradientBrush StartPoint="0%,0%"
                                      EndPoint="0%,100%">
-                    <GradientStop Color="#050609" Offset="0" />
-                    <GradientStop Color="#020305" Offset="0.63" />
+                    <GradientStop Color="#06070A" Offset="0" />
+                    <GradientStop Color="#020305" Offset="0.62" />
                     <GradientStop Color="#07080B" Offset="1" />
                 </LinearGradientBrush>
             </Border.Background>
         </Border>
 
-        <!-- Clearly visible wide cone -->
+        <!-- Beam stage -->
         <Canvas Width="1100"
                 Height="620"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top">
-            <Polygon x:Name="WideBeam"
-                     Points="470,0 630,0 950,590 150,590"
-                     Opacity="0.34">
-                <Polygon.Fill>
-                    <LinearGradientBrush StartPoint="50%,0%"
-                                         EndPoint="50%,100%">
-                        <GradientStop Color="{Binding SelectedGame.BeamCenterColor,
-                                                      FallbackValue=#709D56E8}"
-                                      Offset="0" />
-                        <GradientStop Color="{Binding SelectedGame.FloorLightColor,
-                                                      FallbackValue=#309D56E8}"
-                                      Offset="0.55" />
-                        <GradientStop Color="#009D56E8"
-                                      Offset="1" />
-                    </LinearGradientBrush>
-                </Polygon.Fill>
-            </Polygon>
 
-            <!-- Bright narrow core -->
-            <Polygon x:Name="CoreBeam"
-                     Points="515,0 585,0 730,565 370,565"
-                     Opacity="0.56">
-                <Polygon.Fill>
+            <!-- Broad visible cone -->
+            <Path x:Name="WideBeam"
+                  Data="M 470,0 L 630,0 L 965,590 L 135,590 Z"
+                  Opacity="0.24">
+                <Path.Fill>
                     <LinearGradientBrush StartPoint="50%,0%"
                                          EndPoint="50%,100%">
                         <GradientStop Color="{Binding SelectedGame.AccentBrightColor,
@@ -51,40 +36,54 @@
                                       Offset="0" />
                         <GradientStop Color="{Binding SelectedGame.BeamCenterColor,
                                                       FallbackValue=#709D56E8}"
-                                      Offset="0.45" />
+                                      Offset="0.42" />
+                        <GradientStop Color="{Binding SelectedGame.FloorLightColor,
+                                                      FallbackValue=#309D56E8}"
+                                      Offset="0.78" />
                         <GradientStop Color="#009D56E8"
                                       Offset="1" />
                     </LinearGradientBrush>
-                </Polygon.Fill>
-            </Polygon>
+                </Path.Fill>
+            </Path>
 
-            <!-- Soft moving haze inside the beam -->
-            <Canvas x:Name="HazeLayer"
-                    Width="1100"
-                    Height="580"
-                    Opacity="0.15">
-                <Ellipse Width="500"
-                         Height="145"
-                         Canvas.Left="120"
-                         Canvas.Top="145"
-                         Fill="{Binding SelectedGame.BeamCenterColor,
-                                        FallbackValue=#709D56E8}" />
-                <Ellipse Width="570"
-                         Height="165"
-                         Canvas.Left="420"
-                         Canvas.Top="320"
-                         Fill="{Binding SelectedGame.BeamCenterColor,
-                                        FallbackValue=#709D56E8}" />
-            </Canvas>
+            <!-- Narrow bright center -->
+            <Path x:Name="CoreBeam"
+                  Data="M 515,0 L 585,0 L 745,560 L 355,560 Z"
+                  Opacity="0.48">
+                <Path.Fill>
+                    <LinearGradientBrush StartPoint="50%,0%"
+                                         EndPoint="50%,100%">
+                        <GradientStop Color="{Binding SelectedGame.AccentBrightColor,
+                                                      FallbackValue=#D7B6FF}"
+                                      Offset="0" />
+                        <GradientStop Color="{Binding SelectedGame.BeamCenterColor,
+                                                      FallbackValue=#909D56E8}"
+                                      Offset="0.38" />
+                        <GradientStop Color="{Binding SelectedGame.FloorLightColor,
+                                                      FallbackValue=#409D56E8}"
+                                      Offset="0.76" />
+                        <GradientStop Color="#009D56E8"
+                                      Offset="1" />
+                    </LinearGradientBrush>
+                </Path.Fill>
+            </Path>
+
+            <!-- Thin central shaft for clear visibility -->
+            <Path x:Name="BeamShaft"
+                  Data="M 535,0 L 565,0 L 630,500 L 470,500 Z"
+                  Fill="{Binding SelectedGame.AccentBrightColor,
+                                 FallbackValue=#CFA4FF}"
+                  Opacity="0.16" />
         </Canvas>
 
+        <!-- Separate floor -->
         <Grid VerticalAlignment="Bottom"
               Height="205">
             <Border>
                 <Border.Background>
                     <LinearGradientBrush StartPoint="0%,0%"
                                          EndPoint="0%,100%">
-                        <GradientStop Color="#090B0F" Offset="0" />
+                        <GradientStop Color="#0A0C10" Offset="0" />
                         <GradientStop Color="#030406" Offset="1" />
                     </LinearGradientBrush>
                 </Border.Background>
@@ -92,21 +91,21 @@
 
             <Border Height="1"
                     VerticalAlignment="Top"
-                    Background="#28FFFFFF" />
+                    Background="#32FFFFFF" />
 
             <Border x:Name="FloorLight"
-                    Width="740"
-                    Height="155"
+                    Width="760"
+                    Height="160"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Top"
                     Opacity="0.62">
                 <Border.Background>
                     <RadialGradientBrush Center="50%,0%"
                                          GradientOrigin="50%,0%"
-                                         RadiusX="0.65"
-                                         RadiusY="0.65">
+                                         RadiusX="0.66"
+                                         RadiusY="0.66">
                         <GradientStop Color="{Binding SelectedGame.FloorLightColor,
-                                                      FallbackValue=#309D56E8}"
+                                                      FallbackValue=#409D56E8}"
                                       Offset="0" />
                         <GradientStop Color="#00000000"
                                       Offset="1" />

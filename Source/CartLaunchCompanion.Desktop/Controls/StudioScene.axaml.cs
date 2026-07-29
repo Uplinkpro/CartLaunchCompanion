@@ -12,7 +12,7 @@ public partial class StudioScene : UserControl
 
     private TranslateTransform? _wideTransform;
     private TranslateTransform? _coreTransform;
-    private TranslateTransform? _hazeTransform;
+    private TranslateTransform? _shaftTransform;
 
     public StudioScene()
     {
@@ -47,11 +47,11 @@ public partial class StudioScene : UserControl
     {
         _wideTransform = new TranslateTransform();
         _coreTransform = new TranslateTransform();
-        _hazeTransform = new TranslateTransform();
+        _shaftTransform = new TranslateTransform();
 
         WideBeam.RenderTransform = _wideTransform;
         CoreBeam.RenderTransform = _coreTransform;
-        HazeLayer.RenderTransform = _hazeTransform;
+        BeamShaft.RenderTransform = _shaftTransform;
 
         if (ReduceMotion)
         {
@@ -79,33 +79,30 @@ public partial class StudioScene : UserControl
 
     private void ApplyFrame(double seconds)
     {
-        var wide = Math.Sin(seconds * 0.72);
-        var core = Math.Sin((seconds * 1.05) + 0.8);
-        var haze = Math.Sin((seconds * 0.48) + 0.35);
+        var wide = Math.Sin(seconds * 0.68);
+        var core = Math.Sin((seconds * 0.96) + 0.85);
+        var shaft = Math.Sin((seconds * 1.18) + 1.35);
 
         if (_wideTransform is not null)
-            _wideTransform.X = wide * 54.0;
+            _wideTransform.X = wide * 42.0;
 
         if (_coreTransform is not null)
-            _coreTransform.X = core * 24.0;
+            _coreTransform.X = core * 22.0;
 
-        if (_hazeTransform is not null)
-        {
-            _hazeTransform.X = haze * 70.0;
-            _hazeTransform.Y = wide * 10.0;
-        }
+        if (_shaftTransform is not null)
+            _shaftTransform.X = shaft * 12.0;
 
-        WideBeam.Opacity = 0.34 + (wide * 0.08);
-        CoreBeam.Opacity = 0.56 + (core * 0.12);
-        HazeLayer.Opacity = 0.15 + (haze * 0.05);
-        FloorLight.Opacity = 0.61 + (wide * 0.12);
+        WideBeam.Opacity = 0.23 + (wide * 0.045);
+        CoreBeam.Opacity = 0.46 + (core * 0.075);
+        BeamShaft.Opacity = 0.15 + (shaft * 0.035);
+        FloorLight.Opacity = 0.60 + (wide * 0.11);
     }
 
     private void ApplyStaticState()
     {
-        WideBeam.Opacity = 0.34;
-        CoreBeam.Opacity = 0.56;
-        HazeLayer.Opacity = 0.13;
+        WideBeam.Opacity = 0.24;
+        CoreBeam.Opacity = 0.48;
+        BeamShaft.Opacity = 0.16;
         FloorLight.Opacity = 0.62;
     }
 }
