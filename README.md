@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="Docs/brand/repository-banner.png" alt="Cart Launch Companion" width="100%">
+<img src="docs/brand/repository-banner.png" alt="Cart Launch Companion" width="100%">
 
 # Cart Launch Companion
 
@@ -45,7 +45,7 @@ Everything stays together in one portable folder: the application, game configur
 
 | Library | Game details | Launcher branding |
 |---|---|---|
-| ![Game library](Docs/screenshots/library.png) | ![Game details](Docs/screenshots/details.png) | ![Launcher branding](Docs/screenshots/launcher-branding.png) |
+| ![Game library](docs/screenshots/library.png) | ![Game details](docs/screenshots/details.png) | ![Launcher branding](docs/screenshots/launcher-branding.png) |
 
 ## Highlights
 
@@ -319,14 +319,14 @@ Create self-contained release packages:
 ## Documentation
 
 - [Game Configurator](Documentation/Game-Configurator.md)
-- [Architecture](Docs/2.0/Architecture.md)
-- [Controller guide](Docs/2.0/ControllerGuide.md)
-- [Design principles](Docs/2.0/DesignPrinciples.md)
-- [Folder structure](Docs/2.0/FolderStructure.md)
-- [JSON specification](Docs/2.0/JsonSpecification.md)
-- [Theme guide](Docs/2.0/ThemeGuide.md)
-- [Version 1 upgrade guide](Docs/2.0/UpgradeGuide.md)
-- [Roadmap](Docs/2.0/Roadmap.md)
+- [Architecture](docs/2.0/Architecture.md)
+- [Controller guide](docs/2.0/ControllerGuide.md)
+- [Design principles](docs/2.0/DesignPrinciples.md)
+- [Folder structure](docs/2.0/FolderStructure.md)
+- [JSON specification](docs/2.0/JsonSpecification.md)
+- [Theme guide](docs/2.0/ThemeGuide.md)
+- [Version 1 upgrade guide](docs/2.0/UpgradeGuide.md)
+- [Roadmap](docs/2.0/Roadmap.md)
 
 ## Reporting issues
 
@@ -368,7 +368,7 @@ Version 2 is in active release-candidate testing. Reports are especially useful 
 - Wine and Proton configurations outside Steam;
 - storefront updates that change launch behavior.
 
-See the [roadmap](Docs/2.0/Roadmap.md) for planned work. Roadmap items are goals rather than release commitments.
+See the [roadmap](docs/2.0/Roadmap.md) for planned work. Roadmap items are goals rather than release commitments.
 
 ## Acknowledgements
 
@@ -385,7 +385,7 @@ If Cart Launch Companion improves your gaming setup, you can support continued d
 <br>
 
 <a href="https://buymeacoffee.com/Uplinkpro">
-  <img src="Docs/images/buymeacoffee-qr.png" alt="Buy Me a Coffee QR code" width="220">
+  <img src="docs/images/buymeacoffee-qr.png" alt="Buy Me a Coffee QR code" width="220">
 </a>
 
 <br><br>
