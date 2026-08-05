@@ -99,13 +99,17 @@ The roadmap describes development order, not release promises.
 
 ## Phase 9 — Media and Polish
 
+**Status: complete.** Windows visual validation and automated release checks
+are complete. Linux/SteamOS hardware certification remains part of Phase 10.
+
 - Cross-platform trailer backend
 - Error recovery
 - Performance profiling
 - Storage review
 - Log rotation
 - Accessibility
-- Multi-resolution testing
+- Multi-resolution testing (1280×720, Steam Deck 1280×800, 1920×1080,
+  2560×1440, and 3840×2160)
 
 ## Phase 10 — Release Candidate
 

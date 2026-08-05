@@ -1,8 +1,10 @@
+using System.Diagnostics;
 using CartLaunchCompanion.Core.Input;
 using CartLaunchCompanion.Core.Launching;
 using CartLaunchCompanion.Core.Library;
 using CartLaunchCompanion.Core.Platform;
 using CartLaunchCompanion.Core.Portable;
+using CartLaunchCompanion.Desktop.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -50,7 +52,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                   !IsLaunching);
 
         TrailerCommand = new RelayCommand(
-            ToggleTrailerPlaceholder,
+            ToggleTrailerPlayback,
             () => !IsLaunching);
 
         OpenSelectedGameCommand = new RelayCommand(
@@ -72,6 +74,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public partial string MetadataStatus { get; set; } = "";
 
     [ObservableProperty]
+    public partial string LibraryErrorMessage { get; set; } = "";
+
+    [ObservableProperty]
     public partial bool IsLoading { get; set; }
 
     [ObservableProperty]
@@ -87,7 +92,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public partial bool IsExitVisible { get; set; }
 
     [ObservableProperty]
-    public partial bool IsTrailerPlaceholderActive { get; set; }
+    public partial bool IsTrailerPlaybackEnabled { get; set; } = true;
 
     [ObservableProperty]
     public partial InputDeviceKind LastInputDevice { get; set; } =
@@ -105,7 +110,19 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public bool HasGames => Games.Count > 0;
     public bool HasNoGames => !HasGames && !IsLoading;
+    public bool HasLibraryError => !string.IsNullOrWhiteSpace(LibraryErrorMessage);
+    public bool ShowEmptyLibrary => HasNoGames && !HasLibraryError;
     public bool HasSelectedGame => SelectedGame is not null;
+    public bool HasNoSelectedGame => SelectedGame is null;
+    public bool ShowCartLaunchBranding =>
+        SelectedGame is null || SelectedGame.UsesCartLaunchBranding;
+    public bool ShowLauncherBranding =>
+        SelectedGame is not null && !SelectedGame.UsesCartLaunchBranding;
+    public bool UseMotionEffects =>
+        !AnimationPreferenceParser.IsReducedMotionValue(
+            Environment.GetEnvironmentVariable("CLC_REDUCE_MOTION"));
+    public bool ShouldPlayTrailer =>
+        IsMetadataVisible && UseMotionEffects && IsTrailerPlaybackEnabled;
     public string PortableRoot => _portablePaths.Root;
     public string PlatformName => _platform.ToString();
 
@@ -118,6 +135,22 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         LastInputDevice is InputDeviceKind.Controller or InputDeviceKind.Remote
             ? "B"
             : "ESC";
+
+    public bool ShowOnScreenActionButtons =>
+        LastInputDevice is not InputDeviceKind.Keyboard;
+
+    public string ExitInstruction =>
+        LastInputDevice switch
+        {
+            InputDeviceKind.Keyboard =>
+                "Press Escape again to exit, or Enter to cancel.",
+            InputDeviceKind.Mouse =>
+                "Choose Exit to close the launcher, or Cancel to return.",
+            InputDeviceKind.Remote =>
+                "Press Back again to exit, or Confirm to cancel.",
+            _ =>
+                "Press B again to exit, or A to cancel."
+        };
 
     public string TrailerPrompt =>
         LastInputDevice is InputDeviceKind.Controller or InputDeviceKind.Remote
@@ -136,9 +169,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     partial void OnSelectedGameChanged(
         GameCardViewModel? value)
     {
+        foreach (var game in Games)
+            game.IsSelected = ReferenceEquals(game, value);
+
         ConfirmLaunchCommand.NotifyCanExecuteChanged();
         OpenSelectedGameCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(HasSelectedGame));
+        OnPropertyChanged(nameof(HasNoSelectedGame));
+        OnPropertyChanged(nameof(ShowCartLaunchBranding));
+        OnPropertyChanged(nameof(ShowLauncherBranding));
     }
 
     partial void OnIsLaunchingChanged(bool value)
@@ -149,11 +188,23 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         TrailerCommand.NotifyCanExecuteChanged();
     }
 
+    partial void OnIsMetadataVisibleChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShouldPlayTrailer));
+    }
+
+    partial void OnIsTrailerPlaybackEnabledChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShouldPlayTrailer));
+    }
+
     partial void OnLastInputDeviceChanged(InputDeviceKind value)
     {
         OnPropertyChanged(nameof(ConfirmPrompt));
         OnPropertyChanged(nameof(BackPrompt));
         OnPropertyChanged(nameof(TrailerPrompt));
+        OnPropertyChanged(nameof(ShowOnScreenActionButtons));
+        OnPropertyChanged(nameof(ExitInstruction));
     }
 
     public async Task LoadAsync()
@@ -163,6 +214,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         IsLoading = true;
         StatusMessage = "Loading portable library…";
+        LibraryErrorMessage = string.Empty;
 
         try
         {
@@ -187,16 +239,23 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             OnPropertyChanged(nameof(HasGames));
             OnPropertyChanged(nameof(HasNoGames));
+            OnPropertyChanged(nameof(HasLibraryError));
+            OnPropertyChanged(nameof(ShowEmptyLibrary));
         }
         catch (Exception ex)
         {
-            StatusMessage =
-                $"The library could not be loaded: {ex.Message}";
+            Trace.WriteLine($"Library load failed: {ex}");
+            LibraryErrorMessage =
+                $"The library could not be loaded. {ex.Message}";
+            StatusMessage = LibraryErrorMessage;
+            OnPropertyChanged(nameof(HasLibraryError));
+            OnPropertyChanged(nameof(ShowEmptyLibrary));
         }
         finally
         {
             IsLoading = false;
             OnPropertyChanged(nameof(HasNoGames));
+            OnPropertyChanged(nameof(ShowEmptyLibrary));
         }
     }
 
@@ -315,7 +374,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 break;
 
             case LauncherAction.Trailer:
-                ToggleTrailerPlaceholder();
+                ToggleTrailerPlayback();
                 break;
         }
     }
@@ -374,11 +433,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
 
         SelectedGame = game;
-        IsTrailerPlaceholderActive = false;
+        IsTrailerPlaybackEnabled = true;
         IsExitVisible = false;
 
         MetadataStatus = game.IsLaunchable
-            ? "Ready to launch."
+            ? string.Empty
             : "This game is not launchable on the current platform.";
 
         IsHomeVisible = false;
@@ -390,7 +449,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (IsLaunching)
             return;
 
-        IsTrailerPlaceholderActive = false;
+        IsTrailerPlaybackEnabled = false;
         IsExitVisible = false;
         IsMetadataVisible = false;
         IsHomeVisible = true;
@@ -427,7 +486,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
 
         IsLaunching = true;
-        IsTrailerPlaceholderActive = false;
+        IsTrailerPlaybackEnabled = false;
         MetadataStatus = $"Launching {game.Name}…";
 
         var request = new GameLaunchRequest(
@@ -470,11 +529,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
         catch (OperationCanceledException)
         {
+            Trace.WriteLine($"Launch monitoring cancelled for '{game.Name}'.");
             MetadataStatus = "Launch monitoring was cancelled.";
             _setWindowVisible(true);
         }
         catch (Exception ex)
         {
+            Trace.WriteLine($"Launch failed for '{game.Name}': {ex}");
             MetadataStatus =
                 $"The launch failed: {ex.Message}";
             _setWindowVisible(true);
@@ -485,7 +546,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private void ToggleTrailerPlaceholder()
+    private void ToggleTrailerPlayback()
     {
         if (SelectedGame is null ||
             IsLaunching)
@@ -493,14 +554,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        IsTrailerPlaceholderActive =
-            !IsTrailerPlaceholderActive;
+        if (!SelectedGame.HasTrailerSource)
+        {
+            MetadataStatus = "No trailer is configured for this game.";
+            return;
+        }
 
-        MetadataStatus = SelectedGame.HasTrailer
-            ? IsTrailerPlaceholderActive
-                ? "Trailer playback placeholder active."
-                : "Trailer paused."
-            : "No local trailer is configured.";
+        IsTrailerPlaybackEnabled = !IsTrailerPlaybackEnabled;
+        MetadataStatus = IsTrailerPlaybackEnabled
+            ? "Trailer playing."
+            : "Trailer paused.";
     }
 
     private static string BuildStatusMessage(

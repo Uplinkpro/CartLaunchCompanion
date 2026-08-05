@@ -1,11 +1,16 @@
+using System.Net.Http;
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using CartLaunchCompanion.Desktop.Input;
 using CartLaunchCompanion.Core.Configuration.Migration;
 using CartLaunchCompanion.Core.Configuration.Validation;
+using CartLaunchCompanion.Core.Input;
 using CartLaunchCompanion.Core.Launching;
 using CartLaunchCompanion.Core.Library;
+using CartLaunchCompanion.Core.Metadata;
 using CartLaunchCompanion.Core.Platform;
 using CartLaunchCompanion.Core.Portable;
 using CartLaunchCompanion.Desktop.ViewModels;
@@ -33,11 +38,22 @@ public partial class App : Application
 
             var platformService = new RuntimePlatformService();
 
+            var metadataHttpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(8)
+            };
+
+            var pathResolver = new GamePathResolver();
+            var metadataService = new SteamMetadataService(
+                metadataHttpClient,
+                pathResolver);
+
             var libraryService = new GameLibraryService(
                 new GameConfigurationValidator(),
                 new Version1GameConfigurationImporter(),
-                new GamePathResolver(),
-                new LaunchTargetSelector());
+                pathResolver,
+                new LaunchTargetSelector(),
+                metadataService);
 
             IGameLaunchService launchService =
                 platformService.Current switch
@@ -81,7 +97,6 @@ public partial class App : Application
             };
 
             var controllerService = new SdlControllerService();
-
             controllerService.InputReceived += async (_, input) =>
                 await viewModel.HandleInputAsync(input);
 
@@ -91,10 +106,16 @@ public partial class App : Application
                     connection.Description);
 
             controllerService.DiagnosticChanged += (_, diagnostic) =>
+            {
+                Trace.WriteLine($"Controller: {diagnostic}");
                 viewModel.UpdateControllerDiagnostic(diagnostic);
+            };
 
             desktop.Exit += async (_, _) =>
+            {
+                metadataHttpClient.Dispose();
                 await controllerService.DisposeAsync();
+            };
 
             controllerService.Start();
 

@@ -9,7 +9,11 @@ public sealed class GameConfigurationJsonTests
     {
         var configuration = new GameConfiguration
         {
-            Game = { Name = "Portal 2" },
+            Game =
+            {
+                Name = "Portal 2",
+                SteamDeckCompatibility = SteamDeckCompatibility.Verified
+            },
             Launch =
             {
                 Windows =
@@ -31,6 +35,7 @@ public sealed class GameConfigurationJsonTests
         Assert.Contains("\"game\": {", json);
         Assert.Contains("\"preferredPlatform\": \"automatic\"", json);
         Assert.Contains("\"launcher\": \"steam\"", json);
+        Assert.Contains("\"steamDeckCompatibility\": \"verified\"", json);
     }
 
     [Fact]

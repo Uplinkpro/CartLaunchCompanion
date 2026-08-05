@@ -62,7 +62,7 @@
         </Style>
 
         <Style Selector="Button.game-card Border.card-frame">
-            <Setter Property="Opacity" Value="0.82" />
+            <Setter Property="Opacity" Value="0.68" />
             <Setter Property="RenderTransform"
                     Value="scale(1) translate(0px, 0px)" />
             <Setter Property="RenderTransformOrigin" Value="50%,50%" />
@@ -80,7 +80,7 @@
             <Setter Property="Opacity" Value="1" />
             <Setter Property="BorderThickness" Value="2" />
             <Setter Property="RenderTransform"
-                    Value="scale(1.025) translate(0px, -5px)" />
+                    Value="scale(1) translate(0px, 0px)" />
         </Style>
 
         <Style Selector="Button.game-card:focus Border.card-frame">
@@ -88,6 +88,13 @@
             <Setter Property="Opacity" Value="1" />
             <Setter Property="RenderTransform"
                     Value="scale(1.04) translate(0px, -8px)" />
+        </Style>
+
+        <Style Selector="Button.game-card.selected Border.card-frame">
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="Opacity" Value="1" />
+            <Setter Property="RenderTransform"
+                    Value="scale(1) translate(0px, 0px)" />
         </Style>
 
         <Style Selector="Border.glass-panel">

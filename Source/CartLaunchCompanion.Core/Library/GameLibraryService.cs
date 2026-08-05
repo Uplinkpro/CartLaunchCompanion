@@ -3,6 +3,7 @@ using CartLaunchCompanion.Core.Configuration;
 using CartLaunchCompanion.Core.Configuration.Migration;
 using CartLaunchCompanion.Core.Configuration.Validation;
 using CartLaunchCompanion.Core.Launching;
+using CartLaunchCompanion.Core.Metadata;
 using CartLaunchCompanion.Core.Platform;
 using CartLaunchCompanion.Core.Portable;
 
@@ -12,7 +13,8 @@ public sealed class GameLibraryService(
     GameConfigurationValidator validator,
     Version1GameConfigurationImporter version1Importer,
     IGamePathResolver pathResolver,
-    ILaunchTargetSelector launchTargetSelector)
+    ILaunchTargetSelector launchTargetSelector,
+    IGameMetadataService? metadataService = null)
     : IGameLibraryService
 {
     private static readonly string[] ConfigurationNames =
@@ -48,45 +50,25 @@ public sealed class GameLibraryService(
                     StringComparison.OrdinalIgnoreCase))
             .OrderBy(
                 folder => Path.GetFileName(folder),
-                StringComparer.OrdinalIgnoreCase);
+                StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
-        foreach (var folder in folders)
+        var loadTasks = folders.Select(
+            folder => LoadFolderAsync(
+                folder,
+                paths,
+                platform,
+                cancellationToken));
+
+        var folderResults = await Task.WhenAll(loadTasks);
+
+        foreach (var folderResult in folderResults)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            if (folderResult.Entry is not null)
+                result.Games.Add(folderResult.Entry);
 
-            var configurationPath =
-                FindConfigurationPath(folder);
-
-            if (configurationPath is null)
-            {
-                result.Failures.Add(
-                    new GameLibraryFailure(
-                        folder,
-                        null,
-                        "No game.json file was found."));
-                continue;
-            }
-
-            try
-            {
-                var entry = await LoadEntryAsync(
-                    folder,
-                    configurationPath,
-                    platform,
-                    cancellationToken);
-
-                result.Games.Add(entry);
-            }
-            catch (Exception ex)
-                when (ex is not OperationCanceledException)
-            {
-                result.Failures.Add(
-                    new GameLibraryFailure(
-                        folder,
-                        configurationPath,
-                        ex.Message,
-                        ex));
-            }
+            if (folderResult.Failure is not null)
+                result.Failures.Add(folderResult.Failure);
         }
 
         result.Games.Sort(
@@ -98,9 +80,53 @@ public sealed class GameLibraryService(
         return result;
     }
 
+    private async Task<FolderLoadResult> LoadFolderAsync(
+        string folder,
+        PortablePaths paths,
+        PlatformKind platform,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var configurationPath = FindConfigurationPath(folder);
+
+        if (configurationPath is null)
+        {
+            return new FolderLoadResult(
+                null,
+                new GameLibraryFailure(
+                    folder,
+                    null,
+                    "No game.json file was found."));
+        }
+
+        try
+        {
+            var entry = await LoadEntryAsync(
+                folder,
+                configurationPath,
+                paths,
+                platform,
+                cancellationToken);
+
+            return new FolderLoadResult(entry, null);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return new FolderLoadResult(
+                null,
+                new GameLibraryFailure(
+                    folder,
+                    configurationPath,
+                    ex.Message,
+                    ex));
+        }
+    }
+
     private async Task<GameLibraryEntry> LoadEntryAsync(
         string folder,
         string configurationPath,
+        PortablePaths portablePaths,
         PlatformKind platform,
         CancellationToken cancellationToken)
     {
@@ -135,6 +161,17 @@ public sealed class GameLibraryService(
             migrationWarnings.AddRange(importResult.Warnings);
         }
 
+        if (metadataService is not null)
+        {
+            var metadata = await metadataService.EnrichAsync(
+                folder,
+                configuration,
+                portablePaths,
+                cancellationToken);
+
+            migrationWarnings.AddRange(metadata.Warnings);
+        }
+
         var validation = validator.Validate(configuration);
         var launchTarget =
             launchTargetSelector.Select(configuration, platform);
@@ -157,9 +194,9 @@ public sealed class GameLibraryService(
             IconPath = pathResolver.ResolveExisting(
                 folder,
                 configuration.Artwork.Icon),
-            TrailerPath = pathResolver.ResolveExisting(
-                folder,
-                configuration.Artwork.Trailer),
+            TrailerPath = ResolveLocalTrailerPath(folder, configuration),
+            TrailerSource = ResolveTrailerSource(folder, configuration),
+            ScreenshotPaths = ResolveScreenshotPaths(folder),
             LaunchTarget = ResolveLaunchPaths(
                 folder,
                 launchTarget)
@@ -173,6 +210,45 @@ public sealed class GameLibraryService(
 
         return entry;
     }
+
+    private static IReadOnlyList<string> ResolveScreenshotPaths(string folder)
+    {
+        var screenshotFolder = Path.Combine(folder, "Artwork", "Screenshots");
+        if (!Directory.Exists(screenshotFolder))
+            return [];
+
+        // Let the desktop image decoder determine support instead of limiting
+        // screenshots by their file extension.
+        return Directory.EnumerateFiles(screenshotFolder)
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private string? ResolveLocalTrailerPath(
+        string folder,
+        GameConfiguration configuration)
+    {
+        var snap = pathResolver.ResolveExisting(folder, "Media/Snap.mp4");
+        if (snap is not null)
+            return snap;
+
+        var configured = pathResolver.ResolveExisting(
+            folder,
+            configuration.Artwork.Trailer);
+        if (configured is not null)
+            return configured;
+
+        return pathResolver.ResolveExisting(folder, "Media/SteamTrailer.mp4") ??
+               pathResolver.ResolveExisting(folder, "Media/SteamTrailer.webm");
+    }
+
+    private string? ResolveTrailerSource(
+        string folder,
+        GameConfiguration configuration) =>
+        ResolveLocalTrailerPath(folder, configuration) ??
+        (string.IsNullOrWhiteSpace(configuration.Artwork.TrailerUrl)
+            ? null
+            : configuration.Artwork.TrailerUrl.Trim());
 
     private LaunchTargetSelection? ResolveLaunchPaths(
         string folder,
@@ -281,4 +357,8 @@ public sealed class GameLibraryService(
                 $"This game is disabled on {platform}.");
         }
     }
+
+    private sealed record FolderLoadResult(
+        GameLibraryEntry? Entry,
+        GameLibraryFailure? Failure);
 }

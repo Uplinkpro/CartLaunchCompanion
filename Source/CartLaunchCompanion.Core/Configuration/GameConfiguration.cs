@@ -30,6 +30,9 @@ public sealed class GameInformation
     public string Genre { get; set; } = "";
     public string ReleaseDate { get; set; } = "";
     public string Players { get; set; } = "";
+    public SteamDeckCompatibility SteamDeckCompatibility { get; set; } =
+        SteamDeckCompatibility.Unknown;
+    public GamepadSupport GamepadSupport { get; set; } = GamepadSupport.Unknown;
 }
 
 public sealed class ArtworkConfiguration
@@ -112,6 +115,24 @@ public enum PreferredPlatform
     Automatic,
     Windows,
     Linux
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<SteamDeckCompatibility>))]
+public enum SteamDeckCompatibility
+{
+    Unknown,
+    Verified,
+    Playable,
+    Unsupported
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<GamepadSupport>))]
+public enum GamepadSupport
+{
+    Unknown,
+    Full,
+    Partial,
+    Unsupported
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<LauncherKind>))]

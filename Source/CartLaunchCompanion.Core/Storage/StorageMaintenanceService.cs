@@ -57,11 +57,41 @@ public sealed class StorageMaintenanceService
             TryDelete(file);
         }
 
+        DeleteEmptyDirectories(cacheFolder);
+    }
+
+    public void TrimCache(
+        string cacheFolder,
+        TimeSpan? maximumAge = null,
+        long maximumTotalBytes = 250L * 1024 * 1024)
+    {
+        if (!Directory.Exists(cacheFolder))
+            return;
+
+        var cutoff = DateTime.UtcNow - (maximumAge ?? TimeSpan.FromDays(30));
+        var files = new DirectoryInfo(cacheFolder)
+            .EnumerateFiles("*", SearchOption.AllDirectories)
+            .OrderByDescending(file => file.LastWriteTimeUtc)
+            .ToList();
+        long retainedBytes = 0;
+
+        foreach (var file in files)
+        {
+            var keep = file.LastWriteTimeUtc >= cutoff &&
+                       retainedBytes + file.Length <= maximumTotalBytes;
+            if (keep)
+                retainedBytes += file.Length;
+            else
+                TryDelete(file.FullName);
+        }
+
+        DeleteEmptyDirectories(cacheFolder);
+    }
+
+    private static void DeleteEmptyDirectories(string root)
+    {
         foreach (var directory in Directory
-                     .EnumerateDirectories(
-                         cacheFolder,
-                         "*",
-                         SearchOption.AllDirectories)
+                     .EnumerateDirectories(root, "*", SearchOption.AllDirectories)
                      .OrderByDescending(path => path.Length))
         {
             try

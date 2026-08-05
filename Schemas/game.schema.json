@@ -82,6 +82,18 @@
         "players": {
           "type": "string",
           "description": "Human-readable player information."
+        },
+        "steamDeckCompatibility": {
+          "type": "string",
+          "enum": ["unknown", "verified", "playable", "unsupported"],
+          "default": "unknown",
+          "description": "Steam Deck compatibility category shown on the metadata page."
+        },
+        "gamepadSupport": {
+          "type": "string",
+          "enum": ["unknown", "full", "partial", "unsupported"],
+          "default": "unknown",
+          "description": "Gamepad support shown on the metadata page. Steam metadata can populate full or partial support."
         }
       }
     },

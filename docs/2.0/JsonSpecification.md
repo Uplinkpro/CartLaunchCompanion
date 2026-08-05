@@ -66,6 +66,19 @@ Version 2 uses:
 - `cover` for portrait library artwork
 - `background` for the wide metadata-page background
 - `logo` for optional game logo artwork
+
+## Compatibility badges
+
+Optional game information fields may add compact compatibility badges to the
+Metadata view:
+
+- `steamDeckCompatibility`: `unknown`, `verified`, `playable`, or `unsupported`
+- `gamepadSupport`: `unknown`, `full`, `partial`, or `unsupported`
+
+`unknown` badges stay hidden. Steam metadata may fill full or partial gamepad
+support when the configuration has not supplied an override. Steam Deck status
+remains configuration-driven because Valve does not publish it through the
+regular store metadata response.
 - `icon` for optional compact icon artwork
 - `trailer` for local video
 

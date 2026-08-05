@@ -9,7 +9,9 @@
     "publisher": "",
     "genre": "",
     "releaseDate": "",
-    "players": ""
+    "players": "",
+    "steamDeckCompatibility": "unknown",
+    "gamepadSupport": "unknown"
   },
   "artwork": {
     "cover": "Artwork/Cover.jpg",

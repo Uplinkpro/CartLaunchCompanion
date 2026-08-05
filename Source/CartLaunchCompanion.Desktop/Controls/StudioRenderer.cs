@@ -10,12 +10,15 @@ namespace CartLaunchCompanion.Desktop.Controls;
 /// <summary>
 /// OLED-first CRT studio renderer.
 ///
-/// The base canvas is literal black. Atmosphere, phosphor glow, scanlines,
-/// mask texture, dust, grain, and floor reflection are drawn only where
-/// needed so large OLED regions remain fully unlit.
+/// The base canvas is literal black for OLED displays. Brighter atmosphere,
+/// phosphor glow, scanlines, mask texture, dust, grain, and floor reflection
+/// provide CRT character without lifting unlit pixels away from true black.
 /// </summary>
 public sealed class StudioRenderer : Control
 {
+    public static readonly StyledProperty<bool> ShowArchitectureProperty =
+        AvaloniaProperty.Register<StudioRenderer, bool>(nameof(ShowArchitecture));
+
     private const int TargetFrameMilliseconds = 40;
     private const int ParticleCount = 34;
     private const int GrainPointCount = 150;
@@ -29,7 +32,7 @@ public sealed class StudioRenderer : Control
         new(Color.Parse("#000000"));
 
     private readonly SolidColorBrush _horizonBrush =
-        new(Color.Parse("#20FFFFFF"));
+        new(Color.Parse("#96FFFFFF"));
 
     private readonly SolidColorBrush _dustBrush =
         new(Color.Parse("#D0FFFFFF"));
@@ -68,6 +71,12 @@ public sealed class StudioRenderer : Control
         Unloaded += OnUnloaded;
     }
 
+    public bool ShowArchitecture
+    {
+        get => GetValue(ShowArchitectureProperty);
+        set => SetValue(ShowArchitectureProperty, value);
+    }
+
     private static bool ReduceMotion
     {
         get
@@ -100,39 +109,87 @@ public sealed class StudioRenderer : Control
 
         DrawTrueBlackBase(context, width, height);
 
-        DrawLocalizedPhosphorBloom(
-            context,
-            width,
-            height,
-            time,
-            accent,
-            accentBright);
+        if (ShowArchitecture)
+        {
+            DrawShowroomArchitecture(context, width, height, accent, accentBright, ResolveSelectionPosition());
+        }
+        else
+        {
+            DrawLocalizedPhosphorBloom(context, width, height, time, accent, accentBright);
+            DrawAtmosphere(context, width, height, time, accent);
+            DrawDust(context, width, height, time);
+            DrawFloor(context, width, height, time, accent, accentBright);
+            DrawFilmGrain(context, width, height, time);
+        }
 
-        DrawAtmosphere(
-            context,
-            width,
-            height,
-            time,
-            accent);
-
-        DrawDust(
-            context,
-            width,
-            height,
-            time);
-
-        DrawFloor(
-            context,
-            width,
-            height,
-            time,
-            accent,
-            accentBright);
-
-        DrawCrtMask(context, width, height);
-        DrawScanlines(context, width, height);
-        DrawFilmGrain(context, width, height, time);
         DrawVignette(context, width, height);
+    }
+
+    private static void DrawShowroomArchitecture(
+        DrawingContext context,
+        double width,
+        double height,
+        Color accent,
+        Color accentBright,
+        double selectionPosition)
+    {
+        // A seamless charcoal wall. It reaches beyond the viewport so its edges
+        // disappear naturally into the global vignette instead of forming a box.
+        var wall = new Rect(-2, height * 0.02, width + 4, height * 0.79);
+        context.FillRectangle(
+            new LinearGradientBrush
+            {
+                StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+                EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
+                GradientStops =
+                {
+                    new GradientStop(Color.Parse("#101319"), 0),
+                    new GradientStop(Color.Parse("#080A0E"), 0.66),
+                    new GradientStop(Color.Parse("#000000"), 1)
+                }
+            },
+            wall);
+
+        // One broad, restrained launcher-coloured wall wash.
+        for (var layer = 12; layer >= 1; layer--)
+        {
+            var progress = layer / 12.0;
+            var washWidth = width * (0.34 + (progress * 0.46));
+            var washHeight = height * (0.18 + (progress * 0.34));
+            context.DrawEllipse(
+                new SolidColorBrush(WithAlpha(accent, 0.010 + ((1 - progress) * 0.010))),
+                null,
+                new Point(width * selectionPosition, height * 0.47),
+                washWidth / 2,
+                washHeight / 2);
+        }
+
+        // A slim floating shelf with a brushed top, front face and deep underside shadow.
+        var shelfX = width * 0.055;
+        var shelfWidth = width * 0.89;
+        var shelfTop = height * 0.825;
+        context.FillRectangle(
+            new SolidColorBrush(Color.Parse("#72000000")),
+            new Rect(shelfX + 18, shelfTop + 19, shelfWidth - 36, height * 0.055));
+        context.FillRectangle(
+            new LinearGradientBrush
+            {
+                StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+                EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
+                GradientStops =
+                {
+                    new GradientStop(Color.Parse("#242932"), 0),
+                    new GradientStop(Color.Parse("#12161C"), 0.22),
+                    new GradientStop(Color.Parse("#05070A"), 1)
+                }
+            },
+            new Rect(shelfX, shelfTop, shelfWidth, 23));
+        context.FillRectangle(
+            new SolidColorBrush(Color.Parse("#45FFFFFF")),
+            new Rect(shelfX, shelfTop, shelfWidth, 1));
+        context.FillRectangle(
+            new SolidColorBrush(WithAlpha(accentBright, 0.18)),
+            new Rect(shelfX + (shelfWidth * 0.18), shelfTop + 2, shelfWidth * 0.64, 1));
     }
 
     private void DrawTrueBlackBase(
@@ -163,9 +220,9 @@ public sealed class StudioRenderer : Control
                 height * 0.235),
             width * 0.19,
             height * 0.17,
-            WithAlpha(accent, 0.20),
+            WithAlpha(accent, 0.32),
             14,
-            0.010);
+            0.240);
 
         DrawSoftEllipse(
             context,
@@ -174,9 +231,9 @@ public sealed class StudioRenderer : Control
                 height * 0.235),
             width * 0.105,
             height * 0.085,
-            WithAlpha(accentBright, 0.16),
+            WithAlpha(accentBright, 0.26),
             10,
-            0.010);
+            0.240);
     }
 
     private static void DrawAtmosphere(
@@ -196,9 +253,9 @@ public sealed class StudioRenderer : Control
                 height * 0.45),
             width * 0.21,
             height * 0.105,
-            WithAlpha(accent, 0.055),
+            WithAlpha(accent, 0.18),
             9,
-            0.006);
+            0.210);
 
         DrawSoftEllipse(
             context,
@@ -207,9 +264,9 @@ public sealed class StudioRenderer : Control
                 height * 0.55),
             width * 0.24,
             height * 0.115,
-            WithAlpha(accent, 0.045),
+            WithAlpha(accent, 0.14),
             9,
-            0.005);
+            0.195);
     }
 
     private void DrawDust(
@@ -263,10 +320,12 @@ public sealed class StudioRenderer : Control
         Color accent,
         Color accentBright)
     {
-        var floorTop = height * 0.755;
+        // Keep the horizon below the game-title shelf. At 720p the old
+        // position crossed directly through wrapped names.
+        var floorTop = height * 0.84;
 
-        // The floor remains true black; only the horizon and localized
-        // reflections illuminate pixels.
+        // The floor remains true black; brighter horizon and localized
+        // reflections provide definition without illuminating unlit pixels.
         context.FillRectangle(
             _horizonBrush,
             new Rect(0, floorTop, width, 1));
@@ -281,9 +340,9 @@ public sealed class StudioRenderer : Control
                 floorTop + 3),
             width * 0.29,
             height * 0.075,
-            WithAlpha(accent, 0.16),
+            WithAlpha(accent, 0.30),
             13,
-            0.010);
+            0.240);
 
         DrawSoftEllipse(
             context,
@@ -292,9 +351,9 @@ public sealed class StudioRenderer : Control
                 floorTop + 2),
             width * 0.14,
             height * 0.040,
-            WithAlpha(accentBright, 0.15),
+            WithAlpha(accentBright, 0.25),
             10,
-            0.010);
+            0.240);
     }
 
     private void DrawScanlines(
@@ -381,7 +440,7 @@ public sealed class StudioRenderer : Control
     {
         var brush =
             new SolidColorBrush(
-                Color.Parse("#4A000000"));
+                Color.Parse("#28000000"));
 
         var side = Math.Max(48.0, width * 0.085);
         var top = Math.Max(26.0, height * 0.050);
@@ -413,6 +472,8 @@ public sealed class StudioRenderer : Control
         int layers,
         double opacityPerLayer)
     {
+        var baseOpacity = color.A / 255.0;
+
         for (var layer = layers; layer >= 1; layer--)
         {
             var progress =
@@ -422,6 +483,7 @@ public sealed class StudioRenderer : Control
                 1.0 - progress;
 
             var opacity =
+                baseOpacity *
                 opacityPerLayer *
                 (0.45 + (centerWeight * 1.55));
 
@@ -453,6 +515,23 @@ public sealed class StudioRenderer : Control
         }
 
         return Color.Parse("#9D56E8");
+    }
+
+    private double ResolveSelectionPosition()
+    {
+        if (DataContext is not MainViewModel { SelectedGame: not null } viewModel ||
+            viewModel.Games.Count <= 1)
+        {
+            return 0.5;
+        }
+
+        var index = viewModel.Games.IndexOf(viewModel.SelectedGame);
+        if (index < 0)
+            return 0.5;
+
+        // Let the illumination travel through the room as the user browses,
+        // but keep it away from the extreme edges where the vignette hides it.
+        return 0.27 + ((index / (double)(viewModel.Games.Count - 1)) * 0.46);
     }
 
     private static DustParticle[] CreateParticles()

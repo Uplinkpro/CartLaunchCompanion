@@ -75,6 +75,7 @@ System/
 Settings.json
 RecentGames.json
 UserSettings.json
+Config/metadata.json
 
 ###############################################################################
 # Ignore personal game library
@@ -97,6 +98,7 @@ Games/*
 Assets/Cache/
 Assets/Downloads/
 Assets/Temp/
+Cache/
 
 ###############################################################################
 # Optional VLC runtime

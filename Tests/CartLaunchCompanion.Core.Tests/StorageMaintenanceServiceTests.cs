@@ -35,6 +35,25 @@ public sealed class StorageMaintenanceServiceTests : IDisposable
             Directory.EnumerateFiles(_root).Count());
     }
 
+    [Fact]
+    public void TrimCache_RemovesExpiredFilesAndKeepsFreshFiles()
+    {
+        var cache = Path.Combine(_root, "Cache", "Metadata");
+        Directory.CreateDirectory(cache);
+        var expired = Path.Combine(cache, "expired.json");
+        var fresh = Path.Combine(cache, "fresh.json");
+        File.WriteAllText(expired, "old");
+        File.WriteAllText(fresh, "new");
+        File.SetLastWriteTimeUtc(expired, DateTime.UtcNow.AddDays(-40));
+
+        new StorageMaintenanceService().TrimCache(
+            Path.Combine(_root, "Cache"),
+            maximumAge: TimeSpan.FromDays(30));
+
+        Assert.False(File.Exists(expired));
+        Assert.True(File.Exists(fresh));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))

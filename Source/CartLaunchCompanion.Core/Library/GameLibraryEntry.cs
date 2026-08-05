@@ -17,6 +17,8 @@ public sealed class GameLibraryEntry
     public string? LogoPath { get; init; }
     public string? IconPath { get; init; }
     public string? TrailerPath { get; init; }
+    public string? TrailerSource { get; init; }
+    public IReadOnlyList<string> ScreenshotPaths { get; init; } = [];
 
     public LaunchTargetSelection? LaunchTarget { get; init; }
 

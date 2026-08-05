@@ -1,4 +1,5 @@
 using CartLaunchCompanion.Core.Configuration;
+using CartLaunchCompanion.Core.Input;
 using CartLaunchCompanion.Core.Launching;
 using CartLaunchCompanion.Core.Library;
 using CartLaunchCompanion.Core.Platform;
@@ -55,6 +56,24 @@ public sealed class MetadataNavigationTests
         Assert.Equal(1, launchService.CallCount);
         Assert.Contains("started", viewModel.MetadataStatus);
         Assert.Empty(visibility);
+    }
+
+    [Fact]
+    public async Task TrailerAction_TogglesActualPlaybackState()
+    {
+        var viewModel = CreateViewModel();
+        await viewModel.LoadAsync();
+        viewModel.Games[0].OpenCommand.Execute(null);
+
+        Assert.True(viewModel.ShouldPlayTrailer);
+
+        await viewModel.HandleInputAsync(new LauncherInputEvent(
+            LauncherAction.Trailer,
+            InputDeviceKind.Keyboard,
+            DateTimeOffset.UtcNow));
+
+        Assert.False(viewModel.ShouldPlayTrailer);
+        Assert.Equal("Trailer paused.", viewModel.MetadataStatus);
     }
 
     private static MainViewModel CreateViewModel(
@@ -126,6 +145,7 @@ public sealed class MetadataNavigationTests
                     ConfigurationPath =
                         Path.Combine(Path.GetTempPath(), "game.json"),
                     Configuration = configuration,
+                    TrailerSource = "https://example.test/trailer.m3u8",
                     LaunchTarget = new LaunchTargetSelection(
                         PlatformKind.Windows,
                         LauncherKind.Steam,
