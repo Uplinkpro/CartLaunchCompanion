@@ -192,7 +192,8 @@
         "arguments",
         "workingDirectory",
         "processName",
-        "uri"
+        "uri",
+        "companionApplication"
       ],
       "properties": {
         "enabled": {
@@ -236,6 +237,9 @@
         },
         "uri": {
           "type": "string"
+        },
+        "companionApplication": {
+          "$ref": "#/$defs/companionApplication"
         }
       }
     },
@@ -254,7 +258,8 @@
         "processName",
         "uri",
         "compatibilityTool",
-        "winePrefix"
+        "winePrefix",
+        "companionApplication"
       ],
       "properties": {
         "enabled": {
@@ -292,6 +297,34 @@
         },
         "winePrefix": {
           "type": "string"
+        },
+        "companionApplication": {
+          "$ref": "#/$defs/companionApplication"
+        }
+      }
+    },
+    "companionApplication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "executable", "arguments", "workingDirectory", "closeAfterGame"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Starts this helper immediately before the game."
+        },
+        "executable": {
+          "type": "string",
+          "description": "Helper executable path; relative paths resolve from the game folder."
+        },
+        "arguments": {
+          "type": "string"
+        },
+        "workingDirectory": {
+          "type": "string"
+        },
+        "closeAfterGame": {
+          "type": "boolean",
+          "description": "Closes the helper when the monitored game process exits."
         }
       }
     },

@@ -9,10 +9,11 @@ def normalized_permissions(info: tarfile.TarInfo) -> tarfile.TarInfo:
     path = pathlib.PurePosixPath(info.name)
     if info.isdir():
         info.mode = 0o755
-    elif path.name == "Start Cart Launch Companion.sh":
+    elif path.name in {"Start Cart Launch Companion.sh", "Game Configurator.sh"}:
         info.mode = 0o755
     elif "System/Linux-x64" in path.as_posix() and path.name in {
         "CartLaunchCompanion.Desktop",
+        "CartLaunchCompanion.Configurator",
         "createdump",
     }:
         info.mode = 0o755

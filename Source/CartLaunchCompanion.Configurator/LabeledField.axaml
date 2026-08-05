@@ -1,0 +1,15 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="CartLaunchCompanion.Configurator.LabeledField"
+             x:Name="Root">
+  <StackPanel Margin="0,0,0,16">
+    <DockPanel LastChildFill="False">
+      <TextBlock Classes="label" Text="{Binding Label, ElementName=Root}" DockPanel.Dock="Left"/>
+      <Border Classes="optional" DockPanel.Dock="Right">
+        <TextBlock FontSize="11" Text="{Binding Requirement, ElementName=Root}"/>
+      </Border>
+    </DockPanel>
+    <ContentPresenter Content="{Binding FieldContent, ElementName=Root}" Margin="0,7,0,0"/>
+    <TextBlock Classes="help" Text="{Binding Description, ElementName=Root}"/>
+  </StackPanel>
+</UserControl>

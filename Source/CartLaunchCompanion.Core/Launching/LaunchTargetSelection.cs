@@ -15,4 +15,7 @@ public sealed record LaunchTargetSelection(
     string ProcessName,
     string Uri,
     string CompatibilityTool,
-    string WinePrefix);
+    string WinePrefix)
+{
+    public CompanionApplicationConfiguration CompanionApplication { get; init; } = new();
+}

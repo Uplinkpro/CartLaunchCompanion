@@ -1,10 +1,11 @@
 param(
-    [string]$OutputRoot = (Join-Path $PSScriptRoot 'artifacts\rc1')
+    [string]$OutputRoot = (Join-Path $PSScriptRoot 'artifacts\rc2')
 )
 
 $ErrorActionPreference = 'Stop'
-$version = '2.0.0-rc.1'
-$project = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.Desktop\CartLaunchCompanion.Desktop.csproj'
+$version = '2.0.0-rc.2'
+$launcherProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.Desktop\CartLaunchCompanion.Desktop.csproj'
+$configuratorProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.Configurator\CartLaunchCompanion.Configurator.csproj'
 $staging = Join-Path $OutputRoot 'staging\CartLaunchCompanion'
 $packages = Join-Path $OutputRoot 'packages'
 
@@ -22,11 +23,17 @@ $runtimes = @(
 
 foreach ($runtime in $runtimes) {
     $destination = Join-Path $staging (Join-Path 'System' $runtime.Folder)
-    & dotnet publish $project -c Release -r $runtime.Id --self-contained true `
+    & dotnet publish $launcherProject -c Release -r $runtime.Id --self-contained true `
         -p:PublishSingleFile=false -p:PublishTrimmed=false `
         -p:DebugType=None -p:DebugSymbols=false -o $destination
     if ($LASTEXITCODE -ne 0) {
         throw "Publish failed for $($runtime.Id)."
+    }
+    & dotnet publish $configuratorProject -c Release -r $runtime.Id --self-contained true `
+        -p:PublishSingleFile=false -p:PublishTrimmed=false `
+        -p:DebugType=None -p:DebugSymbols=false -o $destination
+    if ($LASTEXITCODE -ne 0) {
+        throw "Configurator publish failed for $($runtime.Id)."
     }
 }
 
@@ -76,14 +83,35 @@ exec ./CartLaunchCompanion.Desktop "$@"
 $linuxLauncherPath = Join-Path $staging 'Start Cart Launch Companion.sh'
 Set-Content -LiteralPath $linuxLauncherPath -Value $linuxLauncher -Encoding utf8NoBOM
 
+$windowsConfigurator = @'
+@echo off
+setlocal
+cd /d "%~dp0System\Windows-x64"
+CartLaunchCompanion.Configurator.exe
+exit /b %ERRORLEVEL%
+'@
+Set-Content -LiteralPath (Join-Path $staging 'Game Configurator.bat') `
+    -Value $windowsConfigurator -Encoding ASCII
+
+$linuxConfigurator = @'
+#!/usr/bin/env sh
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+cd "$SCRIPT_DIR/System/Linux-x64" || exit 1
+exec ./CartLaunchCompanion.Configurator "$@"
+'@
+Set-Content -LiteralPath (Join-Path $staging 'Game Configurator.sh') `
+    -Value $linuxConfigurator -Encoding utf8NoBOM
+
 $windowsStage = Join-Path $OutputRoot 'windows\CartLaunchCompanion'
 $linuxStage = Join-Path $OutputRoot 'linux\CartLaunchCompanion'
 Copy-Item -LiteralPath $staging -Destination $windowsStage -Recurse
 Copy-Item -LiteralPath $staging -Destination $linuxStage -Recurse
 Remove-Item -LiteralPath (Join-Path $windowsStage 'System\Linux-x64') -Recurse -Force
 Remove-Item -LiteralPath (Join-Path $windowsStage 'Start Cart Launch Companion.sh') -Force
+Remove-Item -LiteralPath (Join-Path $windowsStage 'Game Configurator.sh') -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'System\Windows-x64') -Recurse -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'Start Cart Launch Companion.bat') -Force
+Remove-Item -LiteralPath (Join-Path $linuxStage 'Game Configurator.bat') -Force
 
 $windowsZip = Join-Path $packages "CartLaunchCompanion-$version-win-x64.zip"
 $portableZip = Join-Path $packages "CartLaunchCompanion-$version-portable.zip"

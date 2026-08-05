@@ -8,10 +8,11 @@ import zipfile
 def mode_for(path: pathlib.Path, relative: pathlib.PurePosixPath) -> int:
     if path.is_dir():
         return 0o40755
-    if relative.name == "Start Cart Launch Companion.sh":
+    if relative.name in {"Start Cart Launch Companion.sh", "Game Configurator.sh"}:
         return 0o100755
     if "System/Linux-x64" in relative.as_posix() and relative.name in {
         "CartLaunchCompanion.Desktop",
+        "CartLaunchCompanion.Configurator",
         "createdump",
     }:
         return 0o100755

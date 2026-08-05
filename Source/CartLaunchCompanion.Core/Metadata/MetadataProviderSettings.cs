@@ -36,6 +36,23 @@ public sealed class MetadataProviderSettings
             }
         }
 
+        var secureKey = await MetadataSecretStore.ReadAsync(
+            MetadataSecretStore.SteamGridDbApiKey,
+            cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(result.SteamGridDbApiKey))
+        {
+            await MetadataSecretStore.WriteAsync(
+                MetadataSecretStore.SteamGridDbApiKey,
+                result.SteamGridDbApiKey,
+                cancellationToken);
+            secureKey = result.SteamGridDbApiKey;
+            result.SteamGridDbApiKey = "";
+            await File.WriteAllTextAsync(path, "{}", cancellationToken);
+        }
+
+        result.SteamGridDbApiKey = secureKey;
+
         var environmentKey = Environment.GetEnvironmentVariable(
             "CLC_STEAMGRIDDB_API_KEY");
 

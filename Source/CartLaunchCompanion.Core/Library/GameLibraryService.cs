@@ -267,7 +267,15 @@ public sealed class GameLibraryService(
                 target.WorkingDirectory),
             WinePrefix = pathResolver.Resolve(
                 folder,
-                target.WinePrefix)
+                target.WinePrefix),
+            CompanionApplication = new CompanionApplicationConfiguration
+            {
+                Enabled = target.CompanionApplication.Enabled,
+                Executable = pathResolver.Resolve(folder, target.CompanionApplication.Executable),
+                Arguments = target.CompanionApplication.Arguments,
+                WorkingDirectory = pathResolver.Resolve(folder, target.CompanionApplication.WorkingDirectory),
+                CloseAfterGame = target.CompanionApplication.CloseAfterGame
+            }
         };
     }
 

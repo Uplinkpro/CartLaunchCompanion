@@ -81,6 +81,7 @@ public sealed class WindowsLaunchConfiguration
     public string WorkingDirectory { get; set; } = "";
     public string ProcessName { get; set; } = "";
     public string Uri { get; set; } = "";
+    public CompanionApplicationConfiguration CompanionApplication { get; set; } = new();
 }
 
 public sealed class LinuxLaunchConfiguration
@@ -99,6 +100,16 @@ public sealed class LinuxLaunchConfiguration
     public string Uri { get; set; } = "";
     public string CompatibilityTool { get; set; } = "";
     public string WinePrefix { get; set; } = "";
+    public CompanionApplicationConfiguration CompanionApplication { get; set; } = new();
+}
+
+public sealed class CompanionApplicationConfiguration
+{
+    public bool Enabled { get; set; }
+    public string Executable { get; set; } = "";
+    public string Arguments { get; set; } = "";
+    public string WorkingDirectory { get; set; } = "";
+    public bool CloseAfterGame { get; set; }
 }
 
 public sealed class BehaviorConfiguration

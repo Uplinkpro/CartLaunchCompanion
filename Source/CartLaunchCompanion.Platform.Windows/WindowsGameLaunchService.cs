@@ -20,7 +20,18 @@ public sealed class WindowsGameLaunchService : IGameLaunchService
 
         try
         {
-            return Task.FromResult(Start(request));
+            var companion = StartCompanion(request);
+            var result = Start(request);
+            if (companion is not null && !result.Succeeded)
+            {
+                if (!companion.HasExited) companion.Kill(entireProcessTree: true);
+                companion.Dispose();
+            }
+            if (companion is not null && result.Succeeded && result.Session is not null)
+                result = GameLaunchResult.Success(
+                    result.Message + " The companion app was started first.",
+                    new CompanionGameLaunchSession(result.Session, companion, request.Target.CompanionApplication.CloseAfterGame));
+            return Task.FromResult(result);
         }
         catch (Exception ex)
         {
@@ -28,6 +39,26 @@ public sealed class WindowsGameLaunchService : IGameLaunchService
                 GameLaunchResult.Failure(
                     $"Windows could not launch {request.GameName}: {ex.Message}"));
         }
+    }
+
+    private static Process? StartCompanion(GameLaunchRequest request)
+    {
+        var companion = request.Target.CompanionApplication;
+        if (!companion.Enabled) return null;
+        if (string.IsNullOrWhiteSpace(companion.Executable))
+            throw new InvalidOperationException("The Windows companion app is enabled but has no executable.");
+        if (!File.Exists(companion.Executable))
+            throw new FileNotFoundException("The companion app was not found.", companion.Executable);
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = companion.Executable,
+            UseShellExecute = false,
+            WorkingDirectory = !string.IsNullOrWhiteSpace(companion.WorkingDirectory) && Directory.Exists(companion.WorkingDirectory)
+                ? companion.WorkingDirectory : request.GameFolder
+        };
+        AddArguments(startInfo, companion.Arguments);
+        return Process.Start(startInfo) ?? throw new InvalidOperationException("Windows did not return a process for the companion app.");
     }
 
     private static GameLaunchResult Start(GameLaunchRequest request)

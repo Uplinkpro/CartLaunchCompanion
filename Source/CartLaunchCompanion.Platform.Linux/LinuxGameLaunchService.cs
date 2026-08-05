@@ -20,7 +20,18 @@ public sealed class LinuxGameLaunchService : IGameLaunchService
 
         try
         {
-            return Task.FromResult(Start(request));
+            var companion = StartCompanion(request);
+            var result = Start(request);
+            if (companion is not null && !result.Succeeded)
+            {
+                if (!companion.HasExited) companion.Kill(entireProcessTree: true);
+                companion.Dispose();
+            }
+            if (companion is not null && result.Succeeded && result.Session is not null)
+                result = GameLaunchResult.Success(
+                    result.Message + " The companion app was started first.",
+                    new CompanionGameLaunchSession(result.Session, companion, request.Target.CompanionApplication.CloseAfterGame));
+            return Task.FromResult(result);
         }
         catch (Exception ex)
         {
@@ -28,6 +39,21 @@ public sealed class LinuxGameLaunchService : IGameLaunchService
                 GameLaunchResult.Failure(
                     $"Linux could not launch {request.GameName}: {ex.Message}"));
         }
+    }
+
+    private static Process? StartCompanion(GameLaunchRequest request)
+    {
+        var companion = request.Target.CompanionApplication;
+        if (!companion.Enabled) return null;
+        if (string.IsNullOrWhiteSpace(companion.Executable))
+            throw new InvalidOperationException("The Linux companion app is enabled but has no executable.");
+        if (!File.Exists(companion.Executable))
+            throw new FileNotFoundException("The companion app was not found.", companion.Executable);
+        return StartProcess(
+            companion.Executable,
+            CommandLineArgumentParser.Parse(companion.Arguments),
+            !string.IsNullOrWhiteSpace(companion.WorkingDirectory) && Directory.Exists(companion.WorkingDirectory)
+                ? companion.WorkingDirectory : request.GameFolder);
     }
 
     private static GameLaunchResult Start(GameLaunchRequest request)

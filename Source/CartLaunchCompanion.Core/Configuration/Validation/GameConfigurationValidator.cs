@@ -104,6 +104,8 @@ public sealed class GameConfigurationValidator
                 "launch.windows.executable",
                 "A local Windows game requires an executable.");
         }
+
+        ValidateCompanion(launch.CompanionApplication, "launch.windows.companionApplication", result);
     }
 
     private static void ValidateLinux(
@@ -145,6 +147,18 @@ public sealed class GameConfigurationValidator
                 "launch.linux.executable",
                 "Wine or Proton requires an executable or Steam App ID.");
         }
+
+
+        ValidateCompanion(launch.CompanionApplication, "launch.linux.companionApplication", result);
+    }
+
+    private static void ValidateCompanion(
+        CompanionApplicationConfiguration companion,
+        string path,
+        ConfigurationValidationResult result)
+    {
+        if (companion.Enabled && !Has(companion.Executable))
+            AddError(result, path + ".executable", "An enabled companion app requires an executable.");
     }
 
     private static bool Has(string value) =>
