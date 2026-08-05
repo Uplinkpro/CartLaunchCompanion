@@ -134,4 +134,4 @@ $checksums = foreach ($file in Get-ChildItem -LiteralPath $packages -File | Sort
 Set-Content -LiteralPath (Join-Path $packages 'SHA256SUMS.txt') `
     -Value $checksums -Encoding ASCII
 
-Write-Host "RC1 packages created in $packages" -ForegroundColor Green
+Write-Host "$version packages created in $packages" -ForegroundColor Green
