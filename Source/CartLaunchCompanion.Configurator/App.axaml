@@ -1,0 +1,18 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="CartLaunchCompanion.Configurator.App"
+             RequestedThemeVariant="Dark">
+  <Application.Styles>
+    <FluentTheme />
+    <Style Selector="Window"><Setter Property="Background" Value="#0B0D10"/><Setter Property="FontFamily" Value="Inter"/></Style>
+    <Style Selector="TextBox, ComboBox, NumericUpDown"><Setter Property="MinHeight" Value="38"/></Style>
+    <Style Selector="Button"><Setter Property="MinHeight" Value="38"/><Setter Property="Padding" Value="16,8"/></Style>
+    <Style Selector="Border.card"><Setter Property="Background" Value="#15191F"/><Setter Property="BorderBrush" Value="#2A313B"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="10"/><Setter Property="Padding" Value="18"/></Style>
+    <Style Selector="TextBlock.section"><Setter Property="FontSize" Value="20"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
+    <Style Selector="TextBlock.label"><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Margin" Value="0,0,0,4"/></Style>
+    <Style Selector="TextBlock.help"><Setter Property="Foreground" Value="#AAB2BE"/><Setter Property="FontSize" Value="12"/><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="Margin" Value="0,4,0,0"/></Style>
+    <Style Selector="Border.required"><Setter Property="Background" Value="#173F35"/><Setter Property="CornerRadius" Value="10"/><Setter Property="Padding" Value="8,3"/></Style>
+    <Style Selector="Border.optional"><Setter Property="Background" Value="#26313E"/><Setter Property="CornerRadius" Value="10"/><Setter Property="Padding" Value="8,3"/></Style>
+    <Style Selector="Border.advanced"><Setter Property="Background" Value="#382C48"/><Setter Property="CornerRadius" Value="10"/><Setter Property="Padding" Value="8,3"/></Style>
+  </Application.Styles>
+</Application>

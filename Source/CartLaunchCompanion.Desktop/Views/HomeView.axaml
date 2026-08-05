@@ -1,0 +1,454 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:CartLaunchCompanion.Desktop.ViewModels"
+             xmlns:controls="using:CartLaunchCompanion.Desktop.Controls"
+             x:Class="CartLaunchCompanion.Desktop.Views.HomeView"
+             x:DataType="vm:MainViewModel"
+             Classes.motion="{Binding UseMotionEffects}"
+             Focusable="True">
+
+    <UserControl.Styles>
+        <Style Selector="Border.selection-title-pulse">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+        <Style Selector="UserControl.motion Border.selection-title-pulse">
+            <Style.Animations>
+                <Animation Duration="0:0:1.15"
+                           IterationCount="Infinite"
+                           PlaybackDirection="Alternate"
+                           Easing="SineEaseInOut">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="0.18" />
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="1" />
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+
+        <Style Selector="Border.selection-card-accent">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Border.selection-card-pulse">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Button.game-card.selected Border.selection-card-accent">
+            <Setter Property="IsVisible" Value="True" />
+        </Style>
+        <Style Selector="Button.game-card.selected Border.selection-card-pulse">
+            <Setter Property="IsVisible" Value="True" />
+        </Style>
+        <Style Selector="Button.game-card:pointerover Border.selection-card-accent">
+            <Setter Property="IsVisible" Value="True" />
+        </Style>
+        <Style Selector="Button.game-card:pointerover Border.selection-card-pulse">
+            <Setter Property="IsVisible" Value="True" />
+        </Style>
+        <Style Selector="Border.controller-indicator">
+            <Setter Property="Opacity" Value="0.22" />
+            <Setter Property="BorderBrush" Value="#AFFFFFFF" />
+        </Style>
+        <Style Selector="Border.controller-indicator.connected">
+            <Setter Property="Opacity" Value="1" />
+            <Setter Property="BorderBrush" Value="{Binding SelectedGame.AccentBrightColor}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid Background="#030406">
+        <controls:StudioRenderer ShowArchitecture="True" />
+
+        <!-- The room inherits a soft, cinematic impression of the selected game. -->
+        <Image Source="{Binding SelectedGame.BackgroundImage}"
+               IsVisible="{Binding IsHomeVisible}"
+               Stretch="UniformToFill"
+               Opacity="0.24"
+               Margin="-28">
+            <Image.Effect>
+                <BlurEffect Radius="22" />
+            </Image.Effect>
+        </Image>
+        <Border IsVisible="{Binding IsHomeVisible}">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                    <GradientStop Color="#58000000" Offset="0" />
+                    <GradientStop Color="#98000000" Offset="0.60" />
+                    <GradientStop Color="#F0000000" Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
+        </Border>
+
+        <!-- Home: browse only. -->
+        <Grid IsVisible="{Binding IsHomeVisible}"
+              Classes="page-transition"
+              Classes.active="{Binding IsHomeVisible}"
+              Classes.motion="{Binding UseMotionEffects}"
+              RowDefinitions="Auto,Auto,*,Auto,Auto"
+              Margin="32">
+
+            <Grid Grid.Row="0"
+                  Height="112"
+                  Margin="0,22,0,8">
+                <StackPanel HorizontalAlignment="Center"
+                            Spacing="4"
+                            IsVisible="{Binding ShowCartLaunchBranding}">
+                <Border Width="74"
+                        Height="60"
+                        CornerRadius="10"
+                        BorderBrush="#DDE5E8F0"
+                        BorderThickness="3"
+                        Background="#0B0D11">
+                    <Grid RowDefinitions="*,12"
+                          Margin="8">
+                        <Border Grid.Row="0"
+                                Margin="8,3,8,5"
+                                CornerRadius="4"
+                                BorderBrush="#DDE5E8F0"
+                                BorderThickness="2" />
+                        <StackPanel Grid.Row="1"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    Spacing="3">
+                            <Border Width="5" Height="9" Background="#DDE5E8F0" />
+                            <Border Width="5" Height="9" Background="#DDE5E8F0" />
+                            <Border Width="5" Height="9" Background="#DDE5E8F0" />
+                            <Border Width="5" Height="9" Background="#DDE5E8F0" />
+                            <Border Width="5" Height="9" Background="#DDE5E8F0" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                </StackPanel>
+
+                <StackPanel HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="6"
+                            IsVisible="{Binding ShowLauncherBranding}">
+                    <Image Source="{Binding SelectedGame.LauncherLogoImage}"
+                           Width="300"
+                           Height="72"
+                           Stretch="Uniform" />
+
+                    <TextBlock Text="{Binding SelectedGame.Launcher, StringFormat='LAUNCH VIA {0}'}"
+                               HorizontalAlignment="Center"
+                               Foreground="{Binding SelectedGame.AccentBrightColor}"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               LetterSpacing="3" />
+                </StackPanel>
+            </Grid>
+
+            <Border Grid.Row="1"
+                    Classes="controller-indicator"
+                    Classes.connected="{Binding IsControllerConnected}"
+                    Width="48" Height="30"
+                    HorizontalAlignment="Center"
+                    Margin="0,5,0,12"
+                    CornerRadius="10"
+                    BorderThickness="2"
+                    Background="#98090B10"
+                    ToolTip.Tip="{Binding ControllerStatus}"
+                    AutomationProperties.Name="Controller connection status">
+                <Canvas Width="32" Height="20"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                    <Path Data="M8,4 C4,4 2.5,7 2,11 L1,16 C0.6,19 3.8,21 5.8,18.8 L9,15.5 L23,15.5 L26.2,18.8 C28.2,21 31.4,19 31,16 L30,11 C29.5,7 28,4 24,4 Z"
+                          Stroke="White"
+                          StrokeThickness="2"
+                          Fill="#26000000" />
+                    <Path Data="M8,8 L8,13 M5.5,10.5 L10.5,10.5"
+                          Stroke="White"
+                          StrokeThickness="1.8" />
+                    <Ellipse Canvas.Left="23" Canvas.Top="8"
+                             Width="3" Height="3" Fill="White" />
+                    <Ellipse Canvas.Left="26" Canvas.Top="11"
+                             Width="3" Height="3" Fill="White" />
+                    <Ellipse Canvas.Left="14" Canvas.Top="10"
+                             Width="2" Height="2" Fill="White" Opacity="0.75" />
+                    <Ellipse Canvas.Left="18" Canvas.Top="10"
+                             Width="2" Height="2" Fill="White" Opacity="0.75" />
+                </Canvas>
+            </Border>
+
+            <Grid Grid.Row="2">
+
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto"
+                              IsVisible="{Binding HasGames}">
+                    <ItemsControl ItemsSource="{Binding Games}"
+                                  Margin="18,18,18,0"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           MaxWidth="1210" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:GameCardViewModel">
+                                <Button Classes="game-card"
+                                        Classes.selected="{Binding IsSelected}"
+                                        Margin="5"
+                                        Command="{Binding OpenCommand}"
+                                        AutomationProperties.Name="{Binding Name}"
+                                        ToolTip.Tip="{Binding Name}">
+                                    <StackPanel Width="118"
+                                                Spacing="6">
+                                        <Grid>
+                                            <Border Classes="card-frame"
+                                                    Width="118"
+                                                    Height="220"
+                                                    CornerRadius="7"
+                                                    Background="#F207090D"
+                                                    BorderBrush="{Binding AccentBrightColor}"
+                                                    BorderThickness="2"
+                                                    Opacity="0.92">
+                                        <Grid RowDefinitions="24,2,*">
+                                            <Border Grid.Row="0"
+                                                    Background="{Binding AccentColor}"
+                                                    CornerRadius="5,5,0,0">
+                                                <StackPanel Orientation="Horizontal"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            Spacing="5">
+                                                    <Border Width="9"
+                                                            Height="9"
+                                                            CornerRadius="5"
+                                                            BorderBrush="White"
+                                                            BorderThickness="2" />
+                                                    <TextBlock Text="{Binding Launcher}"
+                                                               Foreground="White"
+                                                               FontSize="9"
+                                                               FontWeight="SemiBold" />
+                                                </StackPanel>
+                                            </Border>
+
+                                            <Border Grid.Row="1"
+                                                    Background="White" />
+
+                                            <Grid Grid.Row="2"
+                                                  Background="#0A0C10"
+                                                  ClipToBounds="True">
+                                                <Image Source="{Binding CoverImage}"
+                                                       Stretch="UniformToFill"
+                                                       IsVisible="{Binding HasCover}" />
+
+                                                <Border Width="58"
+                                                        Height="58"
+                                                        CornerRadius="29"
+                                                        BorderBrush="{Binding AccentColor}"
+                                                        BorderThickness="2"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        IsVisible="{Binding HasNoCover}">
+                                                    <TextBlock Text="{Binding Initials}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"
+                                                               Foreground="White"
+                                                               FontSize="19"
+                                                               FontWeight="Bold" />
+                                                </Border>
+                                            </Grid>
+                                        </Grid>
+                                            </Border>
+
+                                            <Border Classes="selection-card-accent"
+                                                    CornerRadius="7"
+                                                    BorderBrush="{Binding AccentBrightColor}"
+                                                    BorderThickness="4"
+                                                    IsHitTestVisible="False" />
+
+                                            <Border Classes="selection-title-pulse selection-card-pulse"
+                                                    Margin="3"
+                                                    CornerRadius="5"
+                                                    BorderBrush="White"
+                                                    BorderThickness="2"
+                                                    IsHitTestVisible="False" />
+                                        </Grid>
+
+                                        <Border Height="3"
+                                                CornerRadius="2"
+                                                Background="{Binding AccentBrightColor}"
+                                                IsVisible="{Binding IsSelected}" />
+
+                                        <Grid Height="38">
+                                            <Border Background="{Binding AccentMutedColor}"
+                                                    CornerRadius="6"
+                                                    IsVisible="{Binding IsSelected}" />
+
+                                            <Border Margin="-7,-5"
+                                                    CornerRadius="9"
+                                                    BorderBrush="{Binding AccentBrightColor}"
+                                                    BorderThickness="4"
+                                                    IsVisible="{Binding IsSelected}" />
+
+                                            <Border Classes="selection-title-pulse"
+                                                    Margin="-10,-8"
+                                                    CornerRadius="12"
+                                                    BorderBrush="White"
+                                                    BorderThickness="2"
+                                                    IsVisible="{Binding IsSelected}" />
+
+                                            <TextBlock Text="{Binding Name}"
+                                                       Margin="4,2"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       TextAlignment="Center"
+                                                       TextWrapping="Wrap"
+                                                       MaxLines="3"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Foreground="#F2FFFFFF"
+                                                       FontSize="9"
+                                                       FontWeight="SemiBold"
+                                                       LineHeight="11" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <Border IsVisible="{Binding ShowEmptyLibrary}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Width="680"
+                        Padding="38"
+                        CornerRadius="12"
+                        Background="#F0000000"
+                        BorderBrush="#C08AFF"
+                        BorderThickness="3">
+                <StackPanel Spacing="12">
+                    <Border Width="72"
+                            Height="72"
+                            HorizontalAlignment="Center"
+                            CornerRadius="36"
+                            BorderBrush="#C08AFF"
+                            BorderThickness="3">
+                        <TextBlock Text="!"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="White"
+                                   FontSize="30"
+                                   FontWeight="Bold" />
+                    </Border>
+                    <TextBlock Text="NO GAMES FOUND"
+                               HorizontalAlignment="Center"
+                               Foreground="White"
+                               FontSize="24"
+                               FontWeight="Bold" />
+                    <TextBlock Text="Copy a game folder from Games/Examples into Games, then press F5."
+                               MaxWidth="560"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               Foreground="#AFFFFFFF"
+                               FontSize="15" />
+                    <TextBlock Text="{Binding PortableRoot}"
+                               MaxWidth="760"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               Foreground="#7FFFFFFF"
+                               FontSize="12" />
+                    <Button Classes="action"
+                            Content="REFRESH LIBRARY"
+                            Command="{Binding ReloadCommand}"
+                            BorderBrush="#C08AFF"
+                            BorderThickness="2"
+                            HorizontalAlignment="Center" />
+                </StackPanel>
+                </Border>
+
+                <Border IsVisible="{Binding HasLibraryError}"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Width="680" Padding="38" CornerRadius="12"
+                        Background="#F0000000" BorderBrush="#FFFF6B72"
+                        BorderThickness="3">
+                    <StackPanel Spacing="14">
+                        <TextBlock Text="LIBRARY UNAVAILABLE" HorizontalAlignment="Center"
+                                   Foreground="White" FontSize="24" FontWeight="Bold" />
+                        <TextBlock Text="{Binding LibraryErrorMessage}" MaxWidth="560"
+                                   TextAlignment="Center" TextWrapping="Wrap"
+                                   Foreground="#DFFFFFFF" FontSize="15" />
+                        <TextBlock Text="Check the Logs folder for technical details."
+                                   HorizontalAlignment="Center" Foreground="#8FFFFFFF"
+                                   FontSize="12" />
+                        <Button Classes="action" Content="TRY AGAIN"
+                                AutomationProperties.Name="Retry loading library"
+                                Command="{Binding ReloadCommand}" BorderBrush="#FFFF6B72"
+                                BorderThickness="2" HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+
+                <StackPanel IsVisible="{Binding IsLoading}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="12">
+                    <ProgressBar IsIndeterminate="True"
+                                 Width="260"
+                                 Height="6" />
+                    <TextBlock Text="LOADING LIBRARY"
+                               HorizontalAlignment="Center"
+                               Foreground="#BFFFFFFF"
+                               FontWeight="SemiBold" />
+                </StackPanel>
+            </Grid>
+
+            <Border Grid.Row="3"
+                    Height="1"
+                    Background="#22FFFFFF"
+                    Margin="80,8,80,12" />
+
+            <StackPanel Grid.Row="4"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Spacing="14"
+                        IsVisible="{Binding ShowOnScreenActionButtons}">
+                <Button Classes="action"
+                        Command="{Binding OpenSelectedGameCommand}"
+                        IsEnabled="{Binding HasSelectedGame}">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="10">
+                        <Border Width="30"
+                                Height="30"
+                                CornerRadius="15"
+                                Background="#2E9B32">
+                            <TextBlock Text="{Binding ConfirmPrompt}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="White"
+                                       FontWeight="Bold" />
+                        </Border>
+                        <TextBlock Text="VIEW DETAILS"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <Button Classes="action"
+                        Command="{Binding ExitCommand}">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="10">
+                        <Border Width="30"
+                                Height="30"
+                                CornerRadius="15"
+                                Background="#C83B40">
+                            <TextBlock Text="{Binding BackPrompt}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="White"
+                                       FontWeight="Bold" />
+                        </Border>
+                        <TextBlock Text="EXIT"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>
+
+
+

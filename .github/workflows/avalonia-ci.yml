@@ -1,0 +1,72 @@
+﻿name: Avalonia CI
+
+on:
+  push:
+    branches:
+      - avalonia-migration
+  pull_request:
+    branches:
+      - avalonia-migration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: avalonia-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+          - ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Install .NET 10 SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: |
+            **/*.csproj
+            **/packages.lock.json
+
+      - name: Restore
+        run: dotnet restore CartLaunchCompanion.Avalonia.sln
+
+      - name: Build
+        run: >
+          dotnet build
+          CartLaunchCompanion.Avalonia.sln
+          --configuration Release
+          --no-restore
+
+      - name: Test
+        run: >
+          dotnet test
+          CartLaunchCompanion.Avalonia.sln
+          --configuration Release
+          --no-build
+          --logger "trx;LogFileName=${{ matrix.os }}.trx"
+          --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-results-${{ matrix.os }}
+          path: TestResults
+          if-no-files-found: ignore
+          retention-days: 14
+
+

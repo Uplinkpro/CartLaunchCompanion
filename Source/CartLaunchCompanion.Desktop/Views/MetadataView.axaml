@@ -1,0 +1,242 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:CartLaunchCompanion.Desktop.ViewModels"
+             xmlns:controls="using:CartLaunchCompanion.Desktop.Controls"
+             x:Class="CartLaunchCompanion.Desktop.Views.MetadataView"
+             x:DataType="vm:MainViewModel"
+             Focusable="True">
+    <Grid Background="Transparent" Classes="page-transition" Focusable="True"
+          Classes.active="{Binding IsMetadataVisible}"
+          Classes.motion="{Binding UseMotionEffects}">
+        <controls:StudioRenderer />
+
+        <!-- The game trailer/background fills the stage behind the information. -->
+        <Image Source="{Binding SelectedGame.BackgroundImage}"
+               Stretch="UniformToFill"
+               IsVisible="{Binding SelectedGame.HasBackground}"
+               Opacity="0.72" />
+        <Border Background="#52000000" />
+        <Border>
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                    <GradientStop Color="#D9000000" Offset="0" />
+                    <GradientStop Color="#52000000" Offset="0.48" />
+                    <GradientStop Color="#D9000000" Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
+        </Border>
+        <Border VerticalAlignment="Bottom" Height="260">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                    <GradientStop Color="#00000000" Offset="0" />
+                    <GradientStop Color="#F4000000" Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
+        </Border>
+
+        <Grid Margin="48,30,48,34" ColumnDefinitions="310,*,430" ColumnSpacing="34">
+            <!-- Left identity rail: game logo, launcher, and cover. -->
+            <Grid Grid.Column="0" RowDefinitions="Auto,Auto,*,Auto" RowSpacing="14">
+                <Image Grid.Row="0" Source="{Binding SelectedGame.LogoImage}"
+                       MaxWidth="300" MaxHeight="100" HorizontalAlignment="Left"
+                       Stretch="Uniform" IsVisible="{Binding SelectedGame.HasLogo}" />
+                <TextBlock Grid.Row="0" Text="{Binding SelectedGame.Name}"
+                           MaxWidth="300" MaxLines="2" TextWrapping="Wrap"
+                           TextTrimming="CharacterEllipsis" FontSize="34"
+                           LineHeight="38" FontWeight="Bold" Foreground="White"
+                           IsVisible="{Binding SelectedGame.HasNoLogo}" />
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10"
+                            HorizontalAlignment="Left">
+                    <Border Width="78" Height="58" CornerRadius="9" Background="#D9000000"
+                            BorderBrush="{Binding SelectedGame.AccentBrightColor}"
+                            BorderThickness="2">
+                        <Grid Margin="9">
+                            <Image Source="{Binding SelectedGame.LauncherLogoImage}"
+                                   Stretch="Uniform" IsVisible="{Binding ShowLauncherBranding}" />
+                            <TextBlock Text="▣" HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" Foreground="White"
+                                       FontSize="28" IsVisible="{Binding ShowCartLaunchBranding}" />
+                        </Grid>
+                    </Border>
+
+                    <Border Height="58" Padding="12,0" CornerRadius="9"
+                            Background="#D9000000"
+                            BorderBrush="{Binding SelectedGame.SteamDeckCompatibilityColor}"
+                            BorderThickness="2"
+                            AutomationProperties.Name="Steam Deck compatibility"
+                            IsVisible="{Binding SelectedGame.HasSteamDeckCompatibility}">
+                        <StackPanel Orientation="Horizontal" Spacing="8"
+                                    VerticalAlignment="Center">
+                            <Border Width="27" Height="27" CornerRadius="14"
+                                    BorderBrush="{Binding SelectedGame.SteamDeckCompatibilityColor}"
+                                    BorderThickness="2">
+                                <TextBlock Text="{Binding SelectedGame.SteamDeckCompatibilityGlyph}"
+                                           Foreground="{Binding SelectedGame.SteamDeckCompatibilityColor}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           FontSize="16" FontWeight="Bold" />
+                            </Border>
+                            <TextBlock Text="{Binding SelectedGame.SteamDeckCompatibilityText}"
+                                       Foreground="White" VerticalAlignment="Center"
+                                       FontSize="10" FontWeight="Bold" LetterSpacing="1" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Height="58" Padding="12,0" CornerRadius="9"
+                            Background="#D9000000"
+                            BorderBrush="{Binding SelectedGame.GamepadSupportColor}"
+                            BorderThickness="2"
+                            AutomationProperties.Name="Gamepad support"
+                            IsVisible="{Binding SelectedGame.HasGamepadSupport}">
+                        <StackPanel Orientation="Horizontal" Spacing="8"
+                                    VerticalAlignment="Center">
+                            <Canvas Width="30" Height="21">
+                                <Path Data="M8,4 C4,4 2.5,7 2,11 L1,16 C0.6,19 3.8,21 5.8,18.8 L9,15.5 L21,15.5 L24.2,18.8 C26.2,21 29.4,19 29,16 L28,11 C27.5,7 26,4 22,4 Z"
+                                      Stroke="{Binding SelectedGame.GamepadSupportColor}"
+                                      StrokeThickness="2" Fill="Transparent" />
+                                <Path Data="M8,8 L8,13 M5.5,10.5 L10.5,10.5"
+                                      Stroke="{Binding SelectedGame.GamepadSupportColor}"
+                                      StrokeThickness="1.7" />
+                                <Ellipse Canvas.Left="21" Canvas.Top="8" Width="3" Height="3"
+                                         Fill="{Binding SelectedGame.GamepadSupportColor}" />
+                                <Ellipse Canvas.Left="24" Canvas.Top="11" Width="3" Height="3"
+                                         Fill="{Binding SelectedGame.GamepadSupportColor}" />
+                            </Canvas>
+                            <TextBlock Text="{Binding SelectedGame.GamepadSupportText}"
+                                       Foreground="White" VerticalAlignment="Center"
+                                       FontSize="10" FontWeight="Bold" LetterSpacing="1" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <Border Grid.Row="3" Width="245" Height="350" HorizontalAlignment="Left"
+                        CornerRadius="10" Background="#E6000000"
+                        BorderBrush="{Binding SelectedGame.AccentBrightColor}"
+                        BorderThickness="3">
+                    <Grid>
+                        <Image Source="{Binding SelectedGame.CoverImage}" Stretch="Uniform"
+                               IsVisible="{Binding SelectedGame.HasCover}" />
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    Spacing="10" IsVisible="{Binding SelectedGame.HasNoCover}">
+                            <TextBlock Text="{Binding SelectedGame.Initials}" Foreground="White"
+                                       FontSize="30" FontWeight="Bold" HorizontalAlignment="Center" />
+                            <TextBlock Text="COVER ART MISSING" Foreground="#AFFFFFFF" FontSize="11" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- Keep the middle open so the moving trailer remains visible. -->
+            <!-- Right media and information rail. -->
+            <Grid Grid.Column="2" RowDefinitions="242,*,64" RowSpacing="14">
+                <!-- 430 x 242 is a true 16:9 screenshot viewport at 1280 x 720. -->
+                <Border Grid.Row="0" Width="430" Height="242"
+                        CornerRadius="11" Background="#FF000000"
+                        BorderBrush="{Binding SelectedGame.AccentBrightColor}" BorderThickness="2">
+                    <Grid>
+                        <Image Source="{Binding SelectedGame.CurrentScreenshotImage}"
+                               Stretch="Uniform" IsVisible="{Binding SelectedGame.HasScreenshots}" />
+                        <Border Background="#26000000" />
+                        <controls:VlcNativeTrailerControl
+                            x:Name="TrailerPlayer"
+                            Source="{Binding SelectedGame.TrailerSource}"
+                            IsActive="{Binding ShouldPlayTrailer}"
+                            IsVisible="{Binding SelectedGame.HasTrailerSource}"
+                            ZIndex="5" />
+                        <Border Background="#D9000000" ZIndex="5"
+                                IsVisible="{Binding #TrailerPlayer.PlaybackFailed}">
+                            <StackPanel HorizontalAlignment="Center"
+                                        VerticalAlignment="Center" Spacing="8">
+                                <TextBlock Text="TRAILER UNAVAILABLE" Foreground="White"
+                                           FontSize="15" FontWeight="Bold" LetterSpacing="2" />
+                                <TextBlock Text="Showing screenshots instead"
+                                           Foreground="#BFFFFFFF" FontSize="12" />
+                            </StackPanel>
+                        </Border>
+                        <ItemsControl ItemsSource="{Binding SelectedGame.ScreenshotIndicators}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,0,0,10"
+                                      ZIndex="6">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" Spacing="6" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ScreenshotIndicatorViewModel">
+                                    <Ellipse Width="7" Height="7" Fill="{Binding Fill}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Row="1" CornerRadius="11" Background="#E6000000"
+                        BorderBrush="#32FFFFFF" BorderThickness="1">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="22,20" Spacing="14">
+                            <TextBlock Text="{Binding SelectedGame.Name}" Foreground="White"
+                                       FontSize="25" FontWeight="Bold" MaxLines="2"
+                                       TextWrapping="Wrap" TextTrimming="CharacterEllipsis" />
+                            <Border Height="3" Width="120" HorizontalAlignment="Left"
+                                    Background="{Binding SelectedGame.AccentBrightColor}" />
+                            <TextBlock Text="{Binding SelectedGame.DescriptionDisplay}"
+                                       TextWrapping="Wrap" Foreground="#E8FFFFFF"
+                                       FontSize="15" LineHeight="22" />
+                            <Border Height="1" Background="#28FFFFFF" />
+                            <Grid ColumnDefinitions="92,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                                  ColumnSpacing="14" RowSpacing="7">
+                                <TextBlock Grid.Row="0" Text="DEVELOPER" Classes="metadata-label" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedGame.DeveloperDisplay}" Classes="metadata-value" />
+                                <TextBlock Grid.Row="1" Text="PUBLISHER" Classes="metadata-label" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedGame.PublisherDisplay}" Classes="metadata-value" />
+                                <TextBlock Grid.Row="2" Text="GENRE" Classes="metadata-label" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedGame.GenreDisplay}" Classes="metadata-value" />
+                                <TextBlock Grid.Row="3" Text="RELEASED" Classes="metadata-label" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedGame.ReleaseDateDisplay}" Classes="metadata-value" />
+                                <TextBlock Grid.Row="4" Text="PLAYERS" Classes="metadata-label" />
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedGame.PlayersDisplay}" Classes="metadata-value" />
+                            </Grid>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+
+                <Button Grid.Row="2" Command="{Binding ConfirmLaunchCommand}"
+                        AutomationProperties.Name="Launch selected game"
+                        Width="430" HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                        Background="#EB101217" Foreground="White"
+                        BorderBrush="{Binding SelectedGame.AccentBrightColor}" BorderThickness="3"
+                        CornerRadius="10" FontSize="18" FontWeight="Bold">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="&#x25B6;" VerticalAlignment="Center" />
+                        <TextBlock Text="LAUNCH" VerticalAlignment="Center" LetterSpacing="3" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Grid>
+
+        <Border Background="#E8000000" IsVisible="{Binding IsLaunching}" ZIndex="100">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="18">
+                <ProgressBar IsIndeterminate="True" Width="320" Height="6" />
+                <TextBlock Text="LAUNCHING" Foreground="White" FontSize="24"
+                           FontWeight="Bold" LetterSpacing="4" HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding SelectedGame.Name}" Foreground="#CFFFFFFF"
+                           FontSize="17" HorizontalAlignment="Center" />
+            </StackPanel>
+        </Border>
+    </Grid>
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.metadata-label">
+            <Setter Property="Foreground" Value="{Binding SelectedGame.AccentBrightColor}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+        <Style Selector="TextBlock.metadata-value">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+    </UserControl.Styles>
+</UserControl>

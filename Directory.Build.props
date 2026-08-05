@@ -1,10 +1,13 @@
 <Project>
   <PropertyGroup>
-    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionPrefix>2.0.0</VersionPrefix>
+    <VersionSuffix>rc.1</VersionSuffix>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
     <Authors>Uplinkpro</Authors>
     <Company>Cart Launch Companion</Company>
     <Product>Cart Launch Companion</Product>
-    <Description>A portable, controller-first Windows game launcher.</Description>
+    <Description>A portable, controller-first game launcher for Windows, Linux, and SteamOS.</Description>
     <RepositoryUrl>https://github.com/Uplinkpro/CartLaunchCompanion</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>

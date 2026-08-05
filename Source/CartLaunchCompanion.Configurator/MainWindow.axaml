@@ -1,0 +1,184 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:CartLaunchCompanion.Configurator"
+        x:Class="CartLaunchCompanion.Configurator.MainWindow"
+        Title="Cart Launch Companion — Game Configurator"
+        Width="1280" Height="820" MinWidth="980" MinHeight="680"
+        WindowStartupLocation="CenterScreen">
+  <Grid RowDefinitions="Auto,*,Auto">
+    <Border Background="#10141A" BorderBrush="#2A313B" BorderThickness="0,0,0,1" Padding="24,18">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel>
+          <TextBlock FontSize="26" FontWeight="Bold" Text="Game Configurator"/>
+          <TextBlock Foreground="#AAB2BE" Margin="0,4,0,0" Text="Create a complete game folder without editing JSON by hand."/>
+          <TextBlock Foreground="#77818E" FontSize="12" Margin="0,7,0,0" Text="{Binding FilePath}" TextTrimming="CharacterEllipsis"/>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <Button Content="Settings" Click="SettingsClicked"/>
+          <Button Content="New" Click="NewClicked"/>
+          <Button Content="Open game.json" Click="OpenClicked"/>
+          <Button Content="Choose game folder" Click="ChooseFolderClicked"/>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <TabControl Grid.Row="1" Margin="20">
+      <TabItem Header="1  Game details">
+        <ScrollViewer><StackPanel Margin="12" MaxWidth="900">
+          <Border Classes="card"><StackPanel>
+            <TextBlock Classes="section" Text="Game details"/><TextBlock Classes="help" Margin="0,4,0,20" Text="The information people see on the home and details screens."/>
+            <local:LabeledField Label="Game name" Requirement="Required" Description="The title shown in Cart Launch Companion. Find on Steam can fill the remaining metadata after you choose the exact edition."><local:LabeledField.FieldContent><Grid ColumnDefinitions="*,12,Auto"><TextBox Text="{Binding Configuration.Game.Name}" PlaceholderText="Example: Grand Theft Auto V"/><Button Grid.Column="2" Content="Find on Steam" Click="FindOnSteamClicked"/></Grid></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Sort name" Description="Optional. Use this when the game should be alphabetized differently, such as ignoring “The”."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Game.SortName}"/></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Description" Description="Optional. A short summary shown on the metadata page."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Game.Description}" AcceptsReturn="True" MinHeight="100" TextWrapping="Wrap"/></local:LabeledField.FieldContent></local:LabeledField>
+            <Grid ColumnDefinitions="*,20,*">
+              <local:LabeledField Label="Developer" Description="Optional. The studio that made the game."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Game.Developer}"/></local:LabeledField.FieldContent></local:LabeledField>
+              <local:LabeledField Grid.Column="2" Label="Publisher" Description="Optional. The company that published the game."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Game.Publisher}"/></local:LabeledField.FieldContent></local:LabeledField>
+            </Grid>
+            <Grid ColumnDefinitions="*,20,*">
+              <local:LabeledField Label="Genre" Description="Optional. A simple category such as Action or Racing."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Game.Genre}"/></local:LabeledField.FieldContent></local:LabeledField>
+              <local:LabeledField Grid.Column="2" Label="Release date" Description="Optional. A year or full date, such as 2013 or 2013-09-17."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Game.ReleaseDate}"/></local:LabeledField.FieldContent></local:LabeledField>
+            </Grid>
+            <Grid ColumnDefinitions="*,20,*">
+              <local:LabeledField Label="Players" Description="Optional. Examples: Single-player, 1–4, or Online multiplayer."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Game.Players}"/></local:LabeledField.FieldContent></local:LabeledField>
+              <local:LabeledField Grid.Column="2" Label="Gamepad support" Description="Optional. Shows whether the game works fully or partly with a controller."><local:LabeledField.FieldContent><ComboBox ItemsSource="{Binding GamepadRatings}" SelectedItem="{Binding Configuration.Game.GamepadSupport}"/></local:LabeledField.FieldContent></local:LabeledField>
+            </Grid>
+            <local:LabeledField Label="Steam Deck compatibility" Description="Optional. The game’s Steam Deck rating, if known."><local:LabeledField.FieldContent><ComboBox ItemsSource="{Binding DeckRatings}" SelectedItem="{Binding Configuration.Game.SteamDeckCompatibility}"/></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Private notes" Description="Optional. Notes for the person maintaining this configuration; not needed to launch the game."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Notes}" AcceptsReturn="True" MinHeight="70"/></local:LabeledField.FieldContent></local:LabeledField>
+          </StackPanel></Border>
+        </StackPanel></ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="2  Artwork &amp; media">
+        <ScrollViewer><StackPanel Margin="12" MaxWidth="900" Spacing="16">
+          <Border Classes="card">
+            <Grid ColumnDefinitions="320,24,*">
+              <Border Width="320" Height="180" Background="#080A0D" BorderBrush="#2A313B" BorderThickness="1" CornerRadius="8" ClipToBounds="True">
+                <Grid>
+                  <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#707986" Text="Artwork preview" IsVisible="{Binding !HasArtworkPreview}"/>
+                  <Image Source="{Binding ArtworkPreview}" Stretch="Uniform" IsVisible="{Binding HasArtworkPreview}"/>
+                </Grid>
+              </Border>
+              <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="8">
+                <TextBlock Classes="section" Text="Selected artwork preview"/>
+                <TextBlock FontSize="15" Text="{Binding ArtworkPreviewTitle}" TextWrapping="Wrap"/>
+                <TextBlock Classes="help" Text="This is the artwork returned with the selected search result. Full cover, background, logo, and icon files are downloaded when the game is loaded by Cart Launch Companion." TextWrapping="Wrap"/>
+              </StackPanel>
+            </Grid>
+          </Border>
+          <Border Classes="card"><StackPanel>
+            <TextBlock Classes="section" Text="Automatic metadata"/><TextBlock Classes="help" Margin="0,4,0,20" Text="Steam is the simplest way to fill missing artwork and game information."/>
+            <local:LabeledField Label="Steam metadata ID" Description="Optional. The number in the game’s Steam store address. It can be used even when the game launches elsewhere."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.SteamMetadataId}" PlaceholderText="Example: 3240220"/></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Download missing artwork" Description="Optional. When enabled, the launcher tries online sources if local artwork is missing."><local:LabeledField.FieldContent><ToggleSwitch IsChecked="{Binding Configuration.Artwork.DownloadMissingArtwork}" OnContent="Enabled" OffContent="Disabled"/></local:LabeledField.FieldContent></local:LabeledField>
+          </StackPanel></Border>
+          <Border Classes="card"><StackPanel>
+            <TextBlock Classes="section" Text="Local files"/><TextBlock Classes="help" Margin="0,4,0,20" Text="Paths are normally relative to this game folder. Keep the defaults when using the standard Artwork and Media folders."/>
+            <local:LabeledField Label="Cover art" Description="Optional. Portrait cover image shown on the shelf."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.Cover}"/></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Background" Description="Optional. Large image behind the game interface."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.Background}"/></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Logo" Description="Optional. Transparent game logo displayed in the header."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.Logo}"/></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Icon" Description="Optional. Small square game or launcher icon."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.Icon}"/></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Local trailer" Description="Optional. A local video such as Media/Trailer.mp4 or snap.mp4."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.Trailer}"/></local:LabeledField.FieldContent></local:LabeledField>
+          </StackPanel></Border>
+          <Border Classes="card"><StackPanel>
+            <TextBlock Classes="section" Text="Direct download addresses"/><TextBlock Classes="help" Margin="0,4,0,20" Text="Optional fallbacks. Paste a direct web address only when you want to override automatic metadata."/>
+            <local:LabeledField Label="Cover URL" Description="Optional. Direct address for a portrait cover image."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.CoverUrl}"/></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Background URL" Description="Optional. Direct address for a background image."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.BackgroundUrl}"/></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Logo URL" Description="Optional. Direct address for a transparent logo."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.LogoUrl}"/></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Icon URL" Description="Optional. Direct address for a square icon."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.IconUrl}"/></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Trailer URL" Description="Optional. A YouTube link or direct video address used when no local trailer is available."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.TrailerUrl}"/></local:LabeledField.FieldContent></local:LabeledField>
+          </StackPanel></Border>
+        </StackPanel></ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="3  Windows launch">
+        <ScrollViewer><StackPanel Margin="12" MaxWidth="900"><Border Classes="card"><StackPanel>
+          <TextBlock Classes="section" Text="Windows launch"/><TextBlock Classes="help" Margin="0,4,0,20" Text="Choose how this game starts on Windows. Only the target matching the selected launcher is normally needed."/>
+          <local:LabeledField Label="Enable Windows" Requirement="Required" Description="At least Windows or Linux must be enabled."><local:LabeledField.FieldContent><ToggleSwitch IsChecked="{Binding Configuration.Launch.Windows.Enabled}" OnContent="Enabled" OffContent="Disabled"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Launcher" Requirement="Required" Description="The store, launcher, or direct executable used to start the game."><local:LabeledField.FieldContent><ComboBox ItemsSource="{Binding LauncherKinds}" SelectedItem="{Binding Configuration.Launch.Windows.Launcher}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <TextBlock FontWeight="SemiBold" FontSize="16" Margin="0,8,0,14" Text="Launcher IDs"/>
+          <local:LabeledField Label="Steam App ID" Description="Needed for Steam. The numeric ID from the Steam store page."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.SteamId}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Xbox App ID" Description="Needed for Xbox or Microsoft Store launches unless a custom URI is supplied."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.XboxAppId}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Epic app name" Description="Needed for Epic Games unless a custom URI is supplied."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.EpicAppName}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="GOG game ID" Description="Usually needed for GOG. An executable or URI can be used instead."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.GogGameId}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Ubisoft game ID" Description="Needed for Ubisoft Connect unless a custom URI is supplied."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.UbisoftGameId}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Rockstar game ID" Description="Needed for Rockstar Games Launcher unless a custom URI is supplied."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.RockstarGameId}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Amazon game ID" Description="Needed for Amazon Games unless a custom URI is supplied."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.AmazonGameId}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <TextBlock FontWeight="SemiBold" FontSize="16" Margin="0,8,0,14" Text="Executable options"/>
+          <local:LabeledField Label="Executable" Description="Required for a Local game. Path to the game’s .exe; it may be missing while preparing a test config."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.Executable}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Arguments" Description="Optional. Extra command-line options passed to the game."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.Arguments}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Working directory" Description="Optional. Folder the game should treat as its starting location."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.WorkingDirectory}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <TextBlock FontWeight="SemiBold" FontSize="16" Margin="0,18,0,14" Text="Companion executable"/>
+          <TextBlock Classes="help" Margin="0,0,0,14" Text="Optional. Start a mod manager, controller tool, trainer, or other helper immediately before the primary executable or launcher."/>
+          <local:LabeledField Label="Launch companion app" Description="Optional. Enable this only when another program must start before the game."><local:LabeledField.FieldContent><ToggleSwitch IsChecked="{Binding Configuration.Launch.Windows.CompanionApplication.Enabled}" OnContent="Enabled" OffContent="Disabled"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Companion executable" Description="Required when enabled. Path to the helper program; relative paths start from the game folder."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.CompanionApplication.Executable}" PlaceholderText="Example: Tools/ModManager.exe"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Companion arguments" Description="Optional. Command-line options passed only to the companion app."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.CompanionApplication.Arguments}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Companion working directory" Description="Optional. Leave blank to use the game folder."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.CompanionApplication.WorkingDirectory}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Close companion after game" Description="Optional. Automatically closes the companion when Cart Launch Companion detects that the game has exited."><local:LabeledField.FieldContent><ToggleSwitch IsChecked="{Binding Configuration.Launch.Windows.CompanionApplication.CloseAfterGame}" OnContent="Close automatically" OffContent="Leave running"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Process name" Description="Optional. Helps detect when the game starts and exits if its process differs from the executable."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.ProcessName}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Launch URI" Description="Optional. A custom address such as a store protocol link; it can replace a launcher ID for supported launchers."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.Uri}"/></local:LabeledField.FieldContent></local:LabeledField>
+        </StackPanel></Border></StackPanel></ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="4  Linux &amp; Steam Deck">
+        <ScrollViewer><StackPanel Margin="12" MaxWidth="900"><Border Classes="card"><StackPanel>
+          <TextBlock Classes="section" Text="Linux and Steam Deck launch"/><TextBlock Classes="help" Margin="0,4,0,20" Text="Leave this disabled for a Windows-only game. Steam, Heroic, Flatpak, Wine, Proton, local files, and custom URIs are supported."/>
+          <local:LabeledField Label="Enable Linux" Requirement="Required" Description="At least Windows or Linux must be enabled."><local:LabeledField.FieldContent><ToggleSwitch IsChecked="{Binding Configuration.Launch.Linux.Enabled}" OnContent="Enabled" OffContent="Disabled"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Launcher" Requirement="Required" Description="The launcher or compatibility method used on Linux."><local:LabeledField.FieldContent><ComboBox ItemsSource="{Binding LauncherKinds}" SelectedItem="{Binding Configuration.Launch.Linux.Launcher}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Steam App ID" Description="Needed for Steam, or for Proton when launching through Steam."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Linux.SteamId}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Heroic game ID" Description="Needed for Heroic Games Launcher unless a custom URI is supplied."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Linux.HeroicGameId}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Flatpak app ID" Description="Needed for a Flatpak app unless an executable command is supplied."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Linux.FlatpakAppId}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Executable" Description="Required for Local or Wine. Can also be used for Proton, Flatpak, or Custom launches."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Linux.Executable}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Arguments" Description="Optional. Extra command-line options passed to the game."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Linux.Arguments}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Working directory" Description="Optional. Folder the game should treat as its starting location."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Linux.WorkingDirectory}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <TextBlock FontWeight="SemiBold" FontSize="16" Margin="0,18,0,14" Text="Companion executable"/>
+          <TextBlock Classes="help" Margin="0,0,0,14" Text="Optional. Start a native Linux helper immediately before the primary executable or launcher."/>
+          <local:LabeledField Label="Launch companion app" Description="Optional. Enable this only when another program must start before the game."><local:LabeledField.FieldContent><ToggleSwitch IsChecked="{Binding Configuration.Launch.Linux.CompanionApplication.Enabled}" OnContent="Enabled" OffContent="Disabled"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Companion executable" Description="Required when enabled. Path to the native Linux helper executable."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Linux.CompanionApplication.Executable}" PlaceholderText="Example: Tools/controller-helper"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Companion arguments" Description="Optional. Command-line options passed only to the companion app."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Linux.CompanionApplication.Arguments}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Companion working directory" Description="Optional. Leave blank to use the game folder."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Linux.CompanionApplication.WorkingDirectory}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Close companion after game" Description="Optional. Automatically closes the companion when the game exits."><local:LabeledField.FieldContent><ToggleSwitch IsChecked="{Binding Configuration.Launch.Linux.CompanionApplication.CloseAfterGame}" OnContent="Close automatically" OffContent="Leave running"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Process name" Description="Optional. Helps detect when the game starts and exits."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Linux.ProcessName}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Launch URI" Description="Optional. A custom launcher address that can replace an ID where supported."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Linux.Uri}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Proton or Wine executable/version" Requirement="Advanced" Description="For a direct Proton or Wine launch, choose or enter the executable/path for the desired build, such as Proton Experimental or GE-Proton. For a Steam App ID, Steam’s per-game Compatibility setting selects the Proton version."><local:LabeledField.FieldContent><ComboBox IsEditable="True" ItemsSource="{Binding ProtonSuggestions}" Text="{Binding Configuration.Launch.Linux.CompatibilityTool}" PlaceholderText="Leave blank to use the default"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Wine or Proton prefix" Requirement="Advanced" Description="Optional. Path to this game’s compatibility environment. For Steam-managed Proton games, Steam normally creates and manages this automatically."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Linux.WinePrefix}"/></local:LabeledField.FieldContent></local:LabeledField>
+        </StackPanel></Border></StackPanel></ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="5  Behavior">
+        <ScrollViewer><StackPanel Margin="12" MaxWidth="900" Spacing="16">
+          <Border Classes="card"><StackPanel>
+            <TextBlock Classes="section" Text="Platform preference"/><TextBlock Classes="help" Margin="0,4,0,20" Text="Automatic is recommended and selects the matching configuration for the current computer."/>
+            <local:LabeledField Label="Preferred platform" Description="Usually leave this on Automatic. Force Windows or Linux only for a special setup."><local:LabeledField.FieldContent><ComboBox ItemsSource="{Binding PreferredPlatforms}" SelectedItem="{Binding Configuration.Launch.PreferredPlatform}"/></local:LabeledField.FieldContent></local:LabeledField>
+          </StackPanel></Border>
+          <Border Classes="card"><StackPanel>
+            <TextBlock Classes="section" Text="While a game is running"/>
+            <local:LabeledField Label="Hide the launcher" Description="Recommended. Hides Cart Launch Companion after the game starts."><local:LabeledField.FieldContent><ToggleSwitch IsChecked="{Binding Configuration.Behavior.HideWhileGameRuns}" OnContent="Hide" OffContent="Keep visible"/></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Restore after exit" Description="Recommended. Brings Cart Launch Companion back when the game closes."><local:LabeledField.FieldContent><ToggleSwitch IsChecked="{Binding Configuration.Behavior.RestoreLauncherAfterExit}" OnContent="Restore" OffContent="Stay hidden"/></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Start timeout (seconds)" Requirement="Advanced" Description="How long to wait for the game process to appear. Valid range: 1–3600."><local:LabeledField.FieldContent><NumericUpDown Value="{Binding Configuration.Behavior.ProcessStartTimeoutSeconds}" Minimum="1" Maximum="3600"/></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Exit check interval (seconds)" Requirement="Advanced" Description="How often to check whether the game has closed. Valid range: 1–60."><local:LabeledField.FieldContent><NumericUpDown Value="{Binding Configuration.Behavior.ProcessExitPollSeconds}" Minimum="1" Maximum="60"/></local:LabeledField.FieldContent></local:LabeledField>
+          </StackPanel></Border>
+        </StackPanel></ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="6  Review &amp; save">
+        <Grid Margin="12" RowDefinitions="Auto,*" RowSpacing="14">
+          <Border Classes="card"><StackPanel>
+            <TextBlock Classes="section" Text="Check before saving"/>
+            <TextBlock Classes="help" Margin="0,5,0,12" Text="Validation checks the same rules used by Cart Launch Companion. Missing game executables are allowed; they simply will not launch until installed."/>
+            <StackPanel Orientation="Horizontal" Spacing="10"><Button Content="Validate configuration" Click="ValidateClicked"/><Button Content="Refresh JSON preview" Click="PreviewClicked"/></StackPanel>
+          </StackPanel></Border>
+          <Border Grid.Row="1" Classes="card"><Grid RowDefinitions="Auto,*">
+            <TextBlock Classes="section" Text="game.json preview"/>
+            <TextBox Grid.Row="1" Margin="0,14,0,0" Text="{Binding JsonPreview}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="Cascadia Mono,Consolas" FontSize="12"/>
+          </Grid></Border>
+        </Grid>
+      </TabItem>
+    </TabControl>
+
+    <Border Grid.Row="2" Background="#10141A" BorderBrush="#2A313B" BorderThickness="0,1,0,0" Padding="24,14">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel VerticalAlignment="Center"><TextBlock FontWeight="SemiBold" Text="{Binding Status}" TextWrapping="Wrap"/><TextBlock Classes="help" Text="Required = needed to save a working configuration  •  Optional = improves presentation or detection  •  Advanced = safe to leave at its default"/></StackPanel>
+        <Button Grid.Column="1" Background="#2F80ED" Foreground="White" FontWeight="SemiBold" Content="Validate and save game.json" Click="SaveClicked" MinWidth="230"/>
+      </Grid>
+    </Border>
+  </Grid>
+</Window>

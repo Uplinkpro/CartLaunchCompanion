@@ -1,0 +1,385 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Uplinkpro/CartLaunchCompanion/Schemas/game.schema.json",
+  "title": "Cart Launch Companion 2.0 Game Configuration",
+  "description": "A cross-platform game configuration for Cart Launch Companion 2.0.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "game",
+    "artwork",
+    "launch",
+    "behavior",
+    "notes"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Path or URL to this JSON schema."
+    },
+    "formatVersion": {
+      "const": 2,
+      "description": "Cart Launch Companion configuration format version."
+    },
+    "game": {
+      "$ref": "#/$defs/game"
+    },
+    "artwork": {
+      "$ref": "#/$defs/artwork"
+    },
+    "launch": {
+      "$ref": "#/$defs/launch"
+    },
+    "behavior": {
+      "$ref": "#/$defs/behavior"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Free-form notes for the user."
+    }
+  },
+  "$defs": {
+    "game": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "sortName",
+        "description",
+        "developer",
+        "publisher",
+        "genre",
+        "releaseDate",
+        "players"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Display name shown in the launcher."
+        },
+        "sortName": {
+          "type": "string",
+          "description": "Optional alternate name used for ordering."
+        },
+        "description": {
+          "type": "string"
+        },
+        "developer": {
+          "type": "string"
+        },
+        "publisher": {
+          "type": "string"
+        },
+        "genre": {
+          "type": "string"
+        },
+        "releaseDate": {
+          "type": "string",
+          "description": "Recommended format: YYYY-MM-DD."
+        },
+        "players": {
+          "type": "string",
+          "description": "Human-readable player information."
+        },
+        "steamDeckCompatibility": {
+          "type": "string",
+          "enum": ["unknown", "verified", "playable", "unsupported"],
+          "default": "unknown",
+          "description": "Steam Deck compatibility category shown on the metadata page."
+        },
+        "gamepadSupport": {
+          "type": "string",
+          "enum": ["unknown", "full", "partial", "unsupported"],
+          "default": "unknown",
+          "description": "Gamepad support shown on the metadata page. Steam metadata can populate full or partial support."
+        }
+      }
+    },
+    "artwork": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cover",
+        "background",
+        "logo",
+        "icon",
+        "trailer",
+        "steamMetadataId",
+        "downloadMissingArtwork",
+        "coverUrl",
+        "backgroundUrl",
+        "logoUrl",
+        "iconUrl",
+        "trailerUrl"
+      ],
+      "properties": {
+        "cover": {
+          "type": "string",
+          "description": "Portrait cover path relative to the game folder."
+        },
+        "background": {
+          "type": "string",
+          "description": "Wide metadata background path relative to the game folder."
+        },
+        "logo": {
+          "type": "string"
+        },
+        "icon": {
+          "type": "string"
+        },
+        "trailer": {
+          "type": "string"
+        },
+        "steamMetadataId": {
+          "type": "string",
+          "description": "Steam App ID used only for metadata and artwork."
+        },
+        "downloadMissingArtwork": {
+          "type": "boolean"
+        },
+        "coverUrl": {
+          "type": "string"
+        },
+        "backgroundUrl": {
+          "type": "string"
+        },
+        "logoUrl": {
+          "type": "string"
+        },
+        "iconUrl": {
+          "type": "string"
+        },
+        "trailerUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "launcher": {
+      "type": "string",
+      "enum": [
+        "steam",
+        "xbox",
+        "epic",
+        "heroic",
+        "gog",
+        "ubisoft",
+        "rockstar",
+        "amazon",
+        "local",
+        "flatpak",
+        "wine",
+        "proton",
+        "custom"
+      ],
+      "description": "Launch provider or launch method."
+    },
+    "windows": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "launcher",
+        "steamId",
+        "xboxAppId",
+        "epicAppName",
+        "gogGameId",
+        "ubisoftGameId",
+        "rockstarGameId",
+        "amazonGameId",
+        "executable",
+        "arguments",
+        "workingDirectory",
+        "processName",
+        "uri",
+        "companionApplication"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "launcher": {
+          "$ref": "#/$defs/launcher"
+        },
+        "steamId": {
+          "type": "string"
+        },
+        "xboxAppId": {
+          "type": "string"
+        },
+        "epicAppName": {
+          "type": "string"
+        },
+        "gogGameId": {
+          "type": "string"
+        },
+        "ubisoftGameId": {
+          "type": "string"
+        },
+        "rockstarGameId": {
+          "type": "string"
+        },
+        "amazonGameId": {
+          "type": "string"
+        },
+        "executable": {
+          "type": "string"
+        },
+        "arguments": {
+          "type": "string"
+        },
+        "workingDirectory": {
+          "type": "string"
+        },
+        "processName": {
+          "type": "string"
+        },
+        "uri": {
+          "type": "string"
+        },
+        "companionApplication": {
+          "$ref": "#/$defs/companionApplication"
+        }
+      }
+    },
+    "linux": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "launcher",
+        "steamId",
+        "heroicGameId",
+        "flatpakAppId",
+        "executable",
+        "arguments",
+        "workingDirectory",
+        "processName",
+        "uri",
+        "compatibilityTool",
+        "winePrefix",
+        "companionApplication"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "launcher": {
+          "$ref": "#/$defs/launcher"
+        },
+        "steamId": {
+          "type": "string"
+        },
+        "heroicGameId": {
+          "type": "string"
+        },
+        "flatpakAppId": {
+          "type": "string"
+        },
+        "executable": {
+          "type": "string"
+        },
+        "arguments": {
+          "type": "string"
+        },
+        "workingDirectory": {
+          "type": "string"
+        },
+        "processName": {
+          "type": "string"
+        },
+        "uri": {
+          "type": "string"
+        },
+        "compatibilityTool": {
+          "type": "string"
+        },
+        "winePrefix": {
+          "type": "string"
+        },
+        "companionApplication": {
+          "$ref": "#/$defs/companionApplication"
+        }
+      }
+    },
+    "companionApplication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "executable", "arguments", "workingDirectory", "closeAfterGame"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Starts this helper immediately before the game."
+        },
+        "executable": {
+          "type": "string",
+          "description": "Helper executable path; relative paths resolve from the game folder."
+        },
+        "arguments": {
+          "type": "string"
+        },
+        "workingDirectory": {
+          "type": "string"
+        },
+        "closeAfterGame": {
+          "type": "boolean",
+          "description": "Closes the helper when the monitored game process exits."
+        }
+      }
+    },
+    "launch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "preferredPlatform",
+        "windows",
+        "linux"
+      ],
+      "properties": {
+        "preferredPlatform": {
+          "type": "string",
+          "enum": [
+            "automatic",
+            "windows",
+            "linux"
+          ]
+        },
+        "windows": {
+          "$ref": "#/$defs/windows"
+        },
+        "linux": {
+          "$ref": "#/$defs/linux"
+        }
+      }
+    },
+    "behavior": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "restoreLauncherAfterExit",
+        "hideWhileGameRuns",
+        "processStartTimeoutSeconds",
+        "processExitPollSeconds"
+      ],
+      "properties": {
+        "restoreLauncherAfterExit": {
+          "type": "boolean"
+        },
+        "hideWhileGameRuns": {
+          "type": "boolean"
+        },
+        "processStartTimeoutSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600
+        },
+        "processExitPollSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60
+        }
+      }
+    }
+  }
+}

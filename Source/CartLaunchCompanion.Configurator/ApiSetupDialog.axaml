@@ -1,0 +1,55 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CartLaunchCompanion.Configurator.ApiSetupDialog"
+        Title="Online metadata setup" Width="700" Height="610"
+        CanResize="False" WindowStartupLocation="CenterOwner">
+  <Grid Margin="28" RowDefinitions="Auto,18,*,18,Auto">
+    <StackPanel>
+      <TextBlock FontSize="27" FontWeight="Bold" Text="Set up online game information"/>
+      <TextBlock Classes="help" FontSize="13" Margin="0,6,0,0" Text="Connect metadata services before creating games. Keys stay securely on this computer and are never added to game.json."/>
+    </StackPanel>
+
+    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+      <StackPanel Spacing="16">
+        <Border Classes="card"><StackPanel>
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock FontSize="18" FontWeight="SemiBold" Text="Steam Web API"/>
+                <Border Classes="required"><TextBlock FontSize="11" Text="Required for Steam search"/></Border>
+              </StackPanel>
+              <TextBlock Classes="help" Text="Finds games by name and fills their Steam metadata."/>
+            </StackPanel>
+            <Button Grid.Column="1" Content="Get Steam key ↗" Click="GetSteamKeyClicked"/>
+          </Grid>
+          <TextBox x:Name="SteamKeyBox" PasswordChar="●" PlaceholderText="Paste Steam Web API key" Margin="0,14,0,0"/>
+        </StackPanel></Border>
+
+        <Border Classes="card"><StackPanel>
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock FontSize="18" FontWeight="SemiBold" Text="SteamGridDB API"/>
+                <Border Classes="optional"><TextBlock FontSize="11" Text="Recommended"/></Border>
+              </StackPanel>
+              <TextBlock Classes="help" Text="Provides artwork when Steam artwork is missing."/>
+            </StackPanel>
+            <Button Grid.Column="1" Content="Get SteamGridDB key ↗" Click="GetSteamGridDbKeyClicked"/>
+          </Grid>
+          <TextBox x:Name="SteamGridDbKeyBox" PasswordChar="●" PlaceholderText="Paste SteamGridDB API key" Margin="0,14,0,0"/>
+        </StackPanel></Border>
+
+        <StackPanel>
+          <TextBlock x:Name="StatusText" Foreground="#AAB2BE" Text="Use the buttons to open each service’s official key page."/>
+          <TextBlock Classes="help" Margin="0,8,0,0" Text="You can continue offline and add or change keys later in Settings."/>
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+
+    <Grid Grid.Row="4" ColumnDefinitions="*,Auto,10,Auto">
+      <Button Content="Continue offline" Click="OfflineClicked"/>
+      <Button Grid.Column="1" Content="Cancel" Click="CancelClicked"/>
+      <Button Grid.Column="3" Content="Save and continue" Background="#2F80ED" Foreground="White" FontWeight="SemiBold" Click="SaveClicked"/>
+    </Grid>
+  </Grid>
+</Window>
