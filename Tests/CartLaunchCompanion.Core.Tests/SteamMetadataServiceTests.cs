@@ -148,22 +148,26 @@ public sealed class SteamMetadataServiceTests : IDisposable
         });
 
         var paths = CreatePaths();
-        await File.WriteAllTextAsync(
-            Path.Combine(paths.Config, "metadata.json"),
-            """{"steamGridDbApiKey":"test-key"}""");
-
         var gameFolder = CreateGameFolder(paths, "SteamGridDB Fallback");
         var configuration = CreateConfiguration("12170");
+        var previousKey = Environment.GetEnvironmentVariable("CLC_STEAMGRIDDB_API_KEY");
+        try
+        {
+            Environment.SetEnvironmentVariable("CLC_STEAMGRIDDB_API_KEY", "test-key");
+            var result = await CreateService(handler).EnrichAsync(
+                gameFolder,
+                configuration,
+                paths);
 
-        var result = await CreateService(handler).EnrichAsync(
-            gameFolder,
-            configuration,
-            paths);
-
-        Assert.True(
-            File.Exists(
-                Path.Combine(gameFolder, "Artwork", "Cover.jpg")),
-            string.Join(" | ", result.Warnings.Concat(requests)));
+            Assert.True(
+                File.Exists(
+                    Path.Combine(gameFolder, "Artwork", "Cover.jpg")),
+                string.Join(" | ", result.Warnings.Concat(requests)));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CLC_STEAMGRIDDB_API_KEY", previousKey);
+        }
     }
 
     private PortablePaths CreatePaths()
