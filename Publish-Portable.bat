@@ -7,5 +7,5 @@ if errorlevel 1 (
     exit /b 1
 )
 echo.
-echo Optimized portable x64 build is in the Portable folder.
+echo RC1 packages are in artifacts\rc1\packages.
 pause
