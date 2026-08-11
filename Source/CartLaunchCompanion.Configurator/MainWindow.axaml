@@ -58,23 +58,31 @@
           <Border Classes="card">
             <StackPanel Spacing="14">
               <Grid ColumnDefinitions="*,Auto">
-                <StackPanel><TextBlock Classes="section" Text="Artwork previews"/><TextBlock Classes="help" Text="Local files are shown first; configured download URLs are used when local artwork is not present."/></StackPanel>
+                <StackPanel><TextBlock Classes="section" Text="Metadata page preview"/><TextBlock Classes="help" Text="An approximate preview of how the current cover, background, logo, and icon work together on the game-details screen."/></StackPanel>
                 <Button Grid.Column="1" Content="Refresh previews" Click="RefreshArtworkClicked"/>
               </Grid>
-              <Grid ColumnDefinitions="190,*,190" RowDefinitions="220,150" ColumnSpacing="14" RowSpacing="14">
-                <Border Background="#080A0D" BorderBrush="#2A313B" BorderThickness="1" CornerRadius="8" ClipToBounds="True">
-                  <Grid><TextBlock Text="COVER MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasCoverPreview}"/><Image Source="{Binding CoverPreview}" Stretch="Uniform" IsVisible="{Binding HasCoverPreview}"/><Border VerticalAlignment="Bottom" Background="#B8000000" Padding="10,6"><TextBlock Text="COVER" FontWeight="Bold"/></Border></Grid>
-                </Border>
-                <Border Grid.Column="1" Background="#080A0D" BorderBrush="#2A313B" BorderThickness="1" CornerRadius="8" ClipToBounds="True">
-                  <Grid><TextBlock Text="BACKGROUND MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasBackgroundPreview}"/><Image Source="{Binding BackgroundPreview}" Stretch="Uniform" IsVisible="{Binding HasBackgroundPreview}"/><Border VerticalAlignment="Bottom" Background="#B8000000" Padding="10,6"><TextBlock Text="BACKGROUND" FontWeight="Bold"/></Border></Grid>
-                </Border>
-                <Border Grid.Column="2" Background="#080A0D" BorderBrush="#2A313B" BorderThickness="1" CornerRadius="8" ClipToBounds="True">
-                  <Grid><TextBlock Text="ICON MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasIconPreview}"/><Image Source="{Binding IconPreview}" Stretch="Uniform" IsVisible="{Binding HasIconPreview}"/><Border VerticalAlignment="Bottom" Background="#B8000000" Padding="10,6"><TextBlock Text="ICON" FontWeight="Bold"/></Border></Grid>
-                </Border>
-                <Border Grid.Row="1" Grid.ColumnSpan="3" Background="#080A0D" BorderBrush="#2A313B" BorderThickness="1" CornerRadius="8" ClipToBounds="True">
-                  <Grid><TextBlock Text="LOGO MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasLogoPreview}"/><Image Source="{Binding LogoPreview}" Stretch="Uniform" IsVisible="{Binding HasLogoPreview}"/><Border VerticalAlignment="Bottom" Background="#B8000000" Padding="10,6"><TextBlock Text="LOGO" FontWeight="Bold"/></Border></Grid>
-                </Border>
-              </Grid>
+              <Border Width="800" Height="450" HorizontalAlignment="Center" Background="#080A0D"
+                      BorderBrush="#3A4451" BorderThickness="1" CornerRadius="10" ClipToBounds="True">
+                <Grid>
+                  <Image Source="{Binding BackgroundPreview}" Stretch="UniformToFill" IsVisible="{Binding HasBackgroundPreview}"/>
+                  <TextBlock Text="BACKGROUND MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasBackgroundPreview}"/>
+                  <Border><Border.Background><LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%"><GradientStop Color="#26000000" Offset="0"/><GradientStop Color="#B8000000" Offset="1"/></LinearGradientBrush></Border.Background></Border>
+                  <Image Source="{Binding LogoPreview}" Width="300" Height="92" Stretch="Uniform"
+                         HorizontalAlignment="Left" VerticalAlignment="Top" Margin="34,28,0,0" IsVisible="{Binding HasLogoPreview}"/>
+                  <Border Width="76" Height="76" HorizontalAlignment="Right" VerticalAlignment="Top"
+                          Margin="0,26,30,0" Background="#D0101318" CornerRadius="10" Padding="8">
+                    <Grid><Image Source="{Binding IconPreview}" Stretch="Uniform" IsVisible="{Binding HasIconPreview}"/><TextBlock Text="ICON" Foreground="#707986" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasIconPreview}"/></Grid>
+                  </Border>
+                  <Border Width="156" Height="218" HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                          Margin="34,0,0,30" Background="#D0101318" CornerRadius="8" Padding="5">
+                    <Grid><Image Source="{Binding CoverPreview}" Stretch="Uniform" IsVisible="{Binding HasCoverPreview}"/><TextBlock Text="COVER" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasCoverPreview}"/></Grid>
+                  </Border>
+                  <Border Width="530" Height="190" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                          Margin="0,0,30,30" Background="#D9101318" CornerRadius="10" Padding="24">
+                    <StackPanel Spacing="10"><TextBlock Text="{Binding Configuration.Game.Name}" FontSize="25" FontWeight="Bold" TextTrimming="CharacterEllipsis"/><TextBlock Text="{Binding Configuration.Game.Description}" Foreground="#CFFFFFFF" FontSize="14" MaxHeight="82" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"/><Border Height="38" Width="190" HorizontalAlignment="Right" Background="#2F80ED" CornerRadius="5"><TextBlock Text="LAUNCH" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border></StackPanel>
+                  </Border>
+                </Grid>
+              </Border>
             </StackPanel>
           </Border>
           <Border Classes="card"><StackPanel>
@@ -84,10 +92,10 @@
           </StackPanel></Border>
           <Border Classes="card"><StackPanel>
             <TextBlock Classes="section" Text="Local files"/><TextBlock Classes="help" Margin="0,4,0,20" Text="Paths are normally relative to this game folder. Keep the defaults when using the standard Artwork and Media folders."/>
-            <local:LabeledField Label="Cover art" Description="Optional. Portrait cover image shown on the shelf."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.Cover}"/></local:LabeledField.FieldContent></local:LabeledField>
-            <local:LabeledField Label="Background" Description="Optional. Large image behind the game interface."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.Background}"/></local:LabeledField.FieldContent></local:LabeledField>
-            <local:LabeledField Label="Logo" Description="Optional. Transparent game logo displayed in the header."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.Logo}"/></local:LabeledField.FieldContent></local:LabeledField>
-            <local:LabeledField Label="Icon" Description="Optional. Small square game or launcher icon."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.Icon}"/></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Cover art" Description="Optional. Portrait cover image shown on the shelf."><local:LabeledField.FieldContent><StackPanel Spacing="8"><TextBox Text="{Binding Configuration.Artwork.Cover}"/><Border Height="190" Background="#080A0D" CornerRadius="7" Padding="6"><Grid><Image Source="{Binding CoverPreview}" Stretch="Uniform" IsVisible="{Binding HasCoverPreview}"/><TextBlock Text="COVER MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasCoverPreview}"/></Grid></Border></StackPanel></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Background" Description="Optional. Large image behind the game interface."><local:LabeledField.FieldContent><StackPanel Spacing="8"><TextBox Text="{Binding Configuration.Artwork.Background}"/><Border Height="220" Background="#080A0D" CornerRadius="7" Padding="6"><Grid><Image Source="{Binding BackgroundPreview}" Stretch="Uniform" IsVisible="{Binding HasBackgroundPreview}"/><TextBlock Text="BACKGROUND MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasBackgroundPreview}"/></Grid></Border></StackPanel></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Logo" Description="Optional. Transparent game logo displayed in the header."><local:LabeledField.FieldContent><StackPanel Spacing="8"><TextBox Text="{Binding Configuration.Artwork.Logo}"/><Border Height="150" Background="#080A0D" CornerRadius="7" Padding="6"><Grid><Image Source="{Binding LogoPreview}" Stretch="Uniform" IsVisible="{Binding HasLogoPreview}"/><TextBlock Text="LOGO MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasLogoPreview}"/></Grid></Border></StackPanel></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Icon" Description="Optional. Small square game or launcher icon."><local:LabeledField.FieldContent><StackPanel Spacing="8"><TextBox Text="{Binding Configuration.Artwork.Icon}"/><Border Width="170" Height="170" HorizontalAlignment="Left" Background="#080A0D" CornerRadius="7" Padding="6"><Grid><Image Source="{Binding IconPreview}" Stretch="Uniform" IsVisible="{Binding HasIconPreview}"/><TextBlock Text="ICON MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasIconPreview}"/></Grid></Border></StackPanel></local:LabeledField.FieldContent></local:LabeledField>
             <local:LabeledField Label="Local trailer" Description="Optional. A local video such as Media/Trailer.mp4 or snap.mp4."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.Trailer}"/></local:LabeledField.FieldContent></local:LabeledField>
           </StackPanel></Border>
           <Border Classes="card"><StackPanel>
