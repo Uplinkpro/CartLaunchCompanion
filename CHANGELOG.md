@@ -22,6 +22,7 @@ The project follows semantic versioning where practical.
 - Added portable file locators for game, emulator, ROM, and companion paths in the Game Configurator
 - Added collection header-logo preview, dimension guidance, safe artwork import, and collection.json saving to the Series tab
 - Added automatic loading and selection of existing game configurations plus a per-game artwork readability audit on the Review page
+- Replaced the single metadata image with dedicated cover, background, logo, and icon previews in the Configurator
 
 ## [2.2.0] - 2026-08-11
 

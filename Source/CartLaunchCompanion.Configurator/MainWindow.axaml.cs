@@ -29,6 +29,10 @@ public sealed partial class MainWindow : Window
         Closed += (_, _) =>
         {
             _viewModel.CollectionLogoPreview = null;
+            _viewModel.CoverPreview = null;
+            _viewModel.BackgroundPreview = null;
+            _viewModel.LogoPreview = null;
+            _viewModel.IconPreview = null;
             _httpClient.Dispose();
         };
         Opened += StartupOpened;
@@ -93,6 +97,7 @@ public sealed partial class MainWindow : Window
             _viewModel.Configuration = GameConfigurationJson.Deserialize(
                 GameConfigurationJson.Serialize(configuration));
             _viewModel.RefreshPreview();
+            await RefreshArtworkPreviewsAsync();
             _viewModel.Status = openMetadata.UsedAny
                 ? $"Matched {match.Name}. Missing details were filled from PCGamingWiki and Wikipedia."
                 : HasMissingTextMetadata(configuration)
@@ -527,7 +532,48 @@ public sealed partial class MainWindow : Window
         _gameJsonPath = path;
         _viewModel.FilePath = path;
         _viewModel.RefreshPreview();
+        await RefreshArtworkPreviewsAsync();
         SetValidationStatus("Configuration opened.");
+    }
+
+    private async void RefreshArtworkClicked(object? sender, RoutedEventArgs e) =>
+        await RefreshArtworkPreviewsAsync();
+
+    private async Task RefreshArtworkPreviewsAsync()
+    {
+        _viewModel.CoverPreview = null;
+        _viewModel.BackgroundPreview = null;
+        _viewModel.LogoPreview = null;
+        _viewModel.IconPreview = null;
+
+        var configuration = _viewModel.Configuration;
+        var folder = string.IsNullOrWhiteSpace(_gameJsonPath)
+            ? null
+            : Path.GetDirectoryName(_gameJsonPath);
+        _viewModel.CoverPreview = await LoadArtworkPreviewAsync(folder, configuration.Artwork.Cover, configuration.Artwork.CoverUrl);
+        _viewModel.BackgroundPreview = await LoadArtworkPreviewAsync(folder, configuration.Artwork.Background, configuration.Artwork.BackgroundUrl);
+        _viewModel.LogoPreview = await LoadArtworkPreviewAsync(folder, configuration.Artwork.Logo, configuration.Artwork.LogoUrl);
+        _viewModel.IconPreview = await LoadArtworkPreviewAsync(folder, configuration.Artwork.Icon, configuration.Artwork.IconUrl);
+    }
+
+    private async Task<Avalonia.Media.Imaging.Bitmap?> LoadArtworkPreviewAsync(
+        string? gameFolder,
+        string localPath,
+        string remoteUrl)
+    {
+        if (!string.IsNullOrWhiteSpace(gameFolder))
+        {
+            var resolved = new GamePathResolver().ResolveExistingWithAnyExtension(gameFolder, localPath);
+            if (resolved is not null)
+            {
+                try { return new Avalonia.Media.Imaging.Bitmap(resolved); }
+                catch { }
+            }
+        }
+
+        return string.IsNullOrWhiteSpace(remoteUrl)
+            ? null
+            : await DownloadPreviewAsync(remoteUrl);
     }
 
     private async void EditorTabsChanged(object? sender, SelectionChangedEventArgs e)

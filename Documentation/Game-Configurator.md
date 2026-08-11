@@ -60,6 +60,8 @@ The Series collection page also previews the collection-wide header logo. Use a 
 
 The Review & Save page checks every saved game’s cover, background, logo, and icon. A checkmark means the file exists and can be decoded as an image; an X identifies missing or unreadable artwork. The current game is checked from the fields presently shown in the editor, while other games are loaded from their saved `game.json` files. The audit also runs after saving.
 
+The Artwork & Media page displays separate previews for the cover, background, logo, and icon. Local files take priority, with the corresponding configured URL used as a preview fallback. Missing assets are labeled individually, and **Refresh previews** reloads the board after manual path or URL changes.
+
 ## Emulator launches
 
 The Windows and Linux launch pages include command-line recipes for RetroArch, DuckStation, PCSX2, Dolphin, and RPCS3.
