@@ -14,6 +14,11 @@
           <TextBlock Foreground="#77818E" FontSize="12" Margin="0,7,0,0" Text="{Binding FilePath}" TextTrimming="CharacterEllipsis"/>
         </StackPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <ComboBox Width="250" PlaceholderText="No saved games"
+                    ItemsSource="{Binding ExistingGames}"
+                    SelectedItem="{Binding SelectedExistingGame}"
+                    IsVisible="{Binding HasExistingGames}"
+                    SelectionChanged="ExistingGameChanged"/>
           <Button Content="Settings" Click="SettingsClicked"/>
           <Button Content="New" Click="NewClicked"/>
           <Button Content="Open game.json" Click="OpenClicked"/>
@@ -22,7 +27,7 @@
       </Grid>
     </Border>
 
-    <TabControl Grid.Row="1" Margin="20">
+    <TabControl Grid.Row="1" Margin="20" SelectionChanged="EditorTabsChanged">
       <TabItem Header="1  Game details">
         <ScrollViewer><StackPanel Margin="12" MaxWidth="900">
           <Border Classes="card"><StackPanel>
@@ -225,13 +230,37 @@
       </TabItem>
 
       <TabItem Header="7  Review &amp; save">
-        <Grid Margin="12" RowDefinitions="Auto,*" RowSpacing="14">
+        <Grid Margin="12" RowDefinitions="Auto,Auto,*" RowSpacing="14">
           <Border Classes="card"><StackPanel>
             <TextBlock Classes="section" Text="Check before saving"/>
             <TextBlock Classes="help" Margin="0,5,0,12" Text="Validation checks the same rules used by Cart Launch Companion. Missing game executables are allowed; they simply will not launch until installed."/>
             <StackPanel Orientation="Horizontal" Spacing="10"><Button Content="Validate configuration" Click="ValidateClicked"/><Button Content="Refresh JSON preview" Click="PreviewClicked"/></StackPanel>
           </StackPanel></Border>
-          <Border Grid.Row="1" Classes="card"><Grid RowDefinitions="Auto,*">
+          <Border Grid.Row="1" Classes="card">
+            <Grid RowDefinitions="Auto,Auto,*" RowSpacing="10">
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel>
+                  <TextBlock Classes="section" Text="Artwork sanity check"/>
+                  <TextBlock Classes="help" Text="Checks every saved game’s cover, background, logo, and icon using the same paths as the launcher."/>
+                </StackPanel>
+                <Button Grid.Column="1" Content="Run artwork check" Click="AuditArtworkClicked"/>
+              </Grid>
+              <TextBlock Grid.Row="1" Text="{Binding ArtworkAuditSummary}" FontWeight="SemiBold"/>
+              <ListBox Grid.Row="2" ItemsSource="{Binding ArtworkAuditResults}" MaxHeight="210">
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <Grid ColumnDefinitions="34,220,130,*" Margin="4,3">
+                      <TextBlock Text="{Binding Symbol}" Foreground="{Binding StatusColor}" FontSize="18" FontWeight="Bold"/>
+                      <TextBlock Grid.Column="1" Text="{Binding Game}" TextTrimming="CharacterEllipsis"/>
+                      <TextBlock Grid.Column="2" Text="{Binding Asset}" FontWeight="SemiBold"/>
+                      <TextBlock Grid.Column="3" Text="{Binding Message}" Foreground="#AAB2BE"/>
+                    </Grid>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </Grid>
+          </Border>
+          <Border Grid.Row="2" Classes="card"><Grid RowDefinitions="Auto,*">
             <TextBlock Classes="section" Text="game.json preview"/>
             <TextBox Grid.Row="1" Margin="0,14,0,0" Text="{Binding JsonPreview}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="Cascadia Mono,Consolas" FontSize="12"/>
           </Grid></Border>

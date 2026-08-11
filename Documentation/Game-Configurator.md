@@ -1,5 +1,7 @@
 # Game Configurator
 
+When opened on an existing cart, the Configurator discovers saved entries under `Cart/Games`, loads the first game automatically, and provides a game selector in the top toolbar. A blank configuration is shown only when the cart has no saved game entries or when **New** is selected.
+
 ## Portable file locators
 
 Choose the configuration folder under `Cart/Games` before selecting launch files. The Windows and Linux launch pages provide locator buttons for native games, emulators, ROM or disc images, and optional companion applications.
@@ -53,6 +55,10 @@ Open **Series collection** to place the game on an era, generation, platform, or
 This step writes the game's `collection.shelf` and `collection.order` values. The collection-wide name, logo, accent color, and shelf definitions remain in `Config/collection.json`; start from `Config/collection.example.json`. Shelves without games are hidden automatically.
 
 The Series collection page also previews the collection-wide header logo. Use a transparent PNG at `1440 × 448` pixels; the launcher displays it at `360 × 112`. Keep important lettering and characters inside the centered `1320 × 360` safe area. The logo picker copies artwork into `Assets/Collections/<SeriesName>` and updates `Config/collection.json` without overwriting an existing logo file.
+
+## Artwork sanity check
+
+The Review & Save page checks every saved game’s cover, background, logo, and icon. A checkmark means the file exists and can be decoded as an image; an X identifies missing or unreadable artwork. The current game is checked from the fields presently shown in the editor, while other games are loaded from their saved `game.json` files. The audit also runs after saving.
 
 ## Emulator launches
 

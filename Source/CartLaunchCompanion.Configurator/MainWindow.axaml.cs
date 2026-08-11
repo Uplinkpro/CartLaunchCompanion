@@ -19,6 +19,7 @@ public sealed partial class MainWindow : Window
     private string? _gameJsonPath;
     private bool _startupSetupShown;
     private PortablePaths? _portablePaths;
+    private bool _loadingExistingGame;
 
     public MainWindow()
     {
@@ -40,6 +41,7 @@ public sealed partial class MainWindow : Window
         _portablePaths = new PortablePathService().Discover(AppContext.BaseDirectory);
         _ = await MetadataProviderSettings.LoadAsync(_portablePaths);
         await LoadCollectionBrandingAsync();
+        await LoadExistingGamesAsync();
         var settings = await ConfiguratorSettings.LoadAsync();
         if (!settings.SetupCompleted)
             await new ApiSetupDialog(settings).ShowDialog<bool>(this);
@@ -133,7 +135,15 @@ public sealed partial class MainWindow : Window
     private void NewClicked(object? sender, RoutedEventArgs e)
     {
         _gameJsonPath = null;
+        _viewModel.SelectedExistingGame = null;
         _viewModel.Reset();
+    }
+
+    private async void ExistingGameChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_loadingExistingGame || _viewModel.SelectedExistingGame is null)
+            return;
+        await LoadGameConfigurationAsync(_viewModel.SelectedExistingGame.ConfigurationPath);
     }
 
     private async void OpenClicked(object? sender, RoutedEventArgs e)
@@ -156,12 +166,7 @@ public sealed partial class MainWindow : Window
 
         try
         {
-            var path = files[0].Path.LocalPath;
-            _viewModel.Configuration = await GameConfigurationJson.LoadAsync(path);
-            _gameJsonPath = path;
-            _viewModel.FilePath = path;
-            _viewModel.RefreshPreview();
-            SetValidationStatus("Configuration opened.");
+            await LoadGameConfigurationAsync(files[0].Path.LocalPath);
         }
         catch (Exception ex)
         {
@@ -436,6 +441,8 @@ public sealed partial class MainWindow : Window
             Directory.CreateDirectory(Path.Combine(gameFolder, "Artwork"));
             Directory.CreateDirectory(Path.Combine(gameFolder, "Media"));
             await GameConfigurationJson.SaveAsync(_gameJsonPath!, _viewModel.Configuration);
+            await RefreshExistingGamesAsync(_gameJsonPath);
+            await RunArtworkAuditAsync();
             _viewModel.RefreshPreview();
             _viewModel.Status = "Saved successfully. This game folder is ready for Cart Launch Companion.";
             _viewModel.HasErrors = false;
@@ -444,6 +451,149 @@ public sealed partial class MainWindow : Window
         {
             _viewModel.Status = $"Could not save: {ex.Message}";
             _viewModel.HasErrors = true;
+        }
+    }
+
+    private async Task LoadExistingGamesAsync()
+    {
+        if (_portablePaths is null)
+            return;
+        await RefreshExistingGamesAsync();
+        if (_viewModel.ExistingGames.Count == 0)
+        {
+            _viewModel.Status = "This cart has no saved games yet. A blank configuration is ready.";
+            return;
+        }
+
+        _loadingExistingGame = true;
+        try
+        {
+            _viewModel.SelectedExistingGame = _viewModel.ExistingGames[0];
+            await LoadGameConfigurationAsync(_viewModel.ExistingGames[0].ConfigurationPath);
+            _viewModel.Status = $"Loaded {_viewModel.ExistingGames[0].Name}. Choose another saved game from the top menu to edit it.";
+        }
+        finally
+        {
+            _loadingExistingGame = false;
+        }
+    }
+
+    private async Task RefreshExistingGamesAsync(string? selectPath = null)
+    {
+        if (_portablePaths is null)
+            return;
+        var options = new List<ExistingGameOption>();
+        if (Directory.Exists(_portablePaths.Games))
+        {
+            foreach (var folder in Directory.EnumerateDirectories(_portablePaths.Games).OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase))
+            {
+                var path = new[] { Path.Combine(folder, "game.json"), Path.Combine(folder, "Game.json") }
+                    .FirstOrDefault(File.Exists);
+                if (path is null || string.Equals(Path.GetFileName(folder), "Examples", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                try
+                {
+                    var configuration = await GameConfigurationJson.LoadAsync(path);
+                    options.Add(new ExistingGameOption(
+                        string.IsNullOrWhiteSpace(configuration.Game.Name) ? Path.GetFileName(folder) : configuration.Game.Name,
+                        path));
+                }
+                catch
+                {
+                    options.Add(new ExistingGameOption(Path.GetFileName(folder) + " (invalid configuration)", path));
+                }
+            }
+        }
+
+        _loadingExistingGame = true;
+        try
+        {
+            _viewModel.ExistingGames.Clear();
+            foreach (var option in options)
+                _viewModel.ExistingGames.Add(option);
+            _viewModel.SelectedExistingGame = options.FirstOrDefault(option =>
+                selectPath is not null && string.Equals(Path.GetFullPath(option.ConfigurationPath), Path.GetFullPath(selectPath), StringComparison.OrdinalIgnoreCase));
+            _viewModel.NotifyExistingGamesChanged();
+        }
+        finally
+        {
+            _loadingExistingGame = false;
+        }
+    }
+
+    private async Task LoadGameConfigurationAsync(string path)
+    {
+        _viewModel.Configuration = await GameConfigurationJson.LoadAsync(path);
+        _gameJsonPath = path;
+        _viewModel.FilePath = path;
+        _viewModel.RefreshPreview();
+        SetValidationStatus("Configuration opened.");
+    }
+
+    private async void EditorTabsChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (sender is TabControl { SelectedIndex: 6 })
+            await RunArtworkAuditAsync();
+    }
+
+    private async void AuditArtworkClicked(object? sender, RoutedEventArgs e) =>
+        await RunArtworkAuditAsync();
+
+    private async Task RunArtworkAuditAsync()
+    {
+        _viewModel.ArtworkAuditResults.Clear();
+        if (_portablePaths is null || !Directory.Exists(_portablePaths.Games))
+        {
+            _viewModel.ArtworkAuditSummary = "No Cart/Games folder is available to check.";
+            return;
+        }
+
+        var resolver = new GamePathResolver();
+        foreach (var option in _viewModel.ExistingGames)
+        {
+            try
+            {
+                var configuration = _gameJsonPath is not null &&
+                                    string.Equals(Path.GetFullPath(option.ConfigurationPath), Path.GetFullPath(_gameJsonPath), StringComparison.OrdinalIgnoreCase)
+                    ? _viewModel.Configuration
+                    : await GameConfigurationJson.LoadAsync(option.ConfigurationPath);
+                var folder = Path.GetDirectoryName(option.ConfigurationPath)!;
+                AuditImage(option.Name, "Cover", folder, configuration.Artwork.Cover, resolver);
+                AuditImage(option.Name, "Background", folder, configuration.Artwork.Background, resolver);
+                AuditImage(option.Name, "Logo", folder, configuration.Artwork.Logo, resolver);
+                AuditImage(option.Name, "Icon", folder, configuration.Artwork.Icon, resolver);
+            }
+            catch (Exception ex)
+            {
+                _viewModel.ArtworkAuditResults.Add(new ArtworkAuditItem(option.Name, "Configuration", "✕", "#FF6B72", ex.Message));
+            }
+        }
+
+        var failures = _viewModel.ArtworkAuditResults.Count(item => item.Symbol == "✕");
+        _viewModel.ArtworkAuditSummary = failures == 0
+            ? $"✓ All {_viewModel.ArtworkAuditResults.Count} artwork files are present and readable."
+            : $"✕ {failures} of {_viewModel.ArtworkAuditResults.Count} artwork checks need attention.";
+    }
+
+    private void AuditImage(string game, string asset, string folder, string configuredPath, GamePathResolver resolver)
+    {
+        var path = resolver.ResolveExistingWithAnyExtension(folder, configuredPath);
+        if (path is null)
+        {
+            _viewModel.ArtworkAuditResults.Add(new ArtworkAuditItem(game, asset, "✕", "#FF6B72", "Missing"));
+            return;
+        }
+        try
+        {
+            using var image = new Avalonia.Media.Imaging.Bitmap(path);
+            if (image.PixelSize.Width <= 0 || image.PixelSize.Height <= 0)
+                throw new InvalidDataException("Image dimensions are invalid.");
+            _viewModel.ArtworkAuditResults.Add(new ArtworkAuditItem(
+                game, asset, "✓", "#69DB8A", $"{image.PixelSize.Width} × {image.PixelSize.Height}"));
+        }
+        catch
+        {
+            _viewModel.ArtworkAuditResults.Add(new ArtworkAuditItem(game, asset, "✕", "#FF6B72", "Unreadable image"));
         }
     }
 
