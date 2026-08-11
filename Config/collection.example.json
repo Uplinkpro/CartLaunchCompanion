@@ -1,0 +1,16 @@
+{
+  "$schema": "../Schemas/collection.schema.json",
+  "formatVersion": 1,
+  "enabled": true,
+  "name": "The Grand Theft Auto Master Collection",
+  "description": "Every era of Grand Theft Auto in one cart.",
+  "accentColor": "#F2C94C",
+  "defaultShelf": "Other Games",
+  "shelves": [
+    { "name": "2D Era", "order": 10 },
+    { "name": "3D Era", "order": 20 },
+    { "name": "HD Era", "order": 30 },
+    { "name": "Definitive Editions", "order": 40 },
+    { "name": "Other Games", "order": 100 }
+  ]
+}

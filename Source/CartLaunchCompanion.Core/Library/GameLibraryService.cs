@@ -182,16 +182,16 @@ public sealed class GameLibraryService(
             ConfigurationPath = configurationPath,
             Configuration = configuration,
             ImportedFromVersion1 = !isVersion2,
-            CoverPath = pathResolver.ResolveExisting(
+            CoverPath = pathResolver.ResolveExistingWithAnyExtension(
                 folder,
                 configuration.Artwork.Cover),
-            BackgroundPath = pathResolver.ResolveExisting(
+            BackgroundPath = pathResolver.ResolveExistingWithAnyExtension(
                 folder,
                 configuration.Artwork.Background),
-            LogoPath = pathResolver.ResolveExisting(
+            LogoPath = pathResolver.ResolveExistingWithAnyExtension(
                 folder,
                 configuration.Artwork.Logo),
-            IconPath = pathResolver.ResolveExisting(
+            IconPath = pathResolver.ResolveExistingWithAnyExtension(
                 folder,
                 configuration.Artwork.Icon),
             TrailerPath = ResolveLocalTrailerPath(folder, configuration),

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using CartLaunchCompanion.Core.Input;
+using CartLaunchCompanion.Core.Configuration;
 using CartLaunchCompanion.Core.Launching;
 using CartLaunchCompanion.Core.Library;
 using CartLaunchCompanion.Core.Platform;
@@ -62,6 +63,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
     public ObservableCollection<GameCardViewModel> Games { get; } = [];
+    public ObservableCollection<GameShelfViewModel> Shelves { get; } = [];
+
+    [ObservableProperty]
+    public partial CollectionConfiguration Collection { get; set; } = new();
 
     [ObservableProperty]
     public partial GameCardViewModel? SelectedGame { get; set; }
@@ -114,9 +119,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public bool ShowEmptyLibrary => HasNoGames && !HasLibraryError;
     public bool HasSelectedGame => SelectedGame is not null;
     public bool HasNoSelectedGame => SelectedGame is null;
+    public bool HasCustomCollection =>
+        Collection.Enabled && !string.IsNullOrWhiteSpace(Collection.Name);
     public bool ShowCartLaunchBranding =>
-        SelectedGame is null || SelectedGame.UsesCartLaunchBranding;
+        !HasCustomCollection &&
+        (SelectedGame is null || SelectedGame.UsesCartLaunchBranding);
     public bool ShowLauncherBranding =>
+        !HasCustomCollection &&
         SelectedGame is not null && !SelectedGame.UsesCartLaunchBranding;
     public bool UseMotionEffects =>
         !AnimationPreferenceParser.IsReducedMotionValue(
@@ -220,18 +229,43 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             DisposeCards();
             Games.Clear();
+            Shelves.Clear();
             SelectedGame = null;
+
+            Collection = await CollectionConfigurationJson.LoadAsync(
+                _portablePaths.Config);
 
             var result = await _libraryService.LoadAsync(
                 _portablePaths,
                 _platform);
 
-            foreach (var entry in result.Games.Take(10))
+            var shelfOrder = Collection.Shelves
+                .Where(shelf => !string.IsNullOrWhiteSpace(shelf.Name))
+                .GroupBy(shelf => shelf.Name, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.First().Order,
+                    StringComparer.OrdinalIgnoreCase);
+
+            var orderedEntries = result.Games
+                .OrderBy(entry => GetShelfOrder(entry, shelfOrder))
+                .ThenBy(entry => GetShelfName(entry), StringComparer.OrdinalIgnoreCase)
+                .ThenBy(entry => entry.Configuration.Collection.Order)
+                .ThenBy(entry => GetGameSortName(entry), StringComparer.OrdinalIgnoreCase);
+
+            foreach (var entry in orderedEntries)
             {
                 Games.Add(
                     new GameCardViewModel(
                         entry,
                         OpenMetadata));
+            }
+
+            foreach (var group in Games.GroupBy(
+                         game => GetShelfName(game.Entry),
+                         StringComparer.OrdinalIgnoreCase))
+            {
+                Shelves.Add(new GameShelfViewModel(group.Key, group));
             }
 
             SelectedGame = Games.FirstOrDefault();
@@ -241,6 +275,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             OnPropertyChanged(nameof(HasNoGames));
             OnPropertyChanged(nameof(HasLibraryError));
             OnPropertyChanged(nameof(ShowEmptyLibrary));
+            OnPropertyChanged(nameof(HasCustomCollection));
+            OnPropertyChanged(nameof(ShowCartLaunchBranding));
+            OnPropertyChanged(nameof(ShowLauncherBranding));
         }
         catch (Exception ex)
         {
@@ -343,11 +380,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 break;
 
             case LauncherAction.NavigateUp:
-                MoveSelection(-GetRowStride());
+                MoveBetweenShelves(-1);
                 break;
 
             case LauncherAction.NavigateDown:
-                MoveSelection(GetRowStride());
+                MoveBetweenShelves(1);
                 break;
 
             case LauncherAction.Confirm:
@@ -413,12 +450,67 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         SelectedGame = Games[nextIndex];
     }
 
-    private int GetRowStride()
+    private void MoveBetweenShelves(int direction)
     {
-        if (Games.Count <= 5)
-            return Games.Count;
+        if (SelectedGame is null || Shelves.Count == 0)
+            return;
 
-        return (int)Math.Ceiling(Games.Count / 2.0);
+        var currentShelfIndex = -1;
+        var currentGameIndex = 0;
+
+        for (var shelfIndex = 0; shelfIndex < Shelves.Count; shelfIndex++)
+        {
+            var gameIndex = Shelves[shelfIndex].Games.IndexOf(SelectedGame);
+            if (gameIndex < 0)
+                continue;
+
+            currentShelfIndex = shelfIndex;
+            currentGameIndex = gameIndex;
+            break;
+        }
+
+        if (currentShelfIndex < 0)
+            return;
+
+        var targetShelfIndex = Math.Clamp(
+            currentShelfIndex + direction,
+            0,
+            Shelves.Count - 1);
+        var targetShelf = Shelves[targetShelfIndex];
+
+        if (targetShelf.Games.Count > 0)
+        {
+            SelectedGame = targetShelf.Games[
+                Math.Min(currentGameIndex, targetShelf.Games.Count - 1)];
+        }
+    }
+
+    private string GetShelfName(GameLibraryEntry entry)
+    {
+        var configured = entry.Configuration.Collection.Shelf?.Trim();
+        if (!string.IsNullOrWhiteSpace(configured))
+            return configured;
+
+        var fallback = Collection.DefaultShelf?.Trim();
+        return string.IsNullOrWhiteSpace(fallback) ? "Library" : fallback;
+    }
+
+    private int GetShelfOrder(
+        GameLibraryEntry entry,
+        IReadOnlyDictionary<string, int> shelfOrder)
+    {
+        var name = GetShelfName(entry);
+        return shelfOrder.TryGetValue(name, out var order)
+            ? order
+            : int.MaxValue;
+    }
+
+    private static string GetGameSortName(GameLibraryEntry entry)
+    {
+        var sortName = entry.Configuration.Game.SortName;
+        return string.IsNullOrWhiteSpace(sortName)
+            ? entry.Configuration.Game.Name
+            : sortName;
     }
 
     private void OpenSelectedMetadata()
@@ -571,20 +663,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         var loaded = result.Games.Count;
         var failed = result.Failures.Count;
-        var limited = loaded > 10;
-        var shown = Math.Min(loaded, 10);
-
         var message =
-            $"{shown} game{(shown == 1 ? "" : "s")} loaded";
+            $"{loaded} game{(loaded == 1 ? "" : "s")} loaded";
 
         if (failed > 0)
         {
             message +=
                 $"; {failed} folder{(failed == 1 ? "" : "s")} could not be loaded";
         }
-
-        if (limited)
-            message += "; only the first 10 are shown";
 
         return message + ".";
     }

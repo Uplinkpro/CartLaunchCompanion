@@ -26,4 +26,31 @@ public sealed class GamePathResolverTests
 
         Assert.Equal("", resolver.Resolve("C:\\Game", ""));
     }
+
+    [Fact]
+    public void ResolveExistingWithAnyExtension_FindsMatchingArtworkStem()
+    {
+        var root = Path.Combine(
+            Path.GetTempPath(),
+            $"clc-path-{Guid.NewGuid():N}");
+        var artwork = Path.Combine(root, "Artwork");
+        Directory.CreateDirectory(artwork);
+        var pngPath = Path.Combine(artwork, "Cover.png");
+        File.WriteAllText(pngPath, "test");
+
+        try
+        {
+            var resolver = new GamePathResolver();
+
+            var resolved = resolver.ResolveExistingWithAnyExtension(
+                root,
+                "Artwork/Cover.jpg");
+
+            Assert.Equal(pngPath, resolved);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
 }

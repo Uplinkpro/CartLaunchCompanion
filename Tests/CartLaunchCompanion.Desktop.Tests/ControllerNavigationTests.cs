@@ -134,11 +134,34 @@ public sealed class ControllerNavigationTests
         Assert.Equal("Game 2", viewModel.SelectedGame?.Name);
     }
 
+    [Fact]
+    public async Task Home_Down_MovesToSameColumnOnNextShelf()
+    {
+        var viewModel = CreateViewModel(
+            gameCount: 4,
+            shelves: ["2D Era", "2D Era", "3D Era", "3D Era"]);
+        await viewModel.LoadAsync();
+        var timestamp = DateTimeOffset.UtcNow;
+
+        await viewModel.HandleInputAsync(new LauncherInputEvent(
+            LauncherAction.NavigateRight,
+            InputDeviceKind.Controller,
+            timestamp));
+        await viewModel.HandleInputAsync(new LauncherInputEvent(
+            LauncherAction.NavigateDown,
+            InputDeviceKind.Controller,
+            timestamp.AddMilliseconds(150)));
+
+        Assert.Equal("Game 4", viewModel.SelectedGame?.Name);
+        Assert.Equal(2, viewModel.Shelves.Count);
+    }
+
     private static MainViewModel CreateViewModel(
         int gameCount = 1,
-        Action? exitApplication = null)
+        Action? exitApplication = null,
+        string[]? shelves = null)
         => new(
-            new StubLibraryService(gameCount),
+            new StubLibraryService(gameCount, shelves),
             new StubLaunchService(),
             PortablePaths.FromRoot(Path.GetTempPath()),
             PlatformKind.Windows,
@@ -157,7 +180,9 @@ public sealed class ControllerNavigationTests
                     CompletedGameLaunchSession.Instance));
     }
 
-    private sealed class StubLibraryService(int gameCount)
+    private sealed class StubLibraryService(
+        int gameCount,
+        string[]? shelves = null)
         : IGameLibraryService
     {
         public Task<GameLibraryLoadResult> LoadAsync(
@@ -172,6 +197,13 @@ public sealed class ControllerNavigationTests
                 var configuration = new GameConfiguration
                 {
                     Game = { Name = $"Game {index}" },
+                    Collection =
+                    {
+                        Shelf = shelves is not null && index <= shelves.Length
+                            ? shelves[index - 1]
+                            : "Library",
+                        Order = index
+                    },
                     Launch =
                     {
                         Windows =

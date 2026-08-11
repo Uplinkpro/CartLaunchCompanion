@@ -36,6 +36,7 @@ public sealed class GameConfigurationJsonTests
         Assert.Contains("\"preferredPlatform\": \"automatic\"", json);
         Assert.Contains("\"launcher\": \"steam\"", json);
         Assert.Contains("\"steamDeckCompatibility\": \"verified\"", json);
+        Assert.Contains("\"collection\": {", json);
     }
 
     [Fact]
@@ -68,5 +69,40 @@ public sealed class GameConfigurationJsonTests
 
         Assert.Equal("Portal 2", configuration.Game.Name);
         Assert.Equal("620", configuration.Launch.Windows.SteamId);
+        Assert.Equal("", configuration.Collection.Shelf);
+    }
+
+    [Fact]
+    public async Task CollectionConfiguration_LoadsOptionalCartDefinition()
+    {
+        var folder = Path.Combine(
+            Path.GetTempPath(),
+            $"clc-collection-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(folder);
+
+        try
+        {
+            await File.WriteAllTextAsync(
+                Path.Combine(folder, "collection.json"),
+                """
+                {
+                  "formatVersion": 1,
+                  "enabled": true,
+                  "name": "GTA Master Collection",
+                  "defaultShelf": "Other",
+                  "shelves": [{ "name": "3D Era", "order": 20 }]
+                }
+                """);
+
+            var collection = await CollectionConfigurationJson.LoadAsync(folder);
+
+            Assert.True(collection.Enabled);
+            Assert.Equal("GTA Master Collection", collection.Name);
+            Assert.Equal("3D Era", Assert.Single(collection.Shelves).Name);
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
     }
 }

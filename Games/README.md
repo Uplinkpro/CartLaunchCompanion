@@ -15,3 +15,21 @@ Games/
 ```
 
 Do not commit copyrighted artwork, videos, account identifiers, personal paths, or private launcher data.
+
+## Custom collections and shelves
+
+Copy `Config/collection.example.json` to `Config/collection.json` to give the
+cart its own collection name, accent color, and ordered shelf list.
+
+Place a game on a shelf by adding this optional block to its `game.json`:
+
+```json
+"collection": {
+  "shelf": "3D Era",
+  "order": 20
+}
+```
+
+Games without a shelf use the collection's `defaultShelf`. Each game keeps its
+real Steam, Rockstar, local executable, or other launch configuration; the
+collection only changes how the library is presented.

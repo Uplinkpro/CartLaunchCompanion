@@ -136,6 +136,26 @@
                                FontWeight="SemiBold"
                                LetterSpacing="3" />
                 </StackPanel>
+
+                <StackPanel HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="5"
+                            IsVisible="{Binding HasCustomCollection}">
+                    <TextBlock Text="{Binding Collection.Name}"
+                               HorizontalAlignment="Center"
+                               Foreground="White"
+                               FontSize="28"
+                               FontWeight="Bold"
+                               LetterSpacing="1.5" />
+                    <TextBlock Text="{Binding Collection.Description}"
+                               HorizontalAlignment="Center"
+                               Foreground="#B8FFFFFF"
+                               FontSize="12"
+                               TextTrimming="CharacterEllipsis"
+                               MaxWidth="760" />
+                    <Border Width="180" Height="3" CornerRadius="2"
+                            Background="{Binding Collection.AccentColor}" />
+                </StackPanel>
             </Grid>
 
             <Border Grid.Row="1"
@@ -175,139 +195,110 @@
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                               VerticalScrollBarVisibility="Auto"
                               IsVisible="{Binding HasGames}">
-                    <ItemsControl ItemsSource="{Binding Games}"
+                    <ItemsControl ItemsSource="{Binding Shelves}"
                                   Margin="18,18,18,0"
-                                  HorizontalAlignment="Center"
-                                  VerticalAlignment="Center">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel Orientation="Horizontal"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           MaxWidth="1210" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-
+                                  HorizontalAlignment="Stretch">
                         <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:GameCardViewModel">
-                                <Button Classes="game-card"
-                                        Classes.selected="{Binding IsSelected}"
-                                        Margin="5"
-                                        Command="{Binding OpenCommand}"
-                                        AutomationProperties.Name="{Binding Name}"
-                                        ToolTip.Tip="{Binding Name}">
-                                    <StackPanel Width="118"
-                                                Spacing="6">
-                                        <Grid>
-                                            <Border Classes="card-frame"
-                                                    Width="118"
-                                                    Height="220"
-                                                    CornerRadius="7"
-                                                    Background="#F207090D"
-                                                    BorderBrush="{Binding AccentBrightColor}"
-                                                    BorderThickness="2"
-                                                    Opacity="0.92">
-                                        <Grid RowDefinitions="24,2,*">
-                                            <Border Grid.Row="0"
-                                                    Background="{Binding AccentColor}"
-                                                    CornerRadius="5,5,0,0">
-                                                <StackPanel Orientation="Horizontal"
-                                                            HorizontalAlignment="Center"
-                                                            VerticalAlignment="Center"
-                                                            Spacing="5">
-                                                    <Border Width="9"
-                                                            Height="9"
-                                                            CornerRadius="5"
-                                                            BorderBrush="White"
-                                                            BorderThickness="2" />
-                                                    <TextBlock Text="{Binding Launcher}"
-                                                               Foreground="White"
-                                                               FontSize="9"
-                                                               FontWeight="SemiBold" />
-                                                </StackPanel>
-                                            </Border>
-
-                                            <Border Grid.Row="1"
-                                                    Background="White" />
-
-                                            <Grid Grid.Row="2"
-                                                  Background="#0A0C10"
-                                                  ClipToBounds="True">
-                                                <Image Source="{Binding CoverImage}"
-                                                       Stretch="UniformToFill"
-                                                       IsVisible="{Binding HasCover}" />
-
-                                                <Border Width="58"
-                                                        Height="58"
-                                                        CornerRadius="29"
-                                                        BorderBrush="{Binding AccentColor}"
-                                                        BorderThickness="2"
-                                                        HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center"
-                                                        IsVisible="{Binding HasNoCover}">
-                                                    <TextBlock Text="{Binding Initials}"
-                                                               HorizontalAlignment="Center"
-                                                               VerticalAlignment="Center"
-                                                               Foreground="White"
-                                                               FontSize="19"
-                                                               FontWeight="Bold" />
-                                                </Border>
-                                            </Grid>
-                                        </Grid>
-                                            </Border>
-
-                                            <Border Classes="selection-card-accent"
-                                                    CornerRadius="7"
-                                                    BorderBrush="{Binding AccentBrightColor}"
-                                                    BorderThickness="4"
-                                                    IsHitTestVisible="False" />
-
-                                            <Border Classes="selection-title-pulse selection-card-pulse"
-                                                    Margin="3"
-                                                    CornerRadius="5"
-                                                    BorderBrush="White"
-                                                    BorderThickness="2"
-                                                    IsHitTestVisible="False" />
-                                        </Grid>
-
-                                        <Border Height="3"
-                                                CornerRadius="2"
-                                                Background="{Binding AccentBrightColor}"
-                                                IsVisible="{Binding IsSelected}" />
-
-                                        <Grid Height="38">
-                                            <Border Background="{Binding AccentMutedColor}"
-                                                    CornerRadius="6"
-                                                    IsVisible="{Binding IsSelected}" />
-
-                                            <Border Margin="-7,-5"
-                                                    CornerRadius="9"
-                                                    BorderBrush="{Binding AccentBrightColor}"
-                                                    BorderThickness="4"
-                                                    IsVisible="{Binding IsSelected}" />
-
-                                            <Border Classes="selection-title-pulse"
-                                                    Margin="-10,-8"
-                                                    CornerRadius="12"
-                                                    BorderBrush="White"
-                                                    BorderThickness="2"
-                                                    IsVisible="{Binding IsSelected}" />
-
-                                            <TextBlock Text="{Binding Name}"
-                                                       Margin="4,2"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"
-                                                       TextAlignment="Center"
-                                                       TextWrapping="Wrap"
-                                                       MaxLines="3"
-                                                       TextTrimming="CharacterEllipsis"
-                                                       Foreground="#F2FFFFFF"
-                                                       FontSize="9"
-                                                       FontWeight="SemiBold"
-                                                       LineHeight="11" />
-                                        </Grid>
+                            <DataTemplate x:DataType="vm:GameShelfViewModel">
+                                <StackPanel Spacing="4" Margin="0,0,0,18">
+                                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="10,0">
+                                        <TextBlock Text="{Binding Name}"
+                                                   Foreground="White"
+                                                   FontSize="15"
+                                                   FontWeight="Bold"
+                                                   LetterSpacing="2" />
+                                        <Border Height="2" Width="84"
+                                                VerticalAlignment="Center"
+                                                Background="#70FFFFFF" />
                                     </StackPanel>
-                                </Button>
+                                    <ItemsControl ItemsSource="{Binding Games}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel Orientation="Horizontal"
+                                                           HorizontalAlignment="Left"
+                                                           MaxWidth="1210" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:GameCardViewModel">
+                                                <Button Classes="game-card"
+                                                        Classes.selected="{Binding IsSelected}"
+                                                        Margin="5"
+                                                        Command="{Binding OpenCommand}"
+                                                        AutomationProperties.Name="{Binding Name}"
+                                                        ToolTip.Tip="{Binding Name}">
+                                                    <StackPanel Width="118" Spacing="6">
+                                                        <Grid>
+                                                            <Border Classes="card-frame" Width="118" Height="220"
+                                                                    CornerRadius="7" Background="#F207090D"
+                                                                    BorderBrush="{Binding AccentBrightColor}"
+                                                                    BorderThickness="2" Opacity="0.92">
+                                                                <Grid RowDefinitions="24,2,*">
+                                                                    <Border Grid.Row="0" Background="{Binding AccentColor}"
+                                                                            CornerRadius="5,5,0,0">
+                                                                        <StackPanel Orientation="Horizontal"
+                                                                                    HorizontalAlignment="Center"
+                                                                                    VerticalAlignment="Center" Spacing="5">
+                                                                            <Border Width="9" Height="9" CornerRadius="5"
+                                                                                    BorderBrush="White" BorderThickness="2" />
+                                                                            <TextBlock Text="{Binding Launcher}"
+                                                                                       Foreground="White" FontSize="9"
+                                                                                       FontWeight="SemiBold" />
+                                                                        </StackPanel>
+                                                                    </Border>
+                                                                    <Border Grid.Row="1" Background="White" />
+                                                                    <Grid Grid.Row="2" Background="#0A0C10" ClipToBounds="True">
+                                                                        <Image Source="{Binding CoverImage}"
+                                                                               Stretch="UniformToFill"
+                                                                               IsVisible="{Binding HasCover}" />
+                                                                        <Border Width="58" Height="58" CornerRadius="29"
+                                                                                BorderBrush="{Binding AccentColor}"
+                                                                                BorderThickness="2"
+                                                                                HorizontalAlignment="Center"
+                                                                                VerticalAlignment="Center"
+                                                                                IsVisible="{Binding HasNoCover}">
+                                                                            <TextBlock Text="{Binding Initials}"
+                                                                                       HorizontalAlignment="Center"
+                                                                                       VerticalAlignment="Center"
+                                                                                       Foreground="White" FontSize="19"
+                                                                                       FontWeight="Bold" />
+                                                                        </Border>
+                                                                    </Grid>
+                                                                </Grid>
+                                                            </Border>
+                                                            <Border Classes="selection-card-accent" CornerRadius="7"
+                                                                    BorderBrush="{Binding AccentBrightColor}"
+                                                                    BorderThickness="4" IsHitTestVisible="False" />
+                                                            <Border Classes="selection-title-pulse selection-card-pulse"
+                                                                    Margin="3" CornerRadius="5" BorderBrush="White"
+                                                                    BorderThickness="2" IsHitTestVisible="False" />
+                                                        </Grid>
+                                                        <Border Height="3" CornerRadius="2"
+                                                                Background="{Binding AccentBrightColor}"
+                                                                IsVisible="{Binding IsSelected}" />
+                                                        <Grid Height="38">
+                                                            <Border Background="{Binding AccentMutedColor}"
+                                                                    CornerRadius="6" IsVisible="{Binding IsSelected}" />
+                                                            <Border Margin="-7,-5" CornerRadius="9"
+                                                                    BorderBrush="{Binding AccentBrightColor}"
+                                                                    BorderThickness="4" IsVisible="{Binding IsSelected}" />
+                                                            <Border Classes="selection-title-pulse" Margin="-10,-8"
+                                                                    CornerRadius="12" BorderBrush="White"
+                                                                    BorderThickness="2" IsVisible="{Binding IsSelected}" />
+                                                            <TextBlock Text="{Binding Name}" Margin="4,2"
+                                                                       HorizontalAlignment="Center"
+                                                                       VerticalAlignment="Center"
+                                                                       TextAlignment="Center" TextWrapping="Wrap"
+                                                                       MaxLines="3" TextTrimming="CharacterEllipsis"
+                                                                       Foreground="#F2FFFFFF" FontSize="9"
+                                                                       FontWeight="SemiBold" LineHeight="11" />
+                                                        </Grid>
+                                                    </StackPanel>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

@@ -29,4 +29,36 @@ public sealed class GamePathResolver : IGamePathResolver
             ? resolved
             : null;
     }
+
+    public string? ResolveExistingWithAnyExtension(
+        string gameFolder,
+        string configuredPath)
+    {
+        var exact = ResolveExisting(gameFolder, configuredPath);
+        if (exact is not null)
+            return exact;
+
+        var resolved = Resolve(gameFolder, configuredPath);
+        if (string.IsNullOrWhiteSpace(resolved))
+            return null;
+
+        var directory = Path.GetDirectoryName(resolved);
+        var stem = Path.GetFileNameWithoutExtension(resolved);
+
+        if (string.IsNullOrWhiteSpace(directory) ||
+            string.IsNullOrWhiteSpace(stem) ||
+            !Directory.Exists(directory))
+        {
+            return null;
+        }
+
+        return Directory
+            .EnumerateFiles(directory)
+            .Where(path => string.Equals(
+                Path.GetFileNameWithoutExtension(path),
+                stem,
+                StringComparison.OrdinalIgnoreCase))
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault();
+    }
 }

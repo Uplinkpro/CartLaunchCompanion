@@ -17,7 +17,15 @@ public sealed class GameConfiguration
 
     public BehaviorConfiguration Behavior { get; set; } = new();
 
+    public GameCollectionPlacement Collection { get; set; } = new();
+
     public string Notes { get; set; } = "";
+}
+
+public sealed class GameCollectionPlacement
+{
+    public string Shelf { get; set; } = "";
+    public int Order { get; set; }
 }
 
 public sealed class GameInformation

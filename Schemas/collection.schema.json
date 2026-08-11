@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Uplinkpro/CartLaunchCompanion/Schemas/collection.schema.json",
+  "title": "Cart Launch Companion Collection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "enabled", "name", "description", "accentColor", "defaultShelf", "shelves"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "formatVersion": { "const": 1 },
+    "enabled": { "type": "boolean" },
+    "name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "accentColor": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$"
+    },
+    "defaultShelf": { "type": "string", "minLength": 1 },
+    "shelves": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "order"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "order": { "type": "integer" }
+        }
+      }
+    }
+  }
+}

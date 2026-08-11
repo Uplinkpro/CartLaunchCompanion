@@ -34,6 +34,9 @@
     "behavior": {
       "$ref": "#/$defs/behavior"
     },
+    "collection": {
+      "$ref": "#/$defs/collectionPlacement"
+    },
     "notes": {
       "type": "string",
       "description": "Free-form notes for the user."
@@ -378,6 +381,22 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 60
+        }
+      }
+    },
+    "collectionPlacement": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "shelf": {
+          "type": "string",
+          "default": "",
+          "description": "Shelf or era where this game appears in a custom collection."
+        },
+        "order": {
+          "type": "integer",
+          "default": 0,
+          "description": "Display order within the selected shelf."
         }
       }
     }
