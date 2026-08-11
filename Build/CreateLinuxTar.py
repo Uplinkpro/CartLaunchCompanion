@@ -11,11 +11,15 @@ def normalized_permissions(info: tarfile.TarInfo) -> tarfile.TarInfo:
         info.mode = 0o755
     elif path.name in {"Start Cart Launch Companion.sh", "Game Configurator.sh"}:
         info.mode = 0o755
-    elif "System/Linux-x64" in path.as_posix() and path.name in {
-        "CartLaunchCompanion.Desktop",
-        "CartLaunchCompanion.Configurator",
-        "createdump",
-    }:
+    elif path.name == "CartLaunchCompanion.Updater" or (
+        "System/Linux-x64" in path.as_posix()
+        and path.name
+        in {
+            "CartLaunchCompanion.Desktop",
+            "CartLaunchCompanion.Configurator",
+            "createdump",
+        }
+    ):
         info.mode = 0o755
     else:
         info.mode = 0o644

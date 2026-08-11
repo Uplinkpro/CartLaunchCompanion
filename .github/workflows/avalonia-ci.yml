@@ -3,10 +3,10 @@
 on:
   push:
     branches:
-      - avalonia-migration
+      - main
   pull_request:
     branches:
-      - avalonia-migration
+      - main
   workflow_dispatch:
 
 permissions:

@@ -10,11 +10,15 @@ def mode_for(path: pathlib.Path, relative: pathlib.PurePosixPath) -> int:
         return 0o40755
     if relative.name in {"Start Cart Launch Companion.sh", "Game Configurator.sh"}:
         return 0o100755
-    if "System/Linux-x64" in relative.as_posix() and relative.name in {
-        "CartLaunchCompanion.Desktop",
-        "CartLaunchCompanion.Configurator",
-        "createdump",
-    }:
+    if relative.name == "CartLaunchCompanion.Updater" or (
+        "System/Linux-x64" in relative.as_posix()
+        and relative.name
+        in {
+            "CartLaunchCompanion.Desktop",
+            "CartLaunchCompanion.Configurator",
+            "createdump",
+        }
+    ):
         return 0o100755
     return 0o100644
 

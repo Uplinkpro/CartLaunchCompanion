@@ -425,6 +425,7 @@ Create self-contained release packages:
 ## Documentation
 
 - [Game Configurator](Documentation/Game-Configurator.md)
+- [Updater security design](Documentation/Updater-Security.md)
 - [Emulator launch guide](Documentation/Emulator-Launch-Guide.md)
 - [Architecture](docs/2.0/Architecture.md)
 - [Controller guide](docs/2.0/ControllerGuide.md)

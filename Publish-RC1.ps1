@@ -6,6 +6,7 @@ $ErrorActionPreference = 'Stop'
 $version = '2.2.0'
 $launcherProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.Desktop\CartLaunchCompanion.Desktop.csproj'
 $configuratorProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.Configurator\CartLaunchCompanion.Configurator.csproj'
+$updaterProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.Updater\CartLaunchCompanion.Updater.csproj'
 $staging = Join-Path $OutputRoot 'staging\CartLaunchCompanion'
 $packages = Join-Path $OutputRoot 'packages'
 
@@ -34,6 +35,14 @@ foreach ($runtime in $runtimes) {
         -p:DebugType=None -p:DebugSymbols=false -o $destination
     if ($LASTEXITCODE -ne 0) {
         throw "Configurator publish failed for $($runtime.Id)."
+    }
+
+    $maintenanceDestination = Join-Path $staging (Join-Path 'Maintenance' $runtime.Folder)
+    & dotnet publish $updaterProject -c Release -r $runtime.Id --self-contained true `
+        -p:PublishSingleFile=true -p:PublishTrimmed=true `
+        -p:DebugType=None -p:DebugSymbols=false -o $maintenanceDestination
+    if ($LASTEXITCODE -ne 0) {
+        throw "Updater publish failed for $($runtime.Id)."
     }
 }
 
@@ -69,6 +78,7 @@ Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Docs\2.0\ReleaseCandidate1.md')
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Docs\2.0\UpgradeGuide.md') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Game-Configurator.md') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Emulator-Launch-Guide.md') -Destination $staging
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Updater-Security.md') -Destination $staging
 
 # Generated concept drafts are development assets; portable releases include only final collection artwork.
 Get-ChildItem -LiteralPath (Join-Path $staging 'Assets\Collections') -Directory -Recurse -ErrorAction SilentlyContinue |
@@ -118,9 +128,11 @@ $linuxStage = Join-Path $OutputRoot 'linux\CartLaunchCompanion'
 Copy-Item -LiteralPath $staging -Destination $windowsStage -Recurse
 Copy-Item -LiteralPath $staging -Destination $linuxStage -Recurse
 Remove-Item -LiteralPath (Join-Path $windowsStage 'System\Linux-x64') -Recurse -Force
+Remove-Item -LiteralPath (Join-Path $windowsStage 'Maintenance\Linux-x64') -Recurse -Force
 Remove-Item -LiteralPath (Join-Path $windowsStage 'Start Cart Launch Companion.sh') -Force
 Remove-Item -LiteralPath (Join-Path $windowsStage 'Game Configurator.sh') -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'System\Windows-x64') -Recurse -Force
+Remove-Item -LiteralPath (Join-Path $linuxStage 'Maintenance\Windows-x64') -Recurse -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'Start Cart Launch Companion.bat') -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'Game Configurator.bat') -Force
 
