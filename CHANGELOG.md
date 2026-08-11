@@ -17,6 +17,7 @@ The project follows semantic versioning where practical.
 - Added the fail-closed foundation for a small cross-platform Cart Launch Updater
 - Added strict update manifests, full payload integrity checks, transactional runtime activation, rollback, and interrupted-update recovery
 - Added adversarial tests for path escape, tampering, unexpected files, malformed manifests, and recovery
+- Added the official ECDSA update trust anchor, a release-only manifest signer, and signed tagged-release automation
 
 ## [2.2.0] - 2026-08-11
 

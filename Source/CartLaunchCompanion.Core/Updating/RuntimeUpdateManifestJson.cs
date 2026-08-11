@@ -81,4 +81,28 @@ public static class RuntimeUpdateManifestJson
 
         return JsonSerializer.SerializeToUtf8Bytes(unsigned, JsonContext.RuntimeUpdateManifest);
     }
+
+    public static async Task SaveAsync(
+        string path,
+        RuntimeUpdateManifest manifest,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        ArgumentNullException.ThrowIfNull(manifest);
+
+        await using var stream = new FileStream(
+            path,
+            FileMode.Create,
+            FileAccess.Write,
+            FileShare.None,
+            16 * 1024,
+            FileOptions.Asynchronous | FileOptions.WriteThrough);
+        await JsonSerializer.SerializeAsync(
+            stream,
+            manifest,
+            JsonContext.RuntimeUpdateManifest,
+            cancellationToken);
+        await stream.FlushAsync(cancellationToken);
+        stream.Flush(flushToDisk: true);
+    }
 }

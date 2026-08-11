@@ -2,7 +2,7 @@
 
 The Cart Launch Updater is a small maintenance component intended to update the portable CLC runtime on a cart after the launcher closes. It does not update games, collection configuration, artwork, media, or user metadata.
 
-> The updater foundation is under development. Production update application remains disabled until the official offline release-signing public key is embedded in the maintenance executable.
+> The updater foundation is under development. The official public verification key is embedded, but automatic download and launcher-facing update controls remain disabled until their end-to-end tests are complete.
 
 ## Portable layout
 
@@ -48,9 +48,9 @@ An interrupted journal in the `ActiveMovedToBackup` state is recovered on the ne
 
 ## Signing boundary
 
-HTTPS transport is not sufficient update authorization. Production manifests must be signed by the offline Uplinkpro release-signing key, and the corresponding public key must be compiled into the updater. The updater never accepts a public key, executable path, command, or update endpoint from a cart manifest.
+HTTPS transport is not sufficient update authorization. Production manifests are signed by the Uplinkpro release-signing key stored as an encrypted GitHub Actions secret, and the corresponding public key is compiled into the updater. The private key is never committed or included on a cart. The updater never accepts a public key, executable path, command, or update endpoint from a cart manifest.
 
-Until that trust anchor is configured, the updater exits without changing the active runtime.
+Tagged release builds generate platform-specific runtime payloads and signed manifests in GitHub Actions. A forged or modified manifest cannot pass verification with the embedded public key.
 
 ## Tests
 

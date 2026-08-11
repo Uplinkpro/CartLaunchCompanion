@@ -2,8 +2,11 @@ namespace CartLaunchCompanion.Updater;
 
 internal static class UpdateTrustAnchor
 {
-    // Production updating remains fail-closed until the offline release-signing
-    // key ceremony is complete and its public key is embedded here.
     public const string OfficialKeyId = "uplinkpro-release-1";
-    public const string OfficialPublicKeyPem = "";
+    public const string OfficialPublicKeyPem = """
+        -----BEGIN PUBLIC KEY-----
+        MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwSnjXV9pP/RuRH98cJXSq8Lw6332
+        wssHkj7Ar7CRdv4eXonx06il4+hqLG19fe0R0Qz5XfuYZqWR5/J4qcTR6A==
+        -----END PUBLIC KEY-----
+        """;
 }

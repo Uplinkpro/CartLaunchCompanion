@@ -1,9 +1,10 @@
 param(
-    [string]$OutputRoot = (Join-Path $PSScriptRoot 'artifacts\2.2.0')
+    [string]$Version = '2.3.0',
+    [string]$OutputRoot = (Join-Path $PSScriptRoot "artifacts\$Version")
 )
 
 $ErrorActionPreference = 'Stop'
-$version = '2.2.0'
+$version = $Version
 $launcherProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.Desktop\CartLaunchCompanion.Desktop.csproj'
 $configuratorProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.Configurator\CartLaunchCompanion.Configurator.csproj'
 $updaterProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.Updater\CartLaunchCompanion.Updater.csproj'
