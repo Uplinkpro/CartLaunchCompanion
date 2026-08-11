@@ -171,6 +171,25 @@
 
       <TabItem Header="5  Series collection">
         <ScrollViewer><StackPanel Margin="12" MaxWidth="900" Spacing="16">
+          <Border Classes="card"><Grid ColumnDefinitions="380,24,*">
+            <Border Width="360" Height="112" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Background="#080A0D" BorderBrush="#3A4451" BorderThickness="1" CornerRadius="8" ClipToBounds="True">
+              <Grid>
+                <TextBlock Text="COLLECTION HEADER LOGO" Foreground="#657080" FontSize="12"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           IsVisible="{Binding !HasCollectionLogoPreview}"/>
+                <Image Source="{Binding CollectionLogoPreview}" Stretch="Uniform"
+                       IsVisible="{Binding HasCollectionLogoPreview}"/>
+              </Grid>
+            </Border>
+            <StackPanel Grid.Column="2" Spacing="8" VerticalAlignment="Center">
+              <TextBlock Classes="section" Text="Collection header logo"/>
+              <TextBlock Text="Recommended: 1440 × 448 px transparent PNG" FontWeight="SemiBold"/>
+              <TextBlock Classes="help" Text="Displayed at 360 × 112. Keep important artwork inside the centered 1320 × 360 safe area so edges remain comfortable at every supported resolution." TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding CollectionLogoStatus}" Foreground="#AAB2BE" TextWrapping="Wrap"/>
+              <Button Content="Choose and add collection logo" Click="ChooseCollectionLogoClicked" HorizontalAlignment="Left"/>
+            </StackPanel>
+          </Grid></Border>
           <Border Classes="card"><StackPanel>
             <TextBlock Classes="section" Text="Custom Series Collection"/>
             <TextBlock Classes="help" Margin="0,4,0,20" Text="Optional. Place this game on an era, generation, platform, or themed shelf. The collection launcher reads these values from game.json."/>

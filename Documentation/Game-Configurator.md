@@ -52,6 +52,8 @@ Open **Series collection** to place the game on an era, generation, platform, or
 
 This step writes the game's `collection.shelf` and `collection.order` values. The collection-wide name, logo, accent color, and shelf definitions remain in `Config/collection.json`; start from `Config/collection.example.json`. Shelves without games are hidden automatically.
 
+The Series collection page also previews the collection-wide header logo. Use a transparent PNG at `1440 × 448` pixels; the launcher displays it at `360 × 112`. Keep important lettering and characters inside the centered `1320 × 360` safe area. The logo picker copies artwork into `Assets/Collections/<SeriesName>` and updates `Config/collection.json` without overwriting an existing logo file.
+
 ## Emulator launches
 
 The Windows and Linux launch pages include command-line recipes for RetroArch, DuckStation, PCSX2, Dolphin, and RPCS3.

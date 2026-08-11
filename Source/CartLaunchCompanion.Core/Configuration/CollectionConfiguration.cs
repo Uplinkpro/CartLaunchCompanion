@@ -40,4 +40,23 @@ public static class CollectionConfigurationJson
                ?? throw new InvalidDataException(
                    $"The collection configuration is empty: {path}");
     }
+
+    public static async Task SaveAsync(
+        string configFolder,
+        CollectionConfiguration configuration,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(configFolder);
+        ArgumentNullException.ThrowIfNull(configuration);
+        Directory.CreateDirectory(configFolder);
+        var path = Path.Combine(configFolder, "collection.json");
+        await using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+        await JsonSerializer.SerializeAsync(
+            stream,
+            configuration,
+            GameConfigurationJson.Options,
+            cancellationToken);
+        await stream.FlushAsync(cancellationToken);
+        stream.Flush(flushToDisk: true);
+    }
 }

@@ -15,6 +15,9 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     private Bitmap? _artworkPreview;
     private string _artworkPreviewTitle = "No artwork selected yet";
     private string _pathStatus = "Choose a game configuration folder before locating portable files.";
+    private CollectionConfiguration _collection = new();
+    private Bitmap? _collectionLogoPreview;
+    private string _collectionLogoStatus = "No collection logo configured.";
 
     public GameConfiguration Configuration { get => _configuration; set { _configuration = value; Changed(); Changed(nameof(JsonPreview)); } }
     public string FilePath { get => _filePath; set { _filePath = value; Changed(); } }
@@ -25,6 +28,10 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     public string ArtworkPreviewTitle { get => _artworkPreviewTitle; set { _artworkPreviewTitle = value; Changed(); } }
     public bool HasArtworkPreview => ArtworkPreview is not null;
     public string PathStatus { get => _pathStatus; set { _pathStatus = value; Changed(); } }
+    public CollectionConfiguration Collection { get => _collection; set { _collection = value; Changed(); } }
+    public Bitmap? CollectionLogoPreview { get => _collectionLogoPreview; set { _collectionLogoPreview?.Dispose(); _collectionLogoPreview = value; Changed(); Changed(nameof(HasCollectionLogoPreview)); } }
+    public bool HasCollectionLogoPreview => CollectionLogoPreview is not null;
+    public string CollectionLogoStatus { get => _collectionLogoStatus; set { _collectionLogoStatus = value; Changed(); } }
     public Array LauncherKinds { get; } = Enum.GetValues<LauncherKind>();
     public Array PreferredPlatforms { get; } = Enum.GetValues<PreferredPlatform>();
     public Array DeckRatings { get; } = Enum.GetValues<SteamDeckCompatibility>();

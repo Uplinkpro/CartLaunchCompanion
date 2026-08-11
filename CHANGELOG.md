@@ -20,6 +20,7 @@ The project follows semantic versioning where practical.
 - Added the official ECDSA update trust anchor, a release-only manifest signer, and signed tagged-release automation
 - Added opt-in update discovery, bounded downloads, safe archive extraction, free-space checks, signed staging, and maintenance restart handoff
 - Added portable file locators for game, emulator, ROM, and companion paths in the Game Configurator
+- Added collection header-logo preview, dimension guidance, safe artwork import, and collection.json saving to the Series tab
 
 ## [2.2.0] - 2026-08-11
 

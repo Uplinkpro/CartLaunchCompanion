@@ -6,6 +6,7 @@ using CartLaunchCompanion.Core.Configuration.Validation;
 using CartLaunchCompanion.Core.Library;
 using CartLaunchCompanion.Core.Metadata;
 using CartLaunchCompanion.Core.Portable;
+using System.Text;
 
 namespace CartLaunchCompanion.Configurator;
 
@@ -17,13 +18,18 @@ public sealed partial class MainWindow : Window
     private readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
     private string? _gameJsonPath;
     private bool _startupSetupShown;
+    private PortablePaths? _portablePaths;
 
     public MainWindow()
     {
         InitializeComponent();
         DataContext = _viewModel;
         _viewModel.RefreshPreview();
-        Closed += (_, _) => _httpClient.Dispose();
+        Closed += (_, _) =>
+        {
+            _viewModel.CollectionLogoPreview = null;
+            _httpClient.Dispose();
+        };
         Opened += StartupOpened;
     }
 
@@ -31,8 +37,9 @@ public sealed partial class MainWindow : Window
     {
         if (_startupSetupShown) return;
         _startupSetupShown = true;
-        var portablePaths = new PortablePathService().Discover(AppContext.BaseDirectory);
-        _ = await MetadataProviderSettings.LoadAsync(portablePaths);
+        _portablePaths = new PortablePathService().Discover(AppContext.BaseDirectory);
+        _ = await MetadataProviderSettings.LoadAsync(_portablePaths);
+        await LoadCollectionBrandingAsync();
         var settings = await ConfiguratorSettings.LoadAsync();
         if (!settings.SetupCompleted)
             await new ApiSetupDialog(settings).ShowDialog<bool>(this);
@@ -276,6 +283,109 @@ public sealed partial class MainWindow : Window
         _viewModel.Configuration = GameConfigurationJson.Deserialize(
             GameConfigurationJson.Serialize(configuration));
         _viewModel.RefreshPreview();
+    }
+
+    private async void ChooseCollectionLogoClicked(object? sender, RoutedEventArgs e)
+    {
+        _portablePaths ??= new PortablePathService().Discover(AppContext.BaseDirectory);
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Choose a transparent collection header logo",
+            AllowMultiple = false,
+            FileTypeFilter =
+            [
+                new FilePickerFileType("Collection logo")
+                {
+                    Patterns = ["*.png", "*.webp"]
+                }
+            ]
+        });
+        if (files.Count == 0)
+            return;
+
+        try
+        {
+            var source = files[0].Path.LocalPath;
+            await using (var probe = File.OpenRead(source))
+            {
+                using var bitmap = new Avalonia.Media.Imaging.Bitmap(probe);
+                if (bitmap.PixelSize.Width < 360 || bitmap.PixelSize.Height < 112)
+                    throw new InvalidDataException("The logo must be at least 360 × 112 pixels.");
+            }
+
+            var folderName = MakeSafeFolderName(_viewModel.Collection.Name);
+            var destinationFolder = Path.Combine(_portablePaths.Assets, "Collections", folderName);
+            Directory.CreateDirectory(destinationFolder);
+            var extension = Path.GetExtension(source).ToLowerInvariant();
+            var destination = GetAvailableLogoPath(destinationFolder, extension, source);
+            if (!string.Equals(Path.GetFullPath(source), Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase))
+                File.Copy(source, destination, overwrite: false);
+
+            _viewModel.Collection.Logo = Path.GetRelativePath(_portablePaths.Root, destination).Replace('\\', '/');
+            await CollectionConfigurationJson.SaveAsync(_portablePaths.Config, _viewModel.Collection);
+            LoadCollectionLogoPreview(destination);
+            _viewModel.Status = "Collection logo copied into Cart/Assets and saved to Config/collection.json.";
+        }
+        catch (Exception ex)
+        {
+            _viewModel.CollectionLogoStatus = $"Logo not saved: {ex.Message}";
+            _viewModel.Status = _viewModel.CollectionLogoStatus;
+        }
+    }
+
+    private async Task LoadCollectionBrandingAsync()
+    {
+        if (_portablePaths is null)
+            return;
+        _viewModel.Collection = await CollectionConfigurationJson.LoadAsync(_portablePaths.Config);
+        if (string.IsNullOrWhiteSpace(_viewModel.Collection.Logo))
+            return;
+        var path = Path.Combine(
+            _portablePaths.Root,
+            _viewModel.Collection.Logo.Replace('/', Path.DirectorySeparatorChar));
+        if (File.Exists(path))
+            LoadCollectionLogoPreview(path);
+        else
+            _viewModel.CollectionLogoStatus = $"Configured logo is missing: {_viewModel.Collection.Logo}";
+    }
+
+    private void LoadCollectionLogoPreview(string path)
+    {
+        var bitmap = new Avalonia.Media.Imaging.Bitmap(path);
+        _viewModel.CollectionLogoPreview = bitmap;
+        var width = bitmap.PixelSize.Width;
+        var height = bitmap.PixelSize.Height;
+        var ratio = width / (double)height;
+        var shape = Math.Abs(ratio - (360d / 112d)) <= 0.08
+            ? "Recommended header shape"
+            : "Will fit, but may leave extra space";
+        _viewModel.CollectionLogoStatus = $"{width} × {height} px · {shape} · {_viewModel.Collection.Logo}";
+    }
+
+    private static string MakeSafeFolderName(string name)
+    {
+        var source = string.IsNullOrWhiteSpace(name) ? "MySeries" : name;
+        var builder = new StringBuilder();
+        foreach (var character in source)
+        {
+            if (char.IsLetterOrDigit(character))
+                builder.Append(character);
+        }
+        return builder.Length == 0 ? "MySeries" : builder.ToString();
+    }
+
+    private static string GetAvailableLogoPath(string folder, string extension, string source)
+    {
+        var first = Path.Combine(folder, "Logo" + extension);
+        if (!File.Exists(first) || string.Equals(Path.GetFullPath(first), Path.GetFullPath(source), StringComparison.OrdinalIgnoreCase))
+            return first;
+        for (var index = 2; index < 1000; index++)
+        {
+            var candidate = Path.Combine(folder, $"Logo-{index}{extension}");
+            if (!File.Exists(candidate))
+                return candidate;
+        }
+        throw new IOException("Too many logo versions exist in this collection folder.");
     }
 
     private static string AppendQuotedArgument(string existing, string path)
