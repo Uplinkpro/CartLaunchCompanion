@@ -18,6 +18,7 @@ The project follows semantic versioning where practical.
 - Added strict update manifests, full payload integrity checks, transactional runtime activation, rollback, and interrupted-update recovery
 - Added adversarial tests for path escape, tampering, unexpected files, malformed manifests, and recovery
 - Added the official ECDSA update trust anchor, a release-only manifest signer, and signed tagged-release automation
+- Added opt-in update discovery, bounded downloads, safe archive extraction, free-space checks, signed staging, and maintenance restart handoff
 
 ## [2.2.0] - 2026-08-11
 

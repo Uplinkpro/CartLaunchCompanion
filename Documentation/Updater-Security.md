@@ -2,7 +2,7 @@
 
 The Cart Launch Updater is a small maintenance component intended to update the portable CLC runtime on a cart after the launcher closes. It does not update games, collection configuration, artwork, media, or user metadata.
 
-> The updater foundation is under development. The official public verification key is embedded, but automatic download and launcher-facing update controls remain disabled until their end-to-end tests are complete.
+> The updater is under active pre-release testing. Update checks and installation are always initiated by the user; offline launching remains unaffected.
 
 ## Portable layout
 
@@ -51,6 +51,12 @@ An interrupted journal in the `ActiveMovedToBackup` state is recovered on the ne
 HTTPS transport is not sufficient update authorization. Production manifests are signed by the Uplinkpro release-signing key stored as an encrypted GitHub Actions secret, and the corresponding public key is compiled into the updater. The private key is never committed or included on a cart. The updater never accepts a public key, executable path, command, or update endpoint from a cart manifest.
 
 Tagged release builds generate platform-specific runtime payloads and signed manifests in GitHub Actions. A forged or modified manifest cannot pass verification with the embedded public key.
+
+## Download and staging
+
+The launcher checks only the official GitHub repository's latest release. It requires the expected manifest and payload names for the current platform, limits downloads to 1 GiB, reserves an additional 128 MiB of free space, and stages data beneath `.cartlaunch/update-staging`.
+
+The manifest signature is verified before archive extraction. ZIP and TAR entries are resolved through the same contained-path policy as the final manifest, and Linux links or other non-file archive entries are rejected. Extracted files must then exactly match the signed file list before the maintenance updater is started. Update checking is opt-in and a network failure never prevents normal offline use.
 
 ## Tests
 

@@ -13,6 +13,7 @@ using CartLaunchCompanion.Core.Library;
 using CartLaunchCompanion.Core.Metadata;
 using CartLaunchCompanion.Core.Platform;
 using CartLaunchCompanion.Core.Portable;
+using CartLaunchCompanion.Core.Updating;
 using CartLaunchCompanion.Desktop.ViewModels;
 using CartLaunchCompanion.Desktop.Views;
 using CartLaunchCompanion.Platform.Linux;
@@ -41,6 +42,10 @@ public partial class App : Application
             var metadataHttpClient = new HttpClient
             {
                 Timeout = TimeSpan.FromSeconds(8)
+            };
+            var updateHttpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromMinutes(30)
             };
 
             var pathResolver = new GamePathResolver();
@@ -74,6 +79,7 @@ public partial class App : Application
                 launchService,
                 portablePaths,
                 platformService.Current,
+                new GitHubRuntimeUpdateService(updateHttpClient),
                 () => desktop.Shutdown(),
                 visible =>
                 {
@@ -114,6 +120,7 @@ public partial class App : Application
             desktop.Exit += async (_, _) =>
             {
                 metadataHttpClient.Dispose();
+                updateHttpClient.Dispose();
                 await controllerService.DisposeAsync();
             };
 

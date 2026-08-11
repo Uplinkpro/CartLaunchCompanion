@@ -107,6 +107,14 @@
             <Grid Grid.Row="0"
                   Height="112"
                   Margin="0,22,0,8">
+                <Button Classes="action"
+                        Content="UPDATE"
+                        Command="{Binding CheckForUpdatesCommand}"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Margin="0,8,18,0"
+                        Padding="18,9"
+                        FontSize="11" />
                 <StackPanel HorizontalAlignment="Center"
                             Spacing="4"
                             IsVisible="{Binding ShowCartLaunchBranding}">

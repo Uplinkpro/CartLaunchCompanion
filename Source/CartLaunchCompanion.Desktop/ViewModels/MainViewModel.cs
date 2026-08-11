@@ -6,6 +6,7 @@ using CartLaunchCompanion.Core.Launching;
 using CartLaunchCompanion.Core.Library;
 using CartLaunchCompanion.Core.Platform;
 using CartLaunchCompanion.Core.Portable;
+using CartLaunchCompanion.Core.Updating;
 using CartLaunchCompanion.Desktop.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -18,12 +19,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly IGameLaunchService _launchService;
     private readonly PortablePaths _portablePaths;
     private readonly PlatformKind _platform;
+    private readonly IRuntimeUpdateService _updateService;
     private readonly Action _exitApplication;
     private readonly Action<bool> _setWindowVisible;
 
     private DateTimeOffset _lastInputAt = DateTimeOffset.MinValue;
     private LauncherAction _lastInputAction = LauncherAction.None;
     private bool _isLoadInProgress;
+    private RuntimeUpdateAvailability? _availableUpdate;
+    private CancellationTokenSource? _updateCancellation;
 
     public MainViewModel(
         IGameLibraryService libraryService,
@@ -32,11 +36,31 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         PlatformKind platform,
         Action exitApplication,
         Action<bool> setWindowVisible)
+        : this(
+            libraryService,
+            launchService,
+            portablePaths,
+            platform,
+            new UnavailableRuntimeUpdateService(),
+            exitApplication,
+            setWindowVisible)
+    {
+    }
+
+    public MainViewModel(
+        IGameLibraryService libraryService,
+        IGameLaunchService launchService,
+        PortablePaths portablePaths,
+        PlatformKind platform,
+        IRuntimeUpdateService updateService,
+        Action exitApplication,
+        Action<bool> setWindowVisible)
     {
         _libraryService = libraryService;
         _launchService = launchService;
         _portablePaths = portablePaths;
         _platform = platform;
+        _updateService = updateService;
         _exitApplication = exitApplication;
         _setWindowVisible = setWindowVisible;
 
@@ -62,6 +86,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             OpenSelectedMetadata,
             () => SelectedGame is not null &&
                   !IsLaunching);
+
+        CheckForUpdatesCommand = new AsyncRelayCommand(CheckForUpdatesAsync, () => !IsUpdateBusy);
+        InstallUpdateCommand = new AsyncRelayCommand(InstallUpdateAsync, () => _availableUpdate is not null && !IsUpdateBusy);
+        CloseUpdateCommand = new RelayCommand(CloseUpdate, () => !IsUpdateBusy);
     }
 
     public ObservableCollection<GameCardViewModel> Games { get; } = [];
@@ -100,6 +128,26 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     public partial bool IsExitVisible { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsUpdateVisible { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsUpdateBusy { get; set; }
+
+    [ObservableProperty]
+    public partial string UpdateTitle { get; set; } = "SOFTWARE UPDATE";
+
+    [ObservableProperty]
+    public partial string UpdateMessage { get; set; } = "Check for a newer signed release.";
+
+    [ObservableProperty]
+    public partial string UpdateActionText { get; set; } = "CHECK FOR UPDATES";
+
+    [ObservableProperty]
+    public partial double UpdateProgress { get; set; }
+
+    public bool HasAvailableUpdate => _availableUpdate is not null;
 
     [ObservableProperty]
     public partial bool IsTrailerPlaybackEnabled { get; set; } = true;
@@ -181,6 +229,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public IAsyncRelayCommand ConfirmLaunchCommand { get; }
     public IRelayCommand TrailerCommand { get; }
     public IRelayCommand OpenSelectedGameCommand { get; }
+    public IAsyncRelayCommand CheckForUpdatesCommand { get; }
+    public IAsyncRelayCommand InstallUpdateCommand { get; }
+    public IRelayCommand CloseUpdateCommand { get; }
+
+    partial void OnIsUpdateBusyChanged(bool value)
+    {
+        CheckForUpdatesCommand.NotifyCanExecuteChanged();
+        InstallUpdateCommand.NotifyCanExecuteChanged();
+        CloseUpdateCommand.NotifyCanExecuteChanged();
+    }
 
     partial void OnSelectedGameChanged(
         GameCardViewModel? value)
@@ -348,6 +406,20 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         if (IsLaunching)
             return;
+
+        if (IsUpdateVisible)
+        {
+            if (input.Action == LauncherAction.Back && !IsUpdateBusy)
+                CloseUpdate();
+            else if (input.Action == LauncherAction.Confirm && !IsUpdateBusy)
+            {
+                if (_availableUpdate is null)
+                    await CheckForUpdatesAsync();
+                else
+                    await InstallUpdateAsync();
+            }
+            return;
+        }
 
         if (IsExitVisible)
         {
@@ -579,6 +651,135 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         IsExitVisible = true;
     }
 
+    private async Task CheckForUpdatesAsync()
+    {
+        IsUpdateVisible = true;
+        IsUpdateBusy = true;
+        UpdateTitle = "CHECKING FOR UPDATES";
+        UpdateMessage = "Contacting the official Cart Launch Companion release channel…";
+        UpdateProgress = 0;
+        _availableUpdate = null;
+        OnPropertyChanged(nameof(HasAvailableUpdate));
+
+        try
+        {
+            var platform = GetUpdatePlatform();
+            var current = typeof(MainViewModel).Assembly.GetName().Version ?? new Version(0, 0);
+            _availableUpdate = await _updateService.CheckAsync(current, platform);
+            if (_availableUpdate is null)
+            {
+                UpdateTitle = "YOU'RE UP TO DATE";
+                UpdateMessage = $"Cart Launch Companion {current.ToString(3)} is the newest signed release.";
+                UpdateActionText = "CHECK AGAIN";
+            }
+            else
+            {
+                UpdateTitle = $"VERSION {_availableUpdate.Version} AVAILABLE";
+                UpdateMessage = $"A signed {FormatBytes(_availableUpdate.PayloadBytes)} update is ready. Your games, artwork, and configuration will not be changed.";
+                UpdateActionText = "DOWNLOAD AND RESTART";
+            }
+            OnPropertyChanged(nameof(HasAvailableUpdate));
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"Update check failed: {ex}");
+            UpdateTitle = "UPDATE CHECK UNAVAILABLE";
+            UpdateMessage = "CLC could not reach or validate the official release channel. You can continue using the launcher normally.";
+            UpdateActionText = "TRY AGAIN";
+        }
+        finally
+        {
+            IsUpdateBusy = false;
+        }
+    }
+
+    private async Task InstallUpdateAsync()
+    {
+        if (_availableUpdate is null)
+            return;
+
+        IsUpdateBusy = true;
+        UpdateTitle = "DOWNLOADING SIGNED UPDATE";
+        UpdateMessage = "Keep the cart connected. CLC will verify every file before restarting.";
+        _updateCancellation = new CancellationTokenSource();
+        try
+        {
+            var progress = new Progress<double>(value => UpdateProgress = value * 100);
+            var prepared = await _updateService.DownloadAndPrepareAsync(
+                _availableUpdate, _portablePaths.Root, GetUpdatePlatform(), progress, _updateCancellation.Token);
+            StartMaintenanceUpdater(prepared);
+            _exitApplication();
+        }
+        catch (OperationCanceledException)
+        {
+            UpdateTitle = "UPDATE CANCELLED";
+            UpdateMessage = "No runtime files were changed.";
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"Update preparation failed: {ex}");
+            UpdateTitle = "UPDATE NOT INSTALLED";
+            UpdateMessage = $"CLC rejected the update safely. {ex.Message}";
+        }
+        finally
+        {
+            _updateCancellation?.Dispose();
+            _updateCancellation = null;
+            IsUpdateBusy = false;
+        }
+    }
+
+    private void StartMaintenanceUpdater(PreparedRuntimeUpdate prepared)
+    {
+        var executable = Path.Combine(
+            _portablePaths.Root,
+            "Maintenance",
+            prepared.Platform,
+            prepared.Platform == "Windows-x64" ? "CartLaunchCompanion.Updater.exe" : "CartLaunchCompanion.Updater");
+        if (!File.Exists(executable))
+            throw new FileNotFoundException("The cart maintenance updater is missing.", executable);
+
+        var start = new ProcessStartInfo
+        {
+            FileName = executable,
+            WorkingDirectory = Path.GetDirectoryName(executable)!,
+            UseShellExecute = false
+        };
+        start.ArgumentList.Add("--cart-root");
+        start.ArgumentList.Add(_portablePaths.Root);
+        start.ArgumentList.Add("--platform");
+        start.ArgumentList.Add(prepared.Platform);
+        start.ArgumentList.Add("--staged-runtime");
+        start.ArgumentList.Add(prepared.StagedRuntimeRoot);
+        start.ArgumentList.Add("--manifest");
+        start.ArgumentList.Add(prepared.ManifestPath);
+        start.ArgumentList.Add("--wait-pid");
+        start.ArgumentList.Add(Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        start.ArgumentList.Add("--wait-timeout-seconds");
+        start.ArgumentList.Add("60");
+        _ = Process.Start(start) ??
+            throw new InvalidOperationException("The maintenance updater did not start.");
+    }
+
+    private string GetUpdatePlatform() => _platform switch
+    {
+        PlatformKind.Windows when Environment.Is64BitOperatingSystem => "Windows-x64",
+        PlatformKind.Linux when Environment.Is64BitOperatingSystem => "Linux-x64",
+        _ => throw new PlatformNotSupportedException("Automatic updates require a 64-bit Windows or Linux system.")
+    };
+
+    private void CloseUpdate()
+    {
+        if (IsUpdateBusy)
+            return;
+        IsUpdateVisible = false;
+    }
+
+    private static string FormatBytes(long bytes) =>
+        bytes >= 1024L * 1024 * 1024
+            ? $"{bytes / (1024d * 1024 * 1024):0.0} GB"
+            : $"{bytes / (1024d * 1024):0.0} MB";
+
     private void CancelExitConfirmation()
     {
         IsExitVisible = false;
@@ -726,5 +927,24 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         DisposeCards();
         CollectionLogoImage?.Dispose();
+        _updateCancellation?.Cancel();
+        _updateCancellation?.Dispose();
+    }
+
+    private sealed class UnavailableRuntimeUpdateService : IRuntimeUpdateService
+    {
+        public Task<RuntimeUpdateAvailability?> CheckAsync(
+            Version currentVersion,
+            string platform,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<RuntimeUpdateAvailability?>(null);
+
+        public Task<PreparedRuntimeUpdate> DownloadAndPrepareAsync(
+            RuntimeUpdateAvailability update,
+            string cartRoot,
+            string platform,
+            IProgress<double>? progress = null,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
     }
 }

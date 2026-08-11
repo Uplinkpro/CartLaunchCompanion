@@ -45,7 +45,7 @@ var manifest = new RuntimeUpdateManifest
     EntryPoint = platform == "Windows-x64"
         ? "CartLaunchCompanion.Desktop.exe"
         : "CartLaunchCompanion.Desktop",
-    SignerKeyId = "uplinkpro-release-1",
+    SignerKeyId = OfficialUpdateTrust.KeyId,
     Files = files,
     RootFingerprint = RuntimeIntegrityVerifier.ComputeRootFingerprint(files)
 };

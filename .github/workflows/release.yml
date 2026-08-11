@@ -40,10 +40,16 @@ jobs:
           dotnet run --project Build/CartLaunchCompanion.UpdateSigner -- "$root/linux/CartLaunchCompanion/System/Linux-x64" Linux-x64 $env:CLC_VERSION "$root/packages/update-linux-x64.json"
           Compress-Archive -Path "$root/windows/CartLaunchCompanion/System/Windows-x64/*" -DestinationPath "$root/packages/runtime-win-x64.zip" -CompressionLevel Optimal
           tar -czf "$root/packages/runtime-linux-x64.tar.gz" -C "$root/linux/CartLaunchCompanion/System/Linux-x64" .
+          $checksums = foreach ($file in Get-ChildItem "$root/packages" -File | Where-Object Name -ne 'SHA256SUMS.txt' | Sort-Object Name) {
+            $hash = Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256
+            "$($hash.Hash.ToLowerInvariant())  $($file.Name)"
+          }
+          Set-Content -LiteralPath "$root/packages/SHA256SUMS.txt" -Value $checksums -Encoding ASCII
 
       - name: Publish GitHub release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create '${{ github.ref_name }}' "artifacts/$env:CLC_VERSION/packages/*" --title "Cart Launch Companion $env:CLC_VERSION" --generate-notes --verify-tag
+          $files = Get-ChildItem "artifacts/$env:CLC_VERSION/packages" -File | ForEach-Object FullName
+          gh release create '${{ github.ref_name }}' $files --title "Cart Launch Companion $env:CLC_VERSION" --generate-notes --verify-tag
