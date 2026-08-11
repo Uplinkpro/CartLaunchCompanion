@@ -19,6 +19,7 @@ The project follows semantic versioning where practical.
 - Added adversarial tests for path escape, tampering, unexpected files, malformed manifests, and recovery
 - Added the official ECDSA update trust anchor, a release-only manifest signer, and signed tagged-release automation
 - Added opt-in update discovery, bounded downloads, safe archive extraction, free-space checks, signed staging, and maintenance restart handoff
+- Added portable file locators for game, emulator, ROM, and companion paths in the Game Configurator
 
 ## [2.2.0] - 2026-08-11
 

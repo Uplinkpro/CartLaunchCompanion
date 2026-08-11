@@ -1,5 +1,13 @@
 # Game Configurator
 
+## Portable file locators
+
+Choose the configuration folder under `Cart/Games` before selecting launch files. The Windows and Linux launch pages provide locator buttons for native games, emulators, ROM or disc images, and optional companion applications.
+
+Files selected from the media root's `Games`, `Emulators`, `Roms`, or `Cart` folders are converted into relative paths automatically. Drive letters and Linux mount locations are never written into `game.json`. Selecting a game also fills its working directory and process name; selecting an emulator switches the launcher to `Custom`; selecting a ROM appends a quoted path relative to the emulator's working directory.
+
+Files outside the cart are reported as non-portable and are not saved by the locator.
+
 The Game Configurator is a separate desktop app for creating and editing Version 2 game folders without writing JSON by hand.
 
 On first launch, the online metadata setup appears before the editor. It provides official registration links for a Steam Web API key and an optional SteamGridDB API key. The setup can be reopened later with **Settings**. API keys are stored in Windows Credential Manager or the Linux desktop keyring and are never kept in `game.json` or plain-text settings files.

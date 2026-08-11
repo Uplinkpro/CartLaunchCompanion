@@ -14,6 +14,7 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     private bool _hasErrors;
     private Bitmap? _artworkPreview;
     private string _artworkPreviewTitle = "No artwork selected yet";
+    private string _pathStatus = "Choose a game configuration folder before locating portable files.";
 
     public GameConfiguration Configuration { get => _configuration; set { _configuration = value; Changed(); Changed(nameof(JsonPreview)); } }
     public string FilePath { get => _filePath; set { _filePath = value; Changed(); } }
@@ -23,6 +24,7 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     public Bitmap? ArtworkPreview { get => _artworkPreview; set { _artworkPreview = value; Changed(); Changed(nameof(HasArtworkPreview)); } }
     public string ArtworkPreviewTitle { get => _artworkPreviewTitle; set { _artworkPreviewTitle = value; Changed(); } }
     public bool HasArtworkPreview => ArtworkPreview is not null;
+    public string PathStatus { get => _pathStatus; set { _pathStatus = value; Changed(); } }
     public Array LauncherKinds { get; } = Enum.GetValues<LauncherKind>();
     public Array PreferredPlatforms { get; } = Enum.GetValues<PreferredPlatform>();
     public Array DeckRatings { get; } = Enum.GetValues<SteamDeckCompatibility>();
@@ -38,7 +40,7 @@ public sealed class EditorViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public void RefreshPreview() => JsonPreview = GameConfigurationJson.Serialize(Configuration);
-    public void Reset() { Configuration = CreateDefault(); FilePath = "No game folder selected"; Status = "New configuration ready."; ArtworkPreview = null; ArtworkPreviewTitle = "No artwork selected yet"; RefreshPreview(); }
+    public void Reset() { Configuration = CreateDefault(); FilePath = "No game folder selected"; Status = "New configuration ready."; PathStatus = "Choose a game configuration folder before locating portable files."; ArtworkPreview = null; ArtworkPreviewTitle = "No artwork selected yet"; RefreshPreview(); }
     private static GameConfiguration CreateDefault() { var c = new GameConfiguration(); c.Launch.Linux.Enabled = false; return c; }
     private void Changed([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }

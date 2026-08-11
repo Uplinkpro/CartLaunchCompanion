@@ -13,6 +13,7 @@ public sealed partial class MainWindow : Window
 {
     private readonly EditorViewModel _viewModel = new();
     private readonly GameConfigurationValidator _validator = new();
+    private readonly CartContentPathConverter _cartPathConverter = new();
     private readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
     private string? _gameJsonPath;
     private bool _startupSetupShown;
@@ -176,6 +177,115 @@ public sealed partial class MainWindow : Window
         SetGameFolder(folders[0].Path.LocalPath);
     }
 
+    private async void LocatePortableFileClicked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string target })
+            return;
+
+        if (string.IsNullOrWhiteSpace(_gameJsonPath))
+        {
+            _viewModel.PathStatus = "Choose the Cart/Games configuration folder first, then locate the file.";
+            _viewModel.Status = _viewModel.PathStatus;
+            return;
+        }
+
+        var isRom = target.EndsWith("-rom", StringComparison.Ordinal);
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = isRom ? "Choose a ROM, disc image, or game file" : "Choose a game, emulator, or companion executable",
+            AllowMultiple = false,
+            FileTypeFilter = isRom
+                ? [new FilePickerFileType("ROMs and disc images") { Patterns = ["*.chd", "*.iso", "*.cue", "*.bin", "*.rvz", "*.rom", "*.zip", "*.7z", "*.nes", "*.sfc", "*.gba", "*.n64", "*.z64", "*.cso", "*.pbp", "*"] }]
+                : [new FilePickerFileType("Applications and executables") { Patterns = ["*.exe", "*.bat", "*.cmd", "*.com", "*.sh", "*.AppImage", "*"] }]
+        });
+        if (files.Count == 0)
+            return;
+
+        var gameFolder = Path.GetDirectoryName(_gameJsonPath)!;
+        var result = _cartPathConverter.Convert(gameFolder, files[0].Path.LocalPath);
+        _viewModel.PathStatus = result.IsPortable
+            ? $"PORTABLE · {result.DisplayPath} · {result.Message}"
+            : $"NOT SAVED · {result.Message}";
+        _viewModel.Status = _viewModel.PathStatus;
+        if (!result.IsPortable)
+            return;
+
+        var configuration = _viewModel.Configuration;
+        var workingDirectory = Path.GetDirectoryName(result.ConfiguredPath)?.Replace('\\', '/') ?? "";
+        var processName = Path.GetFileNameWithoutExtension(result.ConfiguredPath);
+        var argumentPath = result.ConfiguredPath;
+        if (isRom)
+        {
+            var configuredWorkingDirectory = target.StartsWith("windows-", StringComparison.Ordinal)
+                ? configuration.Launch.Windows.WorkingDirectory
+                : configuration.Launch.Linux.WorkingDirectory;
+            var argumentBase = string.IsNullOrWhiteSpace(configuredWorkingDirectory)
+                ? gameFolder
+                : new GamePathResolver().Resolve(gameFolder, configuredWorkingDirectory);
+            argumentPath = Path.GetRelativePath(argumentBase, files[0].Path.LocalPath).Replace('\\', '/');
+        }
+        switch (target)
+        {
+            case "windows-game":
+                configuration.Launch.Windows.Launcher = LauncherKind.Local;
+                configuration.Launch.Windows.Executable = result.ConfiguredPath;
+                configuration.Launch.Windows.WorkingDirectory = workingDirectory;
+                configuration.Launch.Windows.ProcessName = processName;
+                break;
+            case "windows-emulator":
+                configuration.Launch.Windows.Launcher = LauncherKind.Custom;
+                configuration.Launch.Windows.Executable = result.ConfiguredPath;
+                configuration.Launch.Windows.WorkingDirectory = workingDirectory;
+                configuration.Launch.Windows.ProcessName = processName;
+                break;
+            case "windows-rom":
+                configuration.Launch.Windows.Arguments = AppendQuotedArgument(
+                    configuration.Launch.Windows.Arguments, argumentPath);
+                break;
+            case "windows-companion":
+                configuration.Launch.Windows.CompanionApplication.Enabled = true;
+                configuration.Launch.Windows.CompanionApplication.Executable = result.ConfiguredPath;
+                configuration.Launch.Windows.CompanionApplication.WorkingDirectory = workingDirectory;
+                break;
+            case "linux-game":
+                configuration.Launch.Linux.Enabled = true;
+                configuration.Launch.Linux.Launcher = LauncherKind.Local;
+                configuration.Launch.Linux.Executable = result.ConfiguredPath;
+                configuration.Launch.Linux.WorkingDirectory = workingDirectory;
+                configuration.Launch.Linux.ProcessName = processName;
+                break;
+            case "linux-emulator":
+                configuration.Launch.Linux.Enabled = true;
+                configuration.Launch.Linux.Launcher = LauncherKind.Custom;
+                configuration.Launch.Linux.Executable = result.ConfiguredPath;
+                configuration.Launch.Linux.WorkingDirectory = workingDirectory;
+                configuration.Launch.Linux.ProcessName = processName;
+                break;
+            case "linux-rom":
+                configuration.Launch.Linux.Arguments = AppendQuotedArgument(
+                    configuration.Launch.Linux.Arguments, argumentPath);
+                break;
+            case "linux-companion":
+                configuration.Launch.Linux.Enabled = true;
+                configuration.Launch.Linux.CompanionApplication.Enabled = true;
+                configuration.Launch.Linux.CompanionApplication.Executable = result.ConfiguredPath;
+                configuration.Launch.Linux.CompanionApplication.WorkingDirectory = workingDirectory;
+                break;
+        }
+
+        _viewModel.Configuration = GameConfigurationJson.Deserialize(
+            GameConfigurationJson.Serialize(configuration));
+        _viewModel.RefreshPreview();
+    }
+
+    private static string AppendQuotedArgument(string existing, string path)
+    {
+        if (path.Contains('"', StringComparison.Ordinal))
+            throw new InvalidDataException("Portable paths containing quotation marks are unsupported.");
+        var quoted = $"\"{path}\"";
+        return string.IsNullOrWhiteSpace(existing) ? quoted : $"{existing.Trim()} {quoted}";
+    }
+
     private void ValidateClicked(object? sender, RoutedEventArgs e) => SetValidationStatus();
 
     private void PreviewClicked(object? sender, RoutedEventArgs e)
@@ -231,6 +341,7 @@ public sealed partial class MainWindow : Window
     {
         _gameJsonPath = Path.Combine(folderPath, "game.json");
         _viewModel.FilePath = _gameJsonPath;
+        _viewModel.PathStatus = "Configuration folder selected. Locator buttons will save portable cart-relative paths.";
         _viewModel.Status = File.Exists(_gameJsonPath)
             ? "This folder already has a game.json. Use Open if you want to edit it first."
             : "Game folder selected. Complete the required fields, then save.";
