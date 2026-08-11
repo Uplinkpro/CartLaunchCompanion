@@ -107,14 +107,6 @@
             <Grid Grid.Row="0"
                   Height="112"
                   Margin="0,22,0,8">
-                <Button Classes="action"
-                        Content="UPDATE"
-                        Command="{Binding CheckForUpdatesCommand}"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Top"
-                        Margin="0,8,18,0"
-                        Padding="18,9"
-                        FontSize="11" />
                 <StackPanel HorizontalAlignment="Center"
                             Spacing="4"
                             IsVisible="{Binding ShowCartLaunchBranding}">
@@ -416,11 +408,11 @@
             <StackPanel Grid.Row="4"
                         Orientation="Horizontal"
                         HorizontalAlignment="Center"
-                        Spacing="14"
-                        IsVisible="{Binding ShowOnScreenActionButtons}">
+                        Spacing="14">
                 <Button Classes="action"
                         Command="{Binding OpenSelectedGameCommand}"
-                        IsEnabled="{Binding HasSelectedGame}">
+                        IsEnabled="{Binding HasSelectedGame}"
+                        IsVisible="{Binding ShowOnScreenActionButtons}">
                     <StackPanel Orientation="Horizontal"
                                 Spacing="10">
                         <Border Width="30"
@@ -439,7 +431,8 @@
                 </Button>
 
                 <Button Classes="action"
-                        Command="{Binding ExitCommand}">
+                        Command="{Binding ExitCommand}"
+                        IsVisible="{Binding ShowOnScreenActionButtons}">
                     <StackPanel Orientation="Horizontal"
                                 Spacing="10">
                         <Border Width="30"
@@ -453,6 +446,20 @@
                                        FontWeight="Bold" />
                         </Border>
                         <TextBlock Text="EXIT"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <Button Classes="action"
+                        Command="{Binding OpenAvailableUpdateCommand}"
+                        IsVisible="{Binding HasAvailableUpdate}"
+                        BorderBrush="#C08AFF"
+                        BorderThickness="2">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="↓" Foreground="#C08AFF"
+                                   FontSize="20" FontWeight="Bold"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Text="UPDATE AVAILABLE"
                                    VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>

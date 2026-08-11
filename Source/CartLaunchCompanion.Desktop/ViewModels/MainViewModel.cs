@@ -88,6 +88,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                   !IsLaunching);
 
         CheckForUpdatesCommand = new AsyncRelayCommand(CheckForUpdatesAsync, () => !IsUpdateBusy);
+        OpenAvailableUpdateCommand = new RelayCommand(OpenAvailableUpdate, () => _availableUpdate is not null && !IsUpdateBusy);
         InstallUpdateCommand = new AsyncRelayCommand(InstallUpdateAsync, () => _availableUpdate is not null && !IsUpdateBusy);
         CloseUpdateCommand = new RelayCommand(CloseUpdate, () => !IsUpdateBusy);
     }
@@ -230,12 +231,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public IRelayCommand TrailerCommand { get; }
     public IRelayCommand OpenSelectedGameCommand { get; }
     public IAsyncRelayCommand CheckForUpdatesCommand { get; }
+    public IRelayCommand OpenAvailableUpdateCommand { get; }
     public IAsyncRelayCommand InstallUpdateCommand { get; }
     public IRelayCommand CloseUpdateCommand { get; }
 
     partial void OnIsUpdateBusyChanged(bool value)
     {
         CheckForUpdatesCommand.NotifyCanExecuteChanged();
+        OpenAvailableUpdateCommand.NotifyCanExecuteChanged();
         InstallUpdateCommand.NotifyCanExecuteChanged();
         CloseUpdateCommand.NotifyCanExecuteChanged();
     }
@@ -691,6 +694,37 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             IsUpdateBusy = false;
         }
+    }
+
+    public async Task CheckForUpdatesSilentlyAsync()
+    {
+        if (IsUpdateBusy || _availableUpdate is not null)
+            return;
+
+        try
+        {
+            var current = typeof(MainViewModel).Assembly.GetName().Version ?? new Version(0, 0);
+            _availableUpdate = await _updateService.CheckAsync(current, GetUpdatePlatform());
+            OnPropertyChanged(nameof(HasAvailableUpdate));
+            OpenAvailableUpdateCommand.NotifyCanExecuteChanged();
+            InstallUpdateCommand.NotifyCanExecuteChanged();
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"Silent update check unavailable: {ex.Message}");
+        }
+    }
+
+    private void OpenAvailableUpdate()
+    {
+        if (_availableUpdate is null || IsUpdateBusy)
+            return;
+
+        UpdateTitle = $"VERSION {_availableUpdate.Version} AVAILABLE";
+        UpdateMessage = $"A signed {FormatBytes(_availableUpdate.PayloadBytes)} update is ready. Your games, artwork, and configuration will not be changed.";
+        UpdateActionText = "DOWNLOAD AND RESTART";
+        UpdateProgress = 0;
+        IsUpdateVisible = true;
     }
 
     private async Task InstallUpdateAsync()

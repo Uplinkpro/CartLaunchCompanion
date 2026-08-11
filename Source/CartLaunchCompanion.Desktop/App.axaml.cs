@@ -131,6 +131,7 @@ public partial class App : Application
             base.OnFrameworkInitializationCompleted();
 
             await viewModel.LoadAsync();
+            _ = viewModel.CheckForUpdatesSilentlyAsync();
             return;
         }
 
