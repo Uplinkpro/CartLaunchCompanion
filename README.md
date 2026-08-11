@@ -46,8 +46,8 @@ Everything stays together in one portable folder: the application, game configur
 | Game library | Game details |
 |---|---|
 | ![Game library](docs/screenshots/library.png) | ![Game details](docs/screenshots/details.png) |
-| **Launcher branding** | **Custom Series Collection** |
-| ![Launcher branding](docs/screenshots/launcher-branding.png) | ![Custom Series Collection launcher](docs/screenshots/custom-series-collection.png) |
+| **Game Configurator** | **Custom Series Collection** |
+| ![Game Configurator](docs/screenshots/game-configurator.png) | ![Custom Series Collection launcher](docs/screenshots/custom-series-collection.png) |
 
 ## Highlights
 
