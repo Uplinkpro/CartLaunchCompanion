@@ -62,6 +62,8 @@ foreach ($folder in @('Logs', 'Cache')) {
 
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'README.md') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'LICENSE') -Destination $staging
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'NOTICE') -Destination $staging
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'COMMERCIAL-LICENSE.md') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'CHANGELOG.md') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Docs\2.0\ReleaseCandidate1.md') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Docs\2.0\UpgradeGuide.md') -Destination $staging

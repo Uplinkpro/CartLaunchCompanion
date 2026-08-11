@@ -6,6 +6,12 @@ The project follows semantic versioning where practical.
 
 ## [Unreleased]
 
+### Changed
+
+- Relicensed future source and releases under the PolyForm Noncommercial License 1.0.0
+- Added required Uplinkpro attribution notices and separate commercial licensing terms
+- Updated the continuous-integration badge to track `main` after retiring `avalonia-migration`
+
 ## [2.2.0] - 2026-08-11
 
 ### Added

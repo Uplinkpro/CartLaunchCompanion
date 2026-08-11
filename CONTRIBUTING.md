@@ -2,6 +2,14 @@
 
 Thank you for helping improve Cart Launch Companion.
 
+## Contribution terms
+
+Cart Launch Companion is source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE), not an OSI-approved open-source license.
+
+By intentionally submitting a contribution for inclusion in this project, you confirm that you have the right to submit it and grant Uplinkpro a perpetual, worldwide, non-exclusive, irrevocable, royalty-free license to use, reproduce, modify, distribute, sublicense, relicense, and commercially license that contribution as part of Cart Launch Companion and related works. You retain ownership of your contribution.
+
+Do not submit a contribution if you cannot grant these rights. Substantial contributions may require a separate contributor agreement before acceptance.
+
 ## Before opening a change
 
 1. Search existing issues and pull requests.

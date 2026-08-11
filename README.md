@@ -11,11 +11,11 @@ A portable, fullscreen, controller-first launcher for Windows, Linux, and SteamO
 <br>
 
 [![Release](https://img.shields.io/github/v/release/Uplinkpro/CartLaunchCompanion?include_prereleases&label=release&style=for-the-badge)](https://github.com/Uplinkpro/CartLaunchCompanion/releases)
-[![Build](https://img.shields.io/github/actions/workflow/status/Uplinkpro/CartLaunchCompanion/avalonia-ci.yml?branch=avalonia-migration&style=for-the-badge&label=build)](https://github.com/Uplinkpro/CartLaunchCompanion/actions/workflows/avalonia-ci.yml)
+[![Build](https://img.shields.io/github/actions/workflow/status/Uplinkpro/CartLaunchCompanion/avalonia-ci.yml?branch=main&style=for-the-badge&label=build)](https://github.com/Uplinkpro/CartLaunchCompanion/actions/workflows/avalonia-ci.yml)
 [![Windows](https://img.shields.io/badge/Windows-x64-0078D4?style=for-the-badge&logo=windows&logoColor=white)](#quick-start)
 [![Linux](https://img.shields.io/badge/Linux-x64-FCC624?style=for-the-badge&logo=linux&logoColor=111111)](#quick-start)
 [![SteamOS](https://img.shields.io/badge/SteamOS-Steam_Deck-1A9FFF?style=for-the-badge&logo=steam&logoColor=white)](#display-support)
-[![License](https://img.shields.io/github/license/Uplinkpro/CartLaunchCompanion?style=for-the-badge)](LICENSE)
+[![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-8A5CF5?style=for-the-badge)](LICENSE)
 
 <br>
 
@@ -511,7 +511,11 @@ If Cart Launch Companion improves your gaming setup, you can support continued d
 
 ## License and trademarks
 
-Cart Launch Companion is distributed under the [MIT License](LICENSE).
+Cart Launch Companion is **source-available for noncommercial use** under the [PolyForm Noncommercial License 1.0.0](LICENSE). It is not open source under the OSI definition because commercial use is restricted.
+
+Commercial use, resale, paid distribution, monetized bundling, and commercial derivatives require a separate written license from Uplinkpro. See [Commercial Licensing](COMMERCIAL-LICENSE.md) and preserve the required attribution in [NOTICE](NOTICE).
+
+Earlier releases and source revisions distributed under the MIT License remain governed by the license attached to those copies. The current license applies prospectively from the licensing-change revision onward.
 
 The project is not affiliated with or endorsed by Valve, Microsoft, Rockstar Games, Ubisoft, Epic Games, GOG, Amazon, VideoLAN, PCGamingWiki, Wikipedia, SteamGridDB, or any other storefront, publisher, or metadata provider. Third-party artwork, names, logos, and trademarks belong to their respective owners.
 
