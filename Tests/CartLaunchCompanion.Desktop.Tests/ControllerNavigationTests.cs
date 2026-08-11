@@ -156,6 +156,17 @@ public sealed class ControllerNavigationTests
         Assert.Equal(2, viewModel.Shelves.Count);
     }
 
+    [Fact]
+    public async Task Home_DefaultShelf_HasNoVisibleName()
+    {
+        var viewModel = CreateViewModel(gameCount: 2);
+        await viewModel.LoadAsync();
+
+        var shelf = Assert.Single(viewModel.Shelves);
+        Assert.Equal("", shelf.Name);
+        Assert.False(shelf.HasName);
+    }
+
     private static MainViewModel CreateViewModel(
         int gameCount = 1,
         Action? exitApplication = null,
@@ -201,7 +212,7 @@ public sealed class ControllerNavigationTests
                     {
                         Shelf = shelves is not null && index <= shelves.Length
                             ? shelves[index - 1]
-                            : "Library",
+                            : "",
                         Order = index
                     },
                     Launch =

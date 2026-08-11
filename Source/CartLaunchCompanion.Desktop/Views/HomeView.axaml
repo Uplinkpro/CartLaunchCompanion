@@ -53,6 +53,24 @@
             <Setter Property="Opacity" Value="1" />
             <Setter Property="BorderBrush" Value="{Binding SelectedGame.AccentBrightColor}" />
         </Style>
+        <Style Selector="Canvas.loading-spinner">
+            <Setter Property="RenderTransformOrigin" Value="50%,50%" />
+            <Setter Property="RenderTransform">
+                <RotateTransform Angle="0" />
+            </Setter>
+            <Style.Animations>
+                <Animation Duration="0:0:0.85"
+                           IterationCount="Infinite"
+                           Easing="LinearEasing">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="RotateTransform.Angle" Value="0" />
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="RotateTransform.Angle" Value="360" />
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
     </UserControl.Styles>
 
     <Grid Background="#030406">
@@ -141,20 +159,18 @@
                             VerticalAlignment="Center"
                             Spacing="5"
                             IsVisible="{Binding HasCustomCollection}">
+                    <Image Source="{Binding CollectionLogoImage}"
+                           Width="360"
+                           Height="112"
+                           Stretch="Uniform"
+                           IsVisible="{Binding HasCollectionLogo}" />
                     <TextBlock Text="{Binding Collection.Name}"
                                HorizontalAlignment="Center"
                                Foreground="White"
                                FontSize="28"
                                FontWeight="Bold"
-                               LetterSpacing="1.5" />
-                    <TextBlock Text="{Binding Collection.Description}"
-                               HorizontalAlignment="Center"
-                               Foreground="#B8FFFFFF"
-                               FontSize="12"
-                               TextTrimming="CharacterEllipsis"
-                               MaxWidth="760" />
-                    <Border Width="180" Height="3" CornerRadius="2"
-                            Background="{Binding Collection.AccentColor}" />
+                               LetterSpacing="1.5"
+                               IsVisible="{Binding HasNoCollectionLogo}" />
                 </StackPanel>
             </Grid>
 
@@ -192,16 +208,24 @@
 
             <Grid Grid.Row="2">
 
-                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
-                              VerticalScrollBarVisibility="Auto"
-                              IsVisible="{Binding HasGames}">
+                <Viewbox Stretch="Uniform"
+                         StretchDirection="DownOnly"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         IsVisible="{Binding HasGames}">
                     <ItemsControl ItemsSource="{Binding Shelves}"
-                                  Margin="18,18,18,0"
-                                  HorizontalAlignment="Stretch">
+                                  Margin="18,4"
+                                  HorizontalAlignment="Center">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:GameShelfViewModel">
-                                <StackPanel Spacing="4" Margin="0,0,0,18">
-                                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="10,0">
+                                <StackPanel Spacing="2" Margin="0,0,0,8"
+                                            HorizontalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="10,0"
+                                                HorizontalAlignment="Center"
+                                                IsVisible="{Binding HasName}">
+                                        <Border Height="2" Width="84"
+                                                VerticalAlignment="Center"
+                                                Background="#70FFFFFF" />
                                         <TextBlock Text="{Binding Name}"
                                                    Foreground="White"
                                                    FontSize="15"
@@ -215,7 +239,7 @@
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
                                                 <WrapPanel Orientation="Horizontal"
-                                                           HorizontalAlignment="Left"
+                                                           HorizontalAlignment="Center"
                                                            MaxWidth="1210" />
                                             </ItemsPanelTemplate>
                                         </ItemsControl.ItemsPanel>
@@ -227,9 +251,9 @@
                                                         Command="{Binding OpenCommand}"
                                                         AutomationProperties.Name="{Binding Name}"
                                                         ToolTip.Tip="{Binding Name}">
-                                                    <StackPanel Width="118" Spacing="6">
+                                                    <StackPanel Width="104" Spacing="4">
                                                         <Grid>
-                                                            <Border Classes="card-frame" Width="118" Height="220"
+                                                            <Border Classes="card-frame" Width="104" Height="180"
                                                                     CornerRadius="7" Background="#F207090D"
                                                                     BorderBrush="{Binding AccentBrightColor}"
                                                                     BorderThickness="2" Opacity="0.92">
@@ -276,7 +300,7 @@
                                                         <Border Height="3" CornerRadius="2"
                                                                 Background="{Binding AccentBrightColor}"
                                                                 IsVisible="{Binding IsSelected}" />
-                                                        <Grid Height="38">
+                                                        <Grid Height="32">
                                                             <Border Background="{Binding AccentMutedColor}"
                                                                     CornerRadius="6" IsVisible="{Binding IsSelected}" />
                                                             <Border Margin="-7,-5" CornerRadius="9"
@@ -302,7 +326,7 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                </ScrollViewer>
+                </Viewbox>
 
                 <Border IsVisible="{Binding ShowEmptyLibrary}"
                         HorizontalAlignment="Center"
@@ -374,18 +398,6 @@
                     </StackPanel>
                 </Border>
 
-                <StackPanel IsVisible="{Binding IsLoading}"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Spacing="12">
-                    <ProgressBar IsIndeterminate="True"
-                                 Width="260"
-                                 Height="6" />
-                    <TextBlock Text="LOADING LIBRARY"
-                               HorizontalAlignment="Center"
-                               Foreground="#BFFFFFFF"
-                               FontWeight="SemiBold" />
-                </StackPanel>
             </Grid>
 
             <Border Grid.Row="3"
@@ -438,6 +450,64 @@
                 </Button>
             </StackPanel>
         </Grid>
+
+        <Border IsVisible="{Binding IsLoading}"
+                ZIndex="100"
+                Background="#FC030406">
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="18">
+                <Border Width="92"
+                        Height="74"
+                        CornerRadius="13"
+                        BorderBrush="#E8FFFFFF"
+                        BorderThickness="3"
+                        Background="#0B0D11">
+                    <Grid RowDefinitions="*,14" Margin="10">
+                        <Border Grid.Row="0"
+                                Margin="9,3,9,6"
+                                CornerRadius="5"
+                                BorderBrush="#E8FFFFFF"
+                                BorderThickness="2" />
+                        <StackPanel Grid.Row="1"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    Spacing="4">
+                            <Border Width="6" Height="10" Background="#E8FFFFFF" />
+                            <Border Width="6" Height="10" Background="#E8FFFFFF" />
+                            <Border Width="6" Height="10" Background="#E8FFFFFF" />
+                            <Border Width="6" Height="10" Background="#E8FFFFFF" />
+                            <Border Width="6" Height="10" Background="#E8FFFFFF" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                <StackPanel Spacing="5">
+                    <TextBlock Text="BUILDING YOUR CART"
+                               HorizontalAlignment="Center"
+                               Foreground="White"
+                               FontSize="19"
+                               FontWeight="Bold"
+                               LetterSpacing="3" />
+                    <TextBlock Text="Finding games and preparing artwork"
+                               HorizontalAlignment="Center"
+                               Foreground="#8FFFFFFF"
+                               FontSize="12" />
+                </StackPanel>
+                <Canvas Classes="loading-spinner"
+                        Width="48"
+                        Height="48"
+                        HorizontalAlignment="Center">
+                    <Ellipse Canvas.Left="4" Canvas.Top="4"
+                             Width="40" Height="40"
+                             Stroke="#24FFFFFF"
+                             StrokeThickness="4" />
+                    <Path Data="M24,4 A20,20 0 0 1 44,24"
+                          Stroke="#C08AFF"
+                          StrokeThickness="4"
+                          StrokeLineCap="Round" />
+                </Canvas>
+            </StackPanel>
+        </Border>
     </Grid>
 </UserControl>
 

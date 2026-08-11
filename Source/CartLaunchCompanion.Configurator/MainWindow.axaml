@@ -106,6 +106,18 @@
           <local:LabeledField Label="Executable" Description="Required for a Local game. Path to the game’s .exe; it may be missing while preparing a test config."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.Executable}"/></local:LabeledField.FieldContent></local:LabeledField>
           <local:LabeledField Label="Arguments" Description="Optional. Extra command-line options passed to the game."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.Arguments}"/></local:LabeledField.FieldContent></local:LabeledField>
           <local:LabeledField Label="Working directory" Description="Optional. Folder the game should treat as its starting location."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.WorkingDirectory}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <Border Background="#101923" BorderBrush="#31506E" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,8,0,12">
+            <StackPanel Spacing="7">
+              <TextBlock FontSize="16" FontWeight="SemiBold" Text="Emulator command-line quick reference"/>
+              <TextBlock Classes="help" Text="Choose Custom as the launcher. Put the emulator in the Executable field, use . as the working directory, and place the fullscreen recipe plus the game image in Arguments."/>
+              <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="RetroArch    -f -L &quot;../../Emulators/RetroArch/cores/core_libretro.dll&quot; &quot;Game/Game.rom&quot;" TextWrapping="Wrap"/>
+              <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="DuckStation  -batch -fullscreen -- &quot;Game/Game.cue&quot;" TextWrapping="Wrap"/>
+              <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="PCSX2        -fullscreen -batch -- &quot;Game/Game.iso&quot;" TextWrapping="Wrap"/>
+              <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="Dolphin      -b -e &quot;Game/Game.rvz&quot;  (enable Start in Fullscreen in Dolphin)" TextWrapping="Wrap"/>
+              <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="RPCS3        --no-gui --fullscreen &quot;Game/Game/PS3_GAME/USRDIR/EBOOT.BIN&quot;" TextWrapping="Wrap"/>
+              <TextBlock Classes="help" Text="Keep quotes around paths with spaces. Set Process name to the emulator process so Cart Launch Companion returns when emulation ends."/>
+            </StackPanel>
+          </Border>
           <TextBlock FontWeight="SemiBold" FontSize="16" Margin="0,18,0,14" Text="Companion executable"/>
           <TextBlock Classes="help" Margin="0,0,0,14" Text="Optional. Start a mod manager, controller tool, trainer, or other helper immediately before the primary executable or launcher."/>
           <local:LabeledField Label="Launch companion app" Description="Optional. Enable this only when another program must start before the game."><local:LabeledField.FieldContent><ToggleSwitch IsChecked="{Binding Configuration.Launch.Windows.CompanionApplication.Enabled}" OnContent="Enabled" OffContent="Disabled"/></local:LabeledField.FieldContent></local:LabeledField>
@@ -129,6 +141,18 @@
           <local:LabeledField Label="Executable" Description="Required for Local or Wine. Can also be used for Proton, Flatpak, or Custom launches."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Linux.Executable}"/></local:LabeledField.FieldContent></local:LabeledField>
           <local:LabeledField Label="Arguments" Description="Optional. Extra command-line options passed to the game."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Linux.Arguments}"/></local:LabeledField.FieldContent></local:LabeledField>
           <local:LabeledField Label="Working directory" Description="Optional. Folder the game should treat as its starting location."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Linux.WorkingDirectory}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <Border Background="#101923" BorderBrush="#31506E" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,8,0,12">
+            <StackPanel Spacing="7">
+              <TextBlock FontSize="16" FontWeight="SemiBold" Text="Linux emulator command-line quick reference"/>
+              <TextBlock Classes="help" Text="Choose Custom as the launcher. Native executables and AppImages can use the same game arguments as Windows; RetroArch cores normally end in .so."/>
+              <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="RetroArch    -f -L &quot;../../Emulators/RetroArch/cores/core_libretro.so&quot; &quot;Game/Game.rom&quot;" TextWrapping="Wrap"/>
+              <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="DuckStation  -batch -fullscreen -- &quot;Game/Game.cue&quot;" TextWrapping="Wrap"/>
+              <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="PCSX2        -fullscreen -batch -- &quot;Game/Game.iso&quot;" TextWrapping="Wrap"/>
+              <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="Dolphin      -b -e &quot;Game/Game.rvz&quot;  (enable Start in Fullscreen in Dolphin)" TextWrapping="Wrap"/>
+              <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="RPCS3        --no-gui --fullscreen &quot;Game/Game/PS3_GAME/USRDIR/EBOOT.BIN&quot;" TextWrapping="Wrap"/>
+              <TextBlock Classes="help" Text="Make native binaries and AppImages executable before launching. AppImage process names can vary, so verify the running process once."/>
+            </StackPanel>
+          </Border>
           <TextBlock FontWeight="SemiBold" FontSize="16" Margin="0,18,0,14" Text="Companion executable"/>
           <TextBlock Classes="help" Margin="0,0,0,14" Text="Optional. Start a native Linux helper immediately before the primary executable or launcher."/>
           <local:LabeledField Label="Launch companion app" Description="Optional. Enable this only when another program must start before the game."><local:LabeledField.FieldContent><ToggleSwitch IsChecked="{Binding Configuration.Launch.Linux.CompanionApplication.Enabled}" OnContent="Enabled" OffContent="Disabled"/></local:LabeledField.FieldContent></local:LabeledField>
@@ -143,7 +167,27 @@
         </StackPanel></Border></StackPanel></ScrollViewer>
       </TabItem>
 
-      <TabItem Header="5  Behavior">
+      <TabItem Header="5  Series collection">
+        <ScrollViewer><StackPanel Margin="12" MaxWidth="900" Spacing="16">
+          <Border Classes="card"><StackPanel>
+            <TextBlock Classes="section" Text="Custom Series Collection"/>
+            <TextBlock Classes="help" Margin="0,4,0,20" Text="Optional. Place this game on an era, generation, platform, or themed shelf. The collection launcher reads these values from game.json."/>
+            <local:LabeledField Label="Shelf name" Description="Optional. Must match a shelf in Config/collection.json, such as The 3D Era. Leave blank to use the collection's default shelf."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Collection.Shelf}" PlaceholderText="Example: The 3D Era"/></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Order within shelf" Description="Optional. Lower numbers appear first. Use 10, 20, 30, and so on to leave room for games added later."><local:LabeledField.FieldContent><NumericUpDown Value="{Binding Configuration.Collection.Order}" Minimum="-10000" Maximum="10000" Increment="10"/></local:LabeledField.FieldContent></local:LabeledField>
+          </StackPanel></Border>
+          <Border Classes="card"><StackPanel Spacing="9">
+            <TextBlock Classes="section" Text="How the collection launcher works"/>
+            <TextBlock Classes="help" Text="Config/collection.json turns Custom Series Collection mode on and defines the collection name, transparent logo, accent color, and shelf order."/>
+            <TextBlock Text="• Only shelves containing games are displayed." TextWrapping="Wrap"/>
+            <TextBlock Text="• Shelf names must match exactly between collection.json and this game." TextWrapping="Wrap"/>
+            <TextBlock Text="• Games without a shelf use defaultShelf; leave defaultShelf blank for an unnamed fallback row." TextWrapping="Wrap"/>
+            <TextBlock Text="• Collection logos use a portable path such as Assets/Collections/MySeries/Logo.png." TextWrapping="Wrap"/>
+            <TextBlock Classes="help" Margin="0,8,0,0" Text="Start from Config/collection.example.json. Restart the launcher or press F5 after changing collection placement."/>
+          </StackPanel></Border>
+        </StackPanel></ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="6  Behavior">
         <ScrollViewer><StackPanel Margin="12" MaxWidth="900" Spacing="16">
           <Border Classes="card"><StackPanel>
             <TextBlock Classes="section" Text="Platform preference"/><TextBlock Classes="help" Margin="0,4,0,20" Text="Automatic is recommended and selects the matching configuration for the current computer."/>
@@ -159,7 +203,7 @@
         </StackPanel></ScrollViewer>
       </TabItem>
 
-      <TabItem Header="6  Review &amp; save">
+      <TabItem Header="7  Review &amp; save">
         <Grid Margin="12" RowDefinitions="Auto,*" RowSpacing="14">
           <Border Classes="card"><StackPanel>
             <TextBlock Classes="section" Text="Check before saving"/>

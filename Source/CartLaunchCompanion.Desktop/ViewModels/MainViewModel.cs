@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Avalonia.Media.Imaging;
 using CartLaunchCompanion.Core.Input;
 using CartLaunchCompanion.Core.Configuration;
 using CartLaunchCompanion.Core.Launching;
@@ -22,6 +23,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private DateTimeOffset _lastInputAt = DateTimeOffset.MinValue;
     private LauncherAction _lastInputAction = LauncherAction.None;
+    private bool _isLoadInProgress;
 
     public MainViewModel(
         IGameLibraryService libraryService,
@@ -69,6 +71,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public partial CollectionConfiguration Collection { get; set; } = new();
 
     [ObservableProperty]
+    public partial Bitmap? CollectionLogoImage { get; set; }
+
+    [ObservableProperty]
     public partial GameCardViewModel? SelectedGame { get; set; }
 
     [ObservableProperty]
@@ -82,7 +87,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public partial string LibraryErrorMessage { get; set; } = "";
 
     [ObservableProperty]
-    public partial bool IsLoading { get; set; }
+    public partial bool IsLoading { get; set; } = true;
 
     [ObservableProperty]
     public partial bool IsLaunching { get; set; }
@@ -121,6 +126,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public bool HasNoSelectedGame => SelectedGame is null;
     public bool HasCustomCollection =>
         Collection.Enabled && !string.IsNullOrWhiteSpace(Collection.Name);
+    public bool HasCollectionLogo => CollectionLogoImage is not null;
+    public bool HasNoCollectionLogo => CollectionLogoImage is null;
     public bool ShowCartLaunchBranding =>
         !HasCustomCollection &&
         (SelectedGame is null || SelectedGame.UsesCartLaunchBranding);
@@ -218,9 +225,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public async Task LoadAsync()
     {
-        if (IsLoading)
+        if (_isLoadInProgress)
             return;
 
+        var loadingStartedAt = Stopwatch.GetTimestamp();
+        _isLoadInProgress = true;
         IsLoading = true;
         StatusMessage = "Loading portable library…";
         LibraryErrorMessage = string.Empty;
@@ -234,6 +243,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             Collection = await CollectionConfigurationJson.LoadAsync(
                 _portablePaths.Config);
+            CollectionLogoImage?.Dispose();
+            CollectionLogoImage = TryLoadCollectionLogo(Collection.Logo);
 
             var result = await _libraryService.LoadAsync(
                 _portablePaths,
@@ -276,6 +287,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             OnPropertyChanged(nameof(HasLibraryError));
             OnPropertyChanged(nameof(ShowEmptyLibrary));
             OnPropertyChanged(nameof(HasCustomCollection));
+            OnPropertyChanged(nameof(HasCollectionLogo));
+            OnPropertyChanged(nameof(HasNoCollectionLogo));
             OnPropertyChanged(nameof(ShowCartLaunchBranding));
             OnPropertyChanged(nameof(ShowLauncherBranding));
         }
@@ -290,6 +303,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
         finally
         {
+            var remainingLoadingTime =
+                TimeSpan.FromMilliseconds(700) -
+                Stopwatch.GetElapsedTime(loadingStartedAt);
+            if (remainingLoadingTime > TimeSpan.Zero)
+                await Task.Delay(remainingLoadingTime);
+
+            _isLoadInProgress = false;
             IsLoading = false;
             OnPropertyChanged(nameof(HasNoGames));
             OnPropertyChanged(nameof(ShowEmptyLibrary));
@@ -492,7 +512,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return configured;
 
         var fallback = Collection.DefaultShelf?.Trim();
-        return string.IsNullOrWhiteSpace(fallback) ? "Library" : fallback;
+        return string.IsNullOrWhiteSpace(fallback) ? "" : fallback;
     }
 
     private int GetShelfOrder(
@@ -681,8 +701,30 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             game.Dispose();
     }
 
+    private Bitmap? TryLoadCollectionLogo(string? configuredPath)
+    {
+        if (string.IsNullOrWhiteSpace(configuredPath))
+            return null;
+
+        var normalized = configuredPath.Replace('/', Path.DirectorySeparatorChar);
+        var path = Path.IsPathRooted(normalized)
+            ? normalized
+            : Path.Combine(_portablePaths.Root, normalized);
+
+        try
+        {
+            return File.Exists(path) ? new Bitmap(path) : null;
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"Collection logo could not be loaded from '{path}': {ex.Message}");
+            return null;
+        }
+    }
+
     public void Dispose()
     {
         DisposeCards();
+        CollectionLogoImage?.Dispose();
     }
 }

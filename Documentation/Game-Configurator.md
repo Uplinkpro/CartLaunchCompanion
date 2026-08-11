@@ -15,9 +15,10 @@ dotnet run --project Source/CartLaunchCompanion.Configurator
 1. Enter the game name.
 2. Choose the Windows and/or Linux launcher.
 3. Enter the ID, executable, or launch address required by that launcher.
-4. Add any optional metadata, artwork, and behavior settings.
-5. Open **Review & save**, then select **Validate and save game.json**.
-6. Choose the folder for this game.
+4. Optionally assign the game to a Custom Series Collection shelf.
+5. Add any optional metadata, artwork, and behavior settings.
+6. Open **Review & save**, then select **Validate and save game.json**.
+7. Choose the folder for this game.
 
 The configurator creates `game.json` plus standard `Artwork` and `Media` folders. It does not require the game executable to exist yet, which makes test configurations and configs prepared on another computer possible.
 
@@ -36,3 +37,23 @@ Name searches combine Steam's current Store catalogue with SteamGridDB. Delisted
 - **Advanced**: safe to keep at its default unless the game needs special handling.
 
 Use **Open game.json** to edit an existing Version 2 configuration. Saving uses the same safe replacement method as Cart Launch Companion itself.
+
+## Custom Series Collection placement
+
+Open **Series collection** to place the game on an era, generation, platform, or themed shelf. Enter the shelf name exactly as it appears in `Config/collection.json`, then choose its order within that shelf. Using 10, 20, 30, and similar values leaves room to insert games later.
+
+This step writes the game's `collection.shelf` and `collection.order` values. The collection-wide name, logo, accent color, and shelf definitions remain in `Config/collection.json`; start from `Config/collection.example.json`. Shelves without games are hidden automatically.
+
+## Emulator launches
+
+The Windows and Linux launch pages include command-line recipes for RetroArch, DuckStation, PCSX2, Dolphin, and RPCS3.
+
+For an emulated game:
+
+1. Set **Launcher** to **Custom**.
+2. Set **Executable** to the emulator executable or AppImage.
+3. Set **Working directory** to `.` when game-image paths are relative to the game folder.
+4. Copy the matching fullscreen recipe into **Arguments** and replace the sample game path.
+5. Set **Process name** to the emulator process so the launcher returns after emulation ends.
+
+See the [Emulator launch guide](Emulator-Launch-Guide.md) for shared portable emulator folders, complete Windows and Linux examples, controller exit hotkeys, and troubleshooting.

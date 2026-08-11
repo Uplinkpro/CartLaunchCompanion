@@ -4,6 +4,7 @@
   "enabled": true,
   "name": "The Grand Theft Auto Master Collection",
   "description": "Every era of Grand Theft Auto in one cart.",
+  "logo": "Assets/Collections/GrandTheftAuto/Logo.png",
   "accentColor": "#F2C94C",
   "defaultShelf": "Other Games",
   "shelves": [

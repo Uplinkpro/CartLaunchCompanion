@@ -8,8 +8,9 @@ public sealed class CollectionConfiguration
     public bool Enabled { get; set; }
     public string Name { get; set; } = "";
     public string Description { get; set; } = "";
+    public string Logo { get; set; } = "";
     public string AccentColor { get; set; } = "#C08AFF";
-    public string DefaultShelf { get; set; } = "Library";
+    public string DefaultShelf { get; set; } = "";
     public List<CollectionShelfConfiguration> Shelves { get; set; } = [];
 }
 

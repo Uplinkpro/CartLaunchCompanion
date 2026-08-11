@@ -105,4 +105,16 @@ public sealed class GameConfigurationJsonTests
             Directory.Delete(folder, recursive: true);
         }
     }
+
+    [Fact]
+    public async Task CollectionConfiguration_DefaultShelf_IsUnnamed()
+    {
+        var folder = Path.Combine(
+            Path.GetTempPath(),
+            $"clc-collection-{Guid.NewGuid():N}");
+
+        var collection = await CollectionConfigurationJson.LoadAsync(folder);
+
+        Assert.Equal("", collection.DefaultShelf);
+    }
 }

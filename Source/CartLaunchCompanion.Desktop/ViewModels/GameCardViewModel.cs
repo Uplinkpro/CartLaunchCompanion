@@ -113,6 +113,7 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
 
     public bool UsesCartLaunchBranding =>
         LauncherKind is LauncherKind.Local or LauncherKind.Custom;
+    public bool UsesLauncherBranding => !UsesCartLaunchBranding;
 
     public LauncherTheme Theme =>
         LauncherThemeCatalog.Get(LauncherKind);

@@ -6,6 +6,30 @@ The project follows semantic versioning where practical.
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-08-11
+
+### Added
+
+- Custom Series Collection launcher mode with collection logos, accent colors, ordered shelves, and per-game placement
+- Responsive collection layout with centered era dividers and automatic hiding of empty shelves
+- Startup loading screen with a circular animated progress indicator
+- Series Collection fields and emulator CLI references in the Game Configurator
+- Fullscreen emulator launch guide for RetroArch, DuckStation, PCSX2, Dolphin, and RPCS3
+- Collection screenshot and complete customization instructions
+
+### Changed
+
+- Collection shelves scale together to remain visible across supported display sizes
+- Metadata launcher and gamepad badges now render independently of collection branding
+- Direct and custom game metadata pages retain the correct storefront identity
+- Game Configurator workflow now includes collection placement before behavior and review
+
+### Fixed
+
+- Removed the false empty-library flash during startup discovery
+- Fixed hidden launcher logos on metadata pages in Custom Series Collection mode
+- Fixed unnamed and unpopulated collection shelves appearing in the library
+
 ## [2.0.0-rc.1] - 2026-08-05
 
 ### Added

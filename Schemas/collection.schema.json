@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Uplinkpro/CartLaunchCompanion/Schemas/collection.schema.json",
-  "title": "Cart Launch Companion Collection",
+  "title": "Cart Launch Companion Custom Series Collection",
   "type": "object",
   "additionalProperties": false,
   "required": ["formatVersion", "enabled", "name", "description", "accentColor", "defaultShelf", "shelves"],
@@ -11,11 +11,20 @@
     "enabled": { "type": "boolean" },
     "name": { "type": "string", "minLength": 1 },
     "description": { "type": "string" },
+    "logo": {
+      "type": "string",
+      "default": "",
+      "description": "Optional path to the custom collection logo, relative to the portable launcher folder."
+    },
     "accentColor": {
       "type": "string",
       "pattern": "^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$"
     },
-    "defaultShelf": { "type": "string", "minLength": 1 },
+    "defaultShelf": {
+      "type": "string",
+      "default": "",
+      "description": "Optional shelf used by games without a shelf name. Leave blank for no visible shelf heading."
+    },
     "shelves": {
       "type": "array",
       "items": {

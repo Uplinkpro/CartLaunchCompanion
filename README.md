@@ -19,7 +19,7 @@ A portable, fullscreen, controller-first launcher for Windows, Linux, and SteamO
 
 <br>
 
-[**Download 2.0 RC2**](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.0.0-rc.2)
+[**Download 2.2**](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.2.0)
 &nbsp;&nbsp;•&nbsp;&nbsp;
 [Quick start](#quick-start)
 &nbsp;&nbsp;•&nbsp;&nbsp;
@@ -39,13 +39,15 @@ Cart Launch Companion turns a curated collection of PC games into a focused cons
 
 Everything stays together in one portable folder: the application, game configurations, artwork, media, cache, and logs. Move it to another drive, a living-room PC, or a handheld without rebuilding the library from scratch.
 
-> **Release status:** [Version 2.0 RC2](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.0.0-rc.2) is available for testing on Windows and Linux. Version 2 remains on `avalonia-migration` until release-candidate validation is complete.
+> **Current release:** [Version 2.2](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.2.0) is available for Windows, Linux, and SteamOS from the stable `main` branch.
 
 ## Preview
 
-| Library | Game details | Launcher branding |
-|---|---|---|
-| ![Game library](docs/screenshots/library.png) | ![Game details](docs/screenshots/details.png) | ![Launcher branding](docs/screenshots/launcher-branding.png) |
+| Game library | Game details |
+|---|---|
+| ![Game library](docs/screenshots/library.png) | ![Game details](docs/screenshots/details.png) |
+| **Launcher branding** | **Custom Series Collection** |
+| ![Launcher branding](docs/screenshots/launcher-branding.png) | ![Custom Series Collection launcher](docs/screenshots/custom-series-collection.png) |
 
 ## Highlights
 
@@ -105,6 +107,7 @@ Everything stays together in one portable folder: the application, game configur
 
 - Major PC storefronts and launcher URIs
 - Direct executable and custom-command support
+- Fullscreen emulator launching for curated retro collections
 - Heroic, Flatpak, Wine, and Proton
 - Process monitoring and launcher restoration
 - Optional pre-launch companion applications
@@ -122,19 +125,42 @@ Everything stays together in one portable folder: the application, game configur
 
 </td>
 </tr>
+<tr>
+<td width="50%" valign="top">
+
+### 🏆 Custom Series Collections
+
+- Turn a curated series or genre into its own launcher
+- Custom collection name, logo, description, and accent color
+- Organize games into eras, generations, or themed shelves
+- Automatic shelf ordering and responsive presentation
+- Empty shelves remain hidden
+
+</td>
+<td width="50%" valign="top">
+
+### ✨ Smooth living-room startup
+
+- Animated library preparation screen
+- No false empty-library flash during discovery
+- Collection artwork and game metadata load together
+- Full keyboard, controller, and remote navigation
+
+</td>
+</tr>
 </table>
 
 ## Download
 
-Download [Cart Launch Companion 2.0 RC2](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.0.0-rc.2), or browse [all GitHub releases](https://github.com/Uplinkpro/CartLaunchCompanion/releases).
+Download [Cart Launch Companion 2.2](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.2.0), or browse [all GitHub releases](https://github.com/Uplinkpro/CartLaunchCompanion/releases).
 
-RC2 provides three packages:
+Version 2.2 provides three packages:
 
 | Package | Intended use |
 |---|---|
-| `CartLaunchCompanion-2.0.0-rc.2-win-x64.zip` | Windows-only portable installation |
-| `CartLaunchCompanion-2.0.0-rc.2-linux-x64.tar.gz` | Linux or SteamOS portable installation |
-| `CartLaunchCompanion-2.0.0-rc.2-portable.zip` | Combined Windows and Linux installation |
+| `CartLaunchCompanion-2.2.0-win-x64.zip` | Windows-only portable installation |
+| `CartLaunchCompanion-2.2.0-linux-x64.tar.gz` | Linux or SteamOS portable installation |
+| `CartLaunchCompanion-2.2.0-portable.zip` | Combined Windows and Linux installation |
 
 Every package is self-contained. The correct .NET runtime is included, so end users do not need to install the .NET SDK or runtime. Published archives contain no source, test, or build folders. Verify downloads with the included `SHA256SUMS.txt`.
 
@@ -198,12 +224,78 @@ The included Game Configurator creates complete game folders without requiring u
 - Preview available artwork before saving.
 - Configure Windows and Linux launch methods independently.
 - Add an optional companion executable beside the primary executable.
+- Assign games to Custom Series Collection shelves and control their order.
+- See fullscreen CLI recipes for RetroArch, DuckStation, PCSX2, Dolphin, and RPCS3 directly in the launch form.
 - Validate the complete configuration before writing `game.json`.
 - Prepare configurations even when the game executable is not present yet.
 
 Steam and SteamGridDB keys are optional and are stored in Windows Credential Manager or the Linux desktop keyring. They are never written into `game.json` or plaintext configurator settings. PCGamingWiki and Wikipedia fallbacks require no user credentials.
 
 See the [Game Configurator guide](Documentation/Game-Configurator.md) for the complete workflow.
+
+## Custom Series Collection launcher
+
+Custom Series Collection mode turns one Cart Launch Companion installation into a focused launcher for a franchise, genre, platform, or personal theme. For example, one portable cart can become **The Grand Theft Auto Master Collection**, with separate shelves for the Topdown, 3D, and HD eras.
+
+Collection mode is optional. Without `Config/collection.json`, Cart Launch Companion continues to use its normal mixed-library presentation.
+
+### 1. Add the collection definition
+
+Copy [`Config/collection.example.json`](Config/collection.example.json) to `Config/collection.json`, then edit it:
+
+```json
+{
+  "$schema": "../Schemas/collection.schema.json",
+  "formatVersion": 1,
+  "enabled": true,
+  "name": "The Grand Theft Auto Master Collection",
+  "description": "Every era of Grand Theft Auto in one cart.",
+  "logo": "Assets/Collections/GrandTheftAuto/Logo.png",
+  "accentColor": "#F2C94C",
+  "defaultShelf": "",
+  "shelves": [
+    { "name": "The Topdown Era", "order": 10 },
+    { "name": "The 3D Era", "order": 20 },
+    { "name": "The HD Era", "order": 30 }
+  ]
+}
+```
+
+| Setting | Required | Purpose |
+|---|:---:|---|
+| `enabled` | Yes | Turns Custom Series Collection mode on or off. |
+| `name` | Yes | Names the complete collection. It is used when no logo is available. |
+| `description` | No | Short internal description of the collection. |
+| `logo` | No | Portable path to a transparent collection logo. PNG is recommended. |
+| `accentColor` | Yes | Hex color used for collection accents. |
+| `defaultShelf` | No | Shelf for games without an assigned shelf. Leave blank for no heading. |
+| `shelves` | No | Defines shelf names and their display order. Only shelves containing games are shown. |
+
+Collection artwork belongs under `Assets/Collections/<CollectionName>/`. Paths are relative to the Cart Launch Companion folder, so the collection remains portable.
+
+### 2. Assign each game to a shelf
+
+Add a `collection` object to each game's `game.json`:
+
+```json
+"collection": {
+  "shelf": "The 3D Era",
+  "order": 20
+}
+```
+
+The shelf name must match the name in `collection.json`. `order` controls the game's position within that shelf; increments of 10 leave room to insert games later. A shelf is automatically hidden when no games use it.
+
+### 3. Refresh the launcher
+
+Restart Cart Launch Companion or press `F5`. The startup screen discovers the games, builds the populated shelves, loads the collection logo, and scales the complete collection to the available display.
+
+For best results:
+
+- use a transparent, wide or crest-shaped PNG for the collection logo;
+- keep shelf names short enough to read from across the room;
+- use consistent cover-art proportions across the collection;
+- keep each collection intentionally curated so every game remains readable on a television or handheld.
 
 ## Portable folder layout
 
@@ -273,6 +365,20 @@ Windows and Linux configurations can start one optional helper immediately befor
 
 The helper has independent executable, argument, and working-directory fields. It may remain running or close automatically after the monitored game process exits. If the primary game fails to launch, Cart Launch Companion closes the helper instead of leaving it orphaned.
 
+## Emulators
+
+The custom command backend can launch games directly through popular emulators without a separate integration layer. Cart Launch Companion supplies the emulator executable, fullscreen or batch flags, and the selected ROM or disc image, then restores the launcher when the emulator closes.
+
+The [Emulator launch guide](Documentation/Emulator-Launch-Guide.md) includes portable Windows and Linux examples for:
+
+- RetroArch;
+- DuckStation;
+- PCSX2;
+- Dolphin;
+- RPCS3.
+
+The guide also covers shared emulator folders, quoted game paths, process monitoring, controller exit hotkeys, AppImages, and troubleshooting. Users must provide their own legally obtained firmware, BIOS files, keys, and game content.
+
 ## Controls
 
 | Input | Action |
@@ -313,12 +419,13 @@ dotnet run --project Source/CartLaunchCompanion.Configurator -c Release
 Create self-contained release packages:
 
 ```powershell
-.\Publish-RC1.ps1
+.\Publish-Portable.ps1
 ```
 
 ## Documentation
 
 - [Game Configurator](Documentation/Game-Configurator.md)
+- [Emulator launch guide](Documentation/Emulator-Launch-Guide.md)
 - [Architecture](docs/2.0/Architecture.md)
 - [Controller guide](docs/2.0/ControllerGuide.md)
 - [Design principles](docs/2.0/DesignPrinciples.md)
@@ -359,7 +466,7 @@ Cart Launch Companion is built with:
 
 ## Project status
 
-Version 2 is in active release-candidate testing. Reports are especially useful for:
+Version 2.2 is the current stable release. Reports are especially useful for:
 
 - physical Steam Deck and SteamOS hardware;
 - different controller models and hot-plug behavior;
@@ -414,7 +521,7 @@ The project is not affiliated with or endorsed by Valve, Microsoft, Rockstar Gam
 
 ### Bring your PC game library to the couch.
 
-[Download RC2](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.0.0-rc.2)
+[Download 2.2](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.2.0)
 &nbsp;&nbsp;•&nbsp;&nbsp;
 [Documentation](#documentation)
 &nbsp;&nbsp;•&nbsp;&nbsp;

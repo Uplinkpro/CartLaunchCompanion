@@ -1,9 +1,9 @@
 param(
-    [string]$OutputRoot = (Join-Path $PSScriptRoot 'artifacts\rc2')
+    [string]$OutputRoot = (Join-Path $PSScriptRoot 'artifacts\2.2.0')
 )
 
 $ErrorActionPreference = 'Stop'
-$version = '2.0.0-rc.2'
+$version = '2.2.0'
 $launcherProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.Desktop\CartLaunchCompanion.Desktop.csproj'
 $configuratorProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.Configurator\CartLaunchCompanion.Configurator.csproj'
 $staging = Join-Path $OutputRoot 'staging\CartLaunchCompanion'
@@ -48,6 +48,8 @@ Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Config\Launchers.json') `
     -Destination $configDestination
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Config\metadata.example.json') `
     -Destination $configDestination
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Config\collection.example.json') `
+    -Destination $configDestination
 
 $gamesDestination = Join-Path $staging 'Games'
 New-Item -ItemType Directory -Path $gamesDestination -Force | Out-Null
@@ -63,6 +65,13 @@ Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'LICENSE') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'CHANGELOG.md') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Docs\2.0\ReleaseCandidate1.md') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Docs\2.0\UpgradeGuide.md') -Destination $staging
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Game-Configurator.md') -Destination $staging
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Emulator-Launch-Guide.md') -Destination $staging
+
+# Generated concept drafts are development assets; portable releases include only final collection artwork.
+Get-ChildItem -LiteralPath (Join-Path $staging 'Assets\Collections') -Directory -Recurse -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -eq 'Concepts' } |
+    Remove-Item -Recurse -Force
 
 $windowsLauncher = @'
 @echo off
