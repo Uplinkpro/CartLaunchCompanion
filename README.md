@@ -4,9 +4,9 @@
 
 # Cart Launch Companion
 
-### Your game library, built for the couch.
+### Turn portable storage into a dedicated PC game cart.
 
-A portable, fullscreen, controller-first launcher for Windows, Linux, and SteamOS.
+A self-contained, fullscreen launcher for games and collections installed on the same portable drive.
 
 <br>
 
@@ -25,7 +25,7 @@ A portable, fullscreen, controller-first launcher for Windows, Linux, and SteamO
 &nbsp;&nbsp;•&nbsp;&nbsp;
 [Game Configurator](#game-configurator)
 &nbsp;&nbsp;•&nbsp;&nbsp;
-[Physical game carts](#physical-game-carts)
+[Trusted cart mode](#optional-trusted-insertion-and-automatic-launch)
 &nbsp;&nbsp;•&nbsp;&nbsp;
 [Documentation](#documentation)
 &nbsp;&nbsp;•&nbsp;&nbsp;
@@ -35,19 +35,23 @@ A portable, fullscreen, controller-first launcher for Windows, Linux, and SteamO
 
 ---
 
-## One library. Every launcher. No desktop clutter.
+## Give an old SSD a new life as a game cart
 
-Cart Launch Companion turns a curated collection of PC games into a focused console-style experience. Browse with a controller, view artwork and trailers, and launch Steam titles, storefront games, local executables, Wine, Proton, Heroic, and Flatpak targets without navigating a traditional desktop.
+Cart Launch Companion (CLC) turns a portable SSD, USB drive, or other removable storage device into a dedicated PC game cart. Install one game, a complete series, or a small themed collection on the drive, then keep its launcher, configuration, artwork, media, emulators, and ROMs with it.
 
-Everything stays together in one portable folder: the application, game configurations, artwork, media, cache, and logs. Move it to another drive, a living-room PC, or a handheld without rebuilding the library from scratch.
+Plug the cart into a compatible Windows, Linux, or SteamOS device and CLC presents only the games that belong to that cart in a focused, controller-first interface. It can launch portable executables directly or hand a game to an installed storefront client, Wine, Proton, Heroic, Flatpak, or an emulator.
+
+CLC is **not intended to replace Steam or organize every game installed across a computer**. Its purpose is smaller and more physical: recycle storage you already own into self-contained cartridges for dedicated games and thoughtfully curated collections.
+
+> **The cart is the product.** CLC and its game definitions live in `Cart/`; installed game files live in the root-level `Games/` folder; shared emulators and game images can live in `Emulators/` and `Roms/`. Relative paths keep the cart usable when its drive letter or mount point changes.
 
 > **Current release:** [Version 2.3](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.3.0) is available for Windows, Linux, and SteamOS. Physical-cart Host support is implemented on `main` and awaiting hardware validation for a future release.
 
 ## Preview
 
-| Game library | Game details |
+| Cart home screen | Game details |
 |---|---|
-| ![Game library](docs/screenshots/library.png) | ![Game details](docs/screenshots/details.png) |
+| ![Cart home screen](docs/screenshots/library.png) | ![Game details](docs/screenshots/details.png) |
 | **Game Configurator** | **Custom Series Collection** |
 | ![Game Configurator](docs/screenshots/game-configurator.png) | ![Custom Series Collection launcher](docs/screenshots/custom-series-collection.png) |
 
@@ -117,11 +121,11 @@ Everything stays together in one portable folder: the application, game configur
 </td>
 <td width="50%" valign="top">
 
-### 📦 Portable and self-contained
+### 📦 Built to live on the cart
 
 - No traditional installer required
 - Bundled platform-specific .NET runtime
-- Relative paths for games and helper tools
+- Games, tools, and emulators use portable relative paths
 - Portable artwork, media, logs, and cache
 - Separate Windows, Linux, and combined packages
 
@@ -156,13 +160,13 @@ Everything stays together in one portable folder: the application, game configur
 
 Download [Cart Launch Companion 2.3](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.3.0), or browse [all GitHub releases](https://github.com/Uplinkpro/CartLaunchCompanion/releases).
 
-Version 2.2 provides three packages:
+Version 2.3 provides three packages:
 
 | Package | Intended use |
 |---|---|
-| `CartLaunchCompanion-2.2.0-win-x64.zip` | Windows-only portable installation |
-| `CartLaunchCompanion-2.2.0-linux-x64.tar.gz` | Linux or SteamOS portable installation |
-| `CartLaunchCompanion-2.2.0-portable.zip` | Combined Windows and Linux installation |
+| `CartLaunchCompanion-2.3.0-win-x64.zip` | Windows-only cart runtime |
+| `CartLaunchCompanion-2.3.0-linux-x64.tar.gz` | Linux or SteamOS cart runtime |
+| `CartLaunchCompanion-2.3.0-portable.zip` | Combined Windows and Linux cart runtime |
 
 Every package is self-contained. The correct .NET runtime is included, so end users do not need to install the .NET SDK or runtime. Published archives contain no source, test, or build folders. Verify downloads with the included `SHA256SUMS.txt`.
 
@@ -186,10 +190,10 @@ Every package is self-contained. The correct .NET runtime is included, so end us
 
 ## Requirements
 
-### Running a portable release
+### Running a game cart
 
 - A 64-bit Windows, Linux, or SteamOS system.
-- A writable extraction folder for configurations, cache, and logs.
+- A writable portable storage device for CLC, its configuration, and its games.
 - The relevant storefront client for launcher-managed games.
 - Internet access for online metadata, artwork, and trailers; local games and media continue to work offline.
 - A controller is recommended but not required.
@@ -198,23 +202,36 @@ The portable packages include the required .NET runtime. No installer, SDK, or s
 
 ## Quick start
 
+Start with an empty or freshly prepared portable drive. The recommended root layout is:
+
+```text
+MyGameCart/
+├── Cart/          # Cart Launch Companion, configuration, and artwork
+├── Games/         # The installed PC game files carried by this cart
+├── Emulators/     # Optional shared portable emulators
+└── Roms/          # Optional ROMs and disc images
+```
+
+Extract the CLC release into `Cart/`, not directly into the root of the drive. Steam, Windows, or other launchers may create additional folders beside these; that is normal.
+
 ### Windows
 
-1. Download and extract the Windows or combined portable package.
-2. Run **Start Cart Launch Companion.bat**.
-3. Run **Game Configurator.bat** to create or edit game entries.
+1. Download the Windows or combined portable package and extract it into the cart's `Cart/` folder.
+2. Run **Game Configurator.bat** to add the game files already stored on the cart.
+3. Use the configurator's file locators so executable paths remain relative and survive drive-letter changes.
+4. Run **Start Cart Launch Companion.bat**.
 
 ### Linux and SteamOS
 
-1. Download and extract the Linux or combined portable package.
+1. Download the Linux or combined portable package and extract it into the cart's `Cart/` folder.
 2. Allow the shell launchers to run if your archive tool did not preserve permissions:
 
    ```bash
    chmod +x "Start Cart Launch Companion.sh" "Game Configurator.sh"
    ```
 
-3. Run `./Start Cart Launch Companion.sh`.
-4. Run `./Game Configurator.sh` to create or edit game entries.
+3. Run `./Game Configurator.sh` to add games, emulators, and ROMs stored on the cart.
+4. Run `./Start Cart Launch Companion.sh`.
 
 ## Game Configurator
 
@@ -235,9 +252,9 @@ Steam and SteamGridDB keys are optional and are stored in Windows Credential Man
 
 See the [Game Configurator guide](Documentation/Game-Configurator.md) for the complete workflow.
 
-## Physical game carts
+## Optional trusted insertion and automatic launch
 
-CLC can turn a USB drive, portable SSD, or other removable media into a self-contained game cart. The launcher, configuration, artwork, and supported platform runtimes remain on the cart. An optional **Cart Launch Host** on each computer provides trusted insertion detection, protected local staging, automatic launch, and safe eject.
+Every CLC installation is designed to live on a portable game cart. For a more console-like experience, an optional **Cart Launch Host** on each computer can add trusted insertion detection, protected local staging, automatic launch, and safe eject.
 
 Normal portable CLC use does not require the Host. Install it only on computers where you want the physical-cart workflow.
 
@@ -309,9 +326,9 @@ See [Security](SECURITY.md) for the threat model and [Physical Cart Hardware Tes
 
 ## Custom Series Collection launcher
 
-Custom Series Collection mode turns one Cart Launch Companion installation into a focused launcher for a franchise, genre, platform, or personal theme. For example, one portable cart can become **The Grand Theft Auto Master Collection**, with separate shelves for the Topdown, 3D, and HD eras.
+Custom Series Collection mode turns one physical cart into a focused launcher for a franchise, genre, platform, or personal theme. For example, a repurposed SSD can become **The Grand Theft Auto Master Collection**, with separate shelves for the Topdown, 3D, and HD eras.
 
-Collection mode is optional. Without `Config/collection.json`, Cart Launch Companion continues to use its normal mixed-library presentation.
+Collection mode is optional. Without `Config/collection.json`, Cart Launch Companion uses its standard cart presentation.
 
 ### 1. Add the collection definition
 
@@ -601,7 +618,7 @@ The project is not affiliated with or endorsed by Valve, Microsoft, Rockstar Gam
 
 <div align="center">
 
-### Bring your PC game library to the couch.
+### Recycle a drive. Build a collection. Plug in and play.
 
 [Download 2.3](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.3.0)
 &nbsp;&nbsp;•&nbsp;&nbsp;
