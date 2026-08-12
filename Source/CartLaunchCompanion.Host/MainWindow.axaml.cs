@@ -16,7 +16,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private CartHostInstallationPlan _plan = CartHostInstallationPlan.ForCurrentUser();
     private TrustedCartStore _trustStore;
     private CartHostAuditLog _auditLog;
-    private string _status = "Drive monitoring and automatic launch are not enabled in this milestone.";
+    private string _status = "Ready. Scan for connected carts, review trust, or install automatic startup from the tabs above.";
     private TrustedCartItem? _selectedCart;
     private ConnectedCartItem? _selectedConnectedCart;
     private PhysicalCartMonitor? _monitor;
@@ -41,7 +41,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         Closed += async (_, _) => { await _ejectServer.DisposeAsync(); await _trustReviewServer.DisposeAsync(); };
     }
 
-    public string InstallPurpose => "Runs only for your signed-in account. It will eventually detect inserted carts, verify carts you approved, and stage verified CLC runtime files locally before launch.";
+    public string InstallPurpose => "Runs in each signed-in user's session. It detects inserted carts, verifies only carts that user approved, and launches CLC from a protected local copy after checking every approved file.";
     public bool ShowWindowsScope => OperatingSystem.IsWindows();
     public string ScopeDescription => _plan.Scope == CartHostInstallScope.AllUsers ? "All Windows users (administrator approval required)" : "Current signed-in user only";
     public string InstallDirectory => _plan.InstallDirectory;

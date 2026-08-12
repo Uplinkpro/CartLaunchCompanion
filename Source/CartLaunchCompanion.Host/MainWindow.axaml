@@ -4,7 +4,7 @@
   <Grid Margin="30" RowDefinitions="Auto,*,Auto" RowSpacing="18">
     <StackPanel Spacing="6">
       <TextBlock FontSize="32" FontWeight="Bold" Text="Cart Launch Host"/>
-      <TextBlock Classes="help" Text="Optional per-user support for trusted physical game carts. It never installs a service, driver, administrator component, or system-wide Linux rule."/>
+      <TextBlock Classes="help" Text="Optional local support for trusted physical game carts. It never installs a service, driver, or system-wide Linux rule."/>
     </StackPanel>
     <TabControl Grid.Row="1">
       <TabItem Header="Install &amp; repair"><ScrollViewer><StackPanel Margin="8,18" Spacing="14">
@@ -31,7 +31,7 @@
         <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10"><Button Content="Review and trust cart…" Click="TrustClicked"/><Button Content="Enable automatic launch" Click="EnableAutoLaunchClicked"/><Button Content="Disable automatic launch" Click="DisableAutoLaunchClicked"/><Button Content="Revoke selected" Click="RevokeClicked"/></StackPanel>
       </Grid></TabItem>
       <TabItem Header="Connected carts"><Grid Margin="8,18" RowDefinitions="Auto,*,Auto" RowSpacing="12">
-        <TextBlock Classes="help" Text="The Host checks only mounted roots for cartlaunch.cartridge.json. Detection does not grant trust and never starts software."/>
+        <TextBlock Classes="help" Text="Scanning checks only mounted-media roots for a CLC cart identity. Detection alone never grants trust or starts software."/>
         <ListBox Grid.Row="1" ItemsSource="{Binding ConnectedCarts}" SelectedItem="{Binding SelectedConnectedCart}"><ListBox.ItemTemplate><DataTemplate><StackPanel Margin="8" Spacing="3"><TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}"/><TextBlock Classes="help" Text="{Binding MediaRoot}"/><TextBlock Classes="help" Text="{Binding TrustText}"/></StackPanel></DataTemplate></ListBox.ItemTemplate></ListBox>
         <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10"><Button Content="Scan mounted media now" Click="ScanClicked"/><Button Content="Verify and prepare selected" Click="PrepareClicked"/><Button Content="Verify and launch selected" Background="#2F80ED" Foreground="White" Click="LaunchClicked"/></StackPanel>
       </Grid></TabItem>

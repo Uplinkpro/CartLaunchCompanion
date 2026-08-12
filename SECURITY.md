@@ -34,7 +34,7 @@ Because game configurations can intentionally name executables, arguments, launc
 
 Physical Cart support is under development and is not part of the 2.3 release. The requirements below are design commitments for that feature, not claims about functionality that has already shipped.
 
-Each physical cart is intended to contain its own portable CLC installation, games, configuration, artwork, and media. A small optional **Cart Launch Host** installed on the computer will detect and start carts that the user has explicitly trusted.
+Each physical cart is intended to contain its own portable CLC installation, games, configuration, artwork, and media. A small optional **Cart Launch Host** installed on the computer detects carts and can start only those the user has explicitly trusted.
 
 ### Installation and removal
 
@@ -50,7 +50,7 @@ Each physical cart is intended to contain its own portable CLC installation, gam
 
 Operating-system volume events only report that media was mounted. Detection never grants trust by itself.
 
-The host will inspect only a bounded, versioned `cartlaunch.cartridge.json` identity manifest at the cart root. A cart cannot supply PowerShell, shell, command-prompt, interpreter, or arbitrary process instructions to the host.
+The host inspects only a bounded, versioned `cartlaunch.cartridge.json` identity manifest at the cart root. A cart cannot supply PowerShell, shell, command-prompt, interpreter, or arbitrary process instructions to the host.
 
 ### Trust and integrity
 
@@ -64,7 +64,7 @@ The host will inspect only a bounded, versioned `cartlaunch.cartridge.json` iden
 
 ### Safe process creation
 
-The host will not execute the verified runtime directly from writable removable media. It will copy the protected runtime into a new, user-only local session directory, verify the staged copy, and launch that copy with the physical cart supplied only as its data root. The session copy is removed after use.
+The host does not execute the verified runtime directly from writable removable media. It copies the protected runtime into a new, user-only local session directory, verifies the staged copy, and launches that copy with the physical cart supplied only as its data root. The session copy is removed after use.
 
 This design reduces file-replacement races, DLL or shared-library substitution, and Linux `noexec` mount compatibility problems while leaving the authoritative portable installation and all user content on the cart.
 
@@ -90,7 +90,7 @@ The final authorization gate also re-hashes the complete local staged runtime im
 
 ### Path and parser hardening
 
-The host will reject:
+The host rejects:
 
 - absolute, network, device-namespace, or URI paths;
 - `.` or `..` path segments;
