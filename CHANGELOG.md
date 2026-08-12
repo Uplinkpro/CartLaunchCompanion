@@ -24,6 +24,7 @@ The project follows semantic versioning where practical.
 - Added automatic loading and selection of existing game configurations plus a per-game artwork readability audit on the Review page
 - Replaced the single metadata image with dedicated cover, background, logo, and icon previews in the Configurator
 - Added selected-launcher-only host detection and strict same-cart residency rules for games, emulators, ROMs, and companion tools
+- Added an explicit direct-URL download action that validates artwork, stores files locally, updates paths, saves game.json, and refreshes previews
 
 ## [2.2.0] - 2026-08-11
 

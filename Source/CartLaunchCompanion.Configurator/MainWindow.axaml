@@ -105,6 +105,12 @@
             <local:LabeledField Label="Logo URL" Description="Optional. Direct address for a transparent logo."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.LogoUrl}"/></local:LabeledField.FieldContent></local:LabeledField>
             <local:LabeledField Label="Icon URL" Description="Optional. Direct address for a square icon."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.IconUrl}"/></local:LabeledField.FieldContent></local:LabeledField>
             <local:LabeledField Label="Trailer URL" Description="Optional. A YouTube link or direct video address used when no local trailer is available."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.TrailerUrl}"/></local:LabeledField.FieldContent></local:LabeledField>
+            <Border Background="#102419" BorderBrush="#347A4D" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,8,0,0">
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel><TextBlock FontWeight="SemiBold" Text="Download files into this game configuration"/><TextBlock Classes="help" Text="Downloads the supplied cover, background, logo, icon, and direct video URLs; validates images; updates local paths; and saves game.json."/></StackPanel>
+                <Button Grid.Column="1" Content="Download artwork and save" Click="DownloadArtworkAndSaveClicked" Margin="14,0,0,0"/>
+              </Grid>
+            </Border>
           </StackPanel></Border>
         </StackPanel></ScrollViewer>
       </TabItem>

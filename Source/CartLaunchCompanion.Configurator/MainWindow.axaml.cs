@@ -17,6 +17,7 @@ public sealed partial class MainWindow : Window
     private readonly CartContentPathConverter _cartPathConverter = new();
     private readonly HostLauncherDetectionService _hostLauncherDetector = new();
     private readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
+    private readonly HttpClient _downloadHttpClient = new() { Timeout = TimeSpan.FromMinutes(30) };
     private string? _gameJsonPath;
     private bool _startupSetupShown;
     private PortablePaths? _portablePaths;
@@ -35,6 +36,7 @@ public sealed partial class MainWindow : Window
             _viewModel.LogoPreview = null;
             _viewModel.IconPreview = null;
             _httpClient.Dispose();
+            _downloadHttpClient.Dispose();
         };
         Opened += StartupOpened;
     }
@@ -633,6 +635,178 @@ public sealed partial class MainWindow : Window
             ? null
             : await DownloadPreviewAsync(remoteUrl);
     }
+
+    private async void DownloadArtworkAndSaveClicked(object? sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_gameJsonPath))
+        {
+            _viewModel.Status = "Choose a Cart/Games configuration folder before downloading artwork.";
+            return;
+        }
+
+        var downloadButton = sender as Button;
+        if (downloadButton is not null)
+            downloadButton.IsEnabled = false;
+        try
+        {
+            var gameFolder = Path.GetDirectoryName(_gameJsonPath)!;
+            var artworkFolder = Path.Combine(gameFolder, "Artwork");
+            var mediaFolder = Path.Combine(gameFolder, "Media");
+            Directory.CreateDirectory(artworkFolder);
+            Directory.CreateDirectory(mediaFolder);
+            var artwork = _viewModel.Configuration.Artwork;
+            var completed = new List<string>();
+            var failures = new List<string>();
+
+            await TryDownloadImageAsync("Cover", artwork.CoverUrl, artworkFolder, path => artwork.Cover = path, completed, failures);
+            await TryDownloadImageAsync("Background", artwork.BackgroundUrl, artworkFolder, path => artwork.Background = path, completed, failures);
+            await TryDownloadImageAsync("Logo", artwork.LogoUrl, artworkFolder, path => artwork.Logo = path, completed, failures);
+            await TryDownloadImageAsync("Icon", artwork.IconUrl, artworkFolder, path => artwork.Icon = path, completed, failures);
+            await TryDownloadTrailerAsync(artwork.TrailerUrl, mediaFolder, path => artwork.Trailer = path, completed, failures);
+
+            if (completed.Count == 0 && failures.Count == 0)
+            {
+                _viewModel.Status = "Add at least one direct artwork or video URL before downloading.";
+                return;
+            }
+
+            await GameConfigurationJson.SaveAsync(_gameJsonPath, _viewModel.Configuration);
+            _viewModel.RefreshPreview();
+            await RefreshArtworkPreviewsAsync();
+            await RunArtworkAuditAsync();
+            _viewModel.Status = failures.Count == 0
+                ? $"Downloaded and saved: {string.Join(", ", completed)}."
+                : $"Saved {completed.Count} file(s). Could not download: {string.Join("; ", failures)}";
+        }
+        catch (Exception ex)
+        {
+            _viewModel.Status = $"Artwork download failed safely: {ex.Message}";
+        }
+        finally
+        {
+            if (downloadButton is not null)
+                downloadButton.IsEnabled = true;
+        }
+    }
+
+    private async Task TryDownloadImageAsync(
+        string name,
+        string url,
+        string folder,
+        Action<string> setConfiguredPath,
+        List<string> completed,
+        List<string> failures)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return;
+        DownloadedAsset? result = null;
+        try
+        {
+            result = await DownloadBoundedFileAsync(url, 25L * 1024 * 1024, isImage: true);
+            var extension = ImageExtension(result.ContentType, result.FinalUri);
+            var destination = Path.Combine(folder, name + extension);
+            File.Move(result.TemporaryPath, destination, overwrite: true);
+            setConfiguredPath($"Artwork/{name}{extension}");
+            completed.Add(name);
+        }
+        catch (Exception ex)
+        {
+            failures.Add($"{name} ({ex.Message})");
+        }
+        finally
+        {
+            if (result is not null && File.Exists(result.TemporaryPath)) File.Delete(result.TemporaryPath);
+        }
+    }
+
+    private async Task TryDownloadTrailerAsync(
+        string url,
+        string folder,
+        Action<string> setConfiguredPath,
+        List<string> completed,
+        List<string> failures)
+    {
+        if (string.IsNullOrWhiteSpace(url) || url.Contains("youtube.com", StringComparison.OrdinalIgnoreCase) || url.Contains("youtu.be", StringComparison.OrdinalIgnoreCase))
+            return;
+        DownloadedAsset? result = null;
+        try
+        {
+            result = await DownloadBoundedFileAsync(url, 1024L * 1024 * 1024, isImage: false);
+            var extension = Path.GetExtension(result.FinalUri.AbsolutePath).ToLowerInvariant();
+            if (extension is not (".mp4" or ".webm" or ".mkv" or ".mov")) extension = ".mp4";
+            var destination = Path.Combine(folder, "Trailer" + extension);
+            File.Move(result.TemporaryPath, destination, overwrite: true);
+            setConfiguredPath($"Media/Trailer{extension}");
+            completed.Add("Trailer");
+        }
+        catch (Exception ex)
+        {
+            failures.Add($"Trailer ({ex.Message})");
+        }
+        finally
+        {
+            if (result is not null && File.Exists(result.TemporaryPath)) File.Delete(result.TemporaryPath);
+        }
+    }
+
+    private async Task<DownloadedAsset> DownloadBoundedFileAsync(string url, long maximumBytes, bool isImage)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))
+            throw new InvalidDataException("URL must use HTTP or HTTPS");
+        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        request.Headers.UserAgent.ParseAdd("CartLaunchCompanion/2.3 artwork-configurator");
+        using var response = await _downloadHttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        response.EnsureSuccessStatusCode();
+        if (response.Content.Headers.ContentLength is > 0 && response.Content.Headers.ContentLength > maximumBytes)
+            throw new InvalidDataException("file exceeds the download limit");
+
+        var temporary = Path.Combine(Path.GetTempPath(), "CLC-art-" + Guid.NewGuid().ToString("N") + ".tmp");
+        try
+        {
+            await using var input = await response.Content.ReadAsStreamAsync();
+            await using (var output = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None, 128 * 1024, true))
+            {
+                var buffer = new byte[128 * 1024];
+                long total = 0;
+                int read;
+                while ((read = await input.ReadAsync(buffer)) > 0)
+                {
+                    total = checked(total + read);
+                    if (total > maximumBytes) throw new InvalidDataException("file exceeds the download limit");
+                    await output.WriteAsync(buffer.AsMemory(0, read));
+                }
+                await output.FlushAsync();
+                output.Flush(true);
+            }
+            if (isImage)
+            {
+                using var image = new Avalonia.Media.Imaging.Bitmap(temporary);
+                if (image.PixelSize.Width <= 0 || image.PixelSize.Height <= 0)
+                    throw new InvalidDataException("download is not a readable image");
+            }
+            return new DownloadedAsset(
+                temporary,
+                response.Content.Headers.ContentType?.MediaType ?? "",
+                response.RequestMessage?.RequestUri ?? uri);
+        }
+        catch
+        {
+            if (File.Exists(temporary)) File.Delete(temporary);
+            throw;
+        }
+    }
+
+    private static string ImageExtension(string contentType, Uri uri)
+    {
+        if (contentType.Contains("png", StringComparison.OrdinalIgnoreCase)) return ".png";
+        if (contentType.Contains("webp", StringComparison.OrdinalIgnoreCase)) return ".webp";
+        if (contentType.Contains("gif", StringComparison.OrdinalIgnoreCase)) return ".gif";
+        if (contentType.Contains("bmp", StringComparison.OrdinalIgnoreCase)) return ".bmp";
+        if (contentType.Contains("jpeg", StringComparison.OrdinalIgnoreCase) || contentType.Contains("jpg", StringComparison.OrdinalIgnoreCase)) return ".jpg";
+        var extension = Path.GetExtension(uri.AbsolutePath).ToLowerInvariant();
+        return extension is ".png" or ".webp" or ".gif" or ".bmp" or ".jpg" or ".jpeg" ? extension : ".png";
+    }
+
+    private sealed record DownloadedAsset(string TemporaryPath, string ContentType, Uri FinalUri);
 
     private async void EditorTabsChanged(object? sender, SelectionChangedEventArgs e)
     {

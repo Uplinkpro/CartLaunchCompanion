@@ -64,6 +64,8 @@ The Review & Save page checks every saved game’s cover, background, logo, and 
 
 The Artwork & Media page begins with a metadata-screen mockup showing the cover, background, logo, and icon together. Each local file-path field then has its own preview directly underneath. Local files take priority, with the corresponding configured URL used as a preview fallback. Missing assets are labeled individually, and **Refresh previews** reloads the page after manual path or URL changes.
 
+Direct download addresses are not fetched merely by saving text fields. Use **Download artwork and save** beneath those fields to download supplied cover, background, logo, icon, and direct-video URLs into the game folder. Images must decode successfully and are limited to 25 MB each; direct videos are limited to 1 GB. Successful downloads update the local paths, save `game.json`, refresh previews, and rerun the artwork sanity check. YouTube links remain streaming fallbacks and are not downloaded as files.
+
 ## Emulator launches
 
 The Windows and Linux launch pages include command-line recipes for RetroArch, DuckStation, PCSX2, Dolphin, and RPCS3.
