@@ -62,5 +62,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $files = Get-ChildItem "artifacts/$env:CLC_VERSION/packages" -File | ForEach-Object FullName
-          $releaseType = if ($env:CLC_VERSION.Contains('-')) { @('--prerelease') } else { @() }
-          gh release create '${{ github.ref_name }}' $files --title "Cart Launch Companion $env:CLC_VERSION" --generate-notes --verify-tag @releaseType
+          if ($env:CLC_VERSION.Contains('-')) {
+            gh release create '${{ github.ref_name }}' $files --title "Cart Launch Companion $env:CLC_VERSION" --generate-notes --verify-tag --prerelease
+          } else {
+            gh release create '${{ github.ref_name }}' $files --title "Cart Launch Companion $env:CLC_VERSION" --generate-notes --verify-tag
+          }
