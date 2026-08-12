@@ -50,7 +50,18 @@ public sealed class CartIdentityService
         if (File.Exists(path)) throw new IOException("This media already has a cart identity.");
         var bytes = JsonSerializer.SerializeToUtf8Bytes(identity, JsonContext.CartIdentity);
         if (bytes.Length > MaximumBytes) throw new InvalidDataException("The cart identity is too large.");
-        await File.WriteAllBytesAsync(path, bytes, cancellationToken);
+        var temporaryPath = path + ".tmp-" + Guid.NewGuid().ToString("N");
+        try
+        {
+            await using (var stream = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, true))
+            {
+                await stream.WriteAsync(bytes, cancellationToken);
+                await stream.FlushAsync(cancellationToken);
+                stream.Flush(flushToDisk: true);
+            }
+            File.Move(temporaryPath, path, overwrite: false);
+        }
+        finally { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); }
         return new VerifiedCartIdentity(identity, Convert.ToHexStringLower(SHA256.HashData(bytes)));
     }
 

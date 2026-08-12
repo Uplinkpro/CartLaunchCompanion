@@ -52,13 +52,17 @@ public static class CollectionConfigurationJson
         ArgumentNullException.ThrowIfNull(configuration);
         Directory.CreateDirectory(configFolder);
         var path = Path.Combine(configFolder, "collection.json");
-        await using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
-        await JsonSerializer.SerializeAsync(
-            stream,
-            configuration,
-            GameConfigurationJson.Options,
-            cancellationToken);
-        await stream.FlushAsync(cancellationToken);
-        stream.Flush(flushToDisk: true);
+        var temporaryPath = path + ".tmp";
+        try
+        {
+            await using (var stream = new FileStream(temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, true))
+            {
+                await JsonSerializer.SerializeAsync(stream, configuration, GameConfigurationJson.Options, cancellationToken);
+                await stream.FlushAsync(cancellationToken);
+                stream.Flush(flushToDisk: true);
+            }
+            File.Move(temporaryPath, path, overwrite: true);
+        }
+        finally { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); }
     }
 }

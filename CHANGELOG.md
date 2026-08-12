@@ -20,6 +20,9 @@ The project follows semantic versioning where practical.
 - Host uninstall now always removes transient protected runtime sessions while preserving trust, settings, and logs exactly as selected
 - Added a final pre-launch authorization gate that reloads cart identity, trust, and runtime approval after staging to close removal, substitution, and revocation races
 - Added race coverage proving cancellation removes partial staging sessions and changed approval fingerprints cannot launch
+- Made standalone collection and cart-identity writes atomic with same-directory temporary files, disk flush, and failure cleanup
+- Added interruption coverage proving cancelled game, collection, layout, and identity writes preserve prior valid data and remove temporary files
+- Artwork and trailer downloads now guarantee partial `.download` cleanup and replace existing media only after a complete transfer
 
 - Added the Phase 3 physical-cart identity foundation with bounded root manifests and stable SHA-256 fingerprints
 - Added a strict per-user trusted-cart database with separate automatic-launch approval and trust revocation

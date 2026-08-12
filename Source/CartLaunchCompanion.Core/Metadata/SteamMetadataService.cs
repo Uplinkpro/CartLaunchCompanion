@@ -398,22 +398,21 @@ public sealed class SteamMetadataService(
 
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
         var temporaryPath = destination + ".download";
-        await using (var source = await response.Content.ReadAsStreamAsync(cancellationToken))
-        await using (var target = new FileStream(
-                         temporaryPath, FileMode.Create, FileAccess.Write,
-                         FileShare.None, 131072, FileOptions.Asynchronous))
+        try
         {
-            await source.CopyToAsync(target, cancellationToken);
-        }
+            await using (var source = await response.Content.ReadAsStreamAsync(cancellationToken))
+            await using (var target = new FileStream(
+                             temporaryPath, FileMode.Create, FileAccess.Write,
+                             FileShare.None, 131072, FileOptions.Asynchronous))
+            {
+                await source.CopyToAsync(target, cancellationToken);
+            }
 
-        if (new FileInfo(temporaryPath).Length < 65536)
-        {
-            File.Delete(temporaryPath);
-            return false;
+            if (new FileInfo(temporaryPath).Length < 65536) return false;
+            File.Move(temporaryPath, destination, true);
+            return true;
         }
-
-        File.Move(temporaryPath, destination, true);
-        return true;
+        finally { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); }
     }
 
     private async Task DownloadSteamGridDbArtworkAsync(
@@ -606,22 +605,19 @@ public sealed class SteamMetadataService(
 
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
         var temporaryPath = destination + ".download";
-
-        await using (var source = await response.Content.ReadAsStreamAsync(
-                         cancellationToken))
-        await using (var target = new FileStream(
-                         temporaryPath,
-                         FileMode.Create,
-                         FileAccess.Write,
-                         FileShare.None,
-                         81920,
-                         FileOptions.Asynchronous))
+        try
         {
-            await source.CopyToAsync(target, cancellationToken);
+            await using (var source = await response.Content.ReadAsStreamAsync(cancellationToken))
+            await using (var target = new FileStream(
+                             temporaryPath, FileMode.Create, FileAccess.Write,
+                             FileShare.None, 81920, FileOptions.Asynchronous))
+            {
+                await source.CopyToAsync(target, cancellationToken);
+            }
+            File.Move(temporaryPath, destination, true);
+            return true;
         }
-
-        File.Move(temporaryPath, destination, true);
-        return true;
+        finally { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); }
     }
 
     private string? ResolveMissingDestination(
