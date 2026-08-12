@@ -40,7 +40,9 @@ jobs:
         run: |
           $root = "artifacts/$env:CLC_VERSION"
           dotnet run --project Build/CartLaunchCompanion.UpdateSigner -- "$root/windows/CartLaunchCompanion/System/Windows-x64" Windows-x64 $env:CLC_VERSION "$root/packages/update-win-x64.json"
+          if ($LASTEXITCODE -ne 0) { throw 'Windows update manifest signing failed.' }
           dotnet run --project Build/CartLaunchCompanion.UpdateSigner -- "$root/linux/CartLaunchCompanion/System/Linux-x64" Linux-x64 $env:CLC_VERSION "$root/packages/update-linux-x64.json"
+          if ($LASTEXITCODE -ne 0) { throw 'Linux update manifest signing failed.' }
           Compress-Archive -Path "$root/windows/CartLaunchCompanion/System/Windows-x64/*" -DestinationPath "$root/packages/runtime-win-x64.zip" -CompressionLevel Optimal
           tar -czf "$root/packages/runtime-linux-x64.tar.gz" -C "$root/linux/CartLaunchCompanion/System/Linux-x64" .
           $checksums = foreach ($file in Get-ChildItem "$root/packages" -File | Where-Object Name -ne 'SHA256SUMS.txt' | Sort-Object Name) {
