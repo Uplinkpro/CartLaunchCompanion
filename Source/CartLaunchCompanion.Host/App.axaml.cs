@@ -3,6 +3,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using CartLaunchCompanion.Core.PhysicalCarts;
 using Microsoft.Win32;
+using System.Runtime.Versioning;
 
 namespace CartLaunchCompanion.Host;
 
@@ -13,7 +14,7 @@ public sealed partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            if (Program.Arguments.Contains("--install-all-users", StringComparer.Ordinal))
+            if (OperatingSystem.IsWindows() && Program.Arguments.Contains("--install-all-users", StringComparer.Ordinal))
             {
                 InstallAllUsersAsync(desktop);
                 base.OnFrameworkInitializationCompleted();
@@ -33,6 +34,7 @@ public sealed partial class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 
+    [SupportedOSPlatform("windows")]
     private static async void InstallAllUsersAsync(IClassicDesktopStyleApplicationLifetime desktop)
     {
         try
