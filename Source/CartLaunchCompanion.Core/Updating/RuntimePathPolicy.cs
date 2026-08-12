@@ -7,23 +7,8 @@ public static class RuntimePathPolicy
     public static string ResolveContainedFile(string root, string relativePath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(root);
-        ArgumentException.ThrowIfNullOrWhiteSpace(relativePath);
-
-        if (Path.IsPathRooted(relativePath) ||
-            relativePath.StartsWith("//", StringComparison.Ordinal) ||
-            relativePath.StartsWith("\\\\", StringComparison.Ordinal) ||
-            relativePath.IndexOfAny(AdditionalInvalidCharacters) >= 0)
-        {
-            throw new InvalidDataException($"Unsafe update path: '{relativePath}'.");
-        }
-
-        var normalized = relativePath.Replace('\\', '/');
-        var segments = normalized.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        if (segments.Length == 0 ||
-            segments.Any(segment => segment is "." or ".." || segment.Length > 255))
-        {
-            throw new InvalidDataException($"Unsafe update path: '{relativePath}'.");
-        }
+        var normalized = ValidateRelativePath(relativePath);
+        var segments = normalized.Split('/');
 
         var rootPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root));
         var candidate = Path.GetFullPath(Path.Combine(rootPath, Path.Combine(segments)));
@@ -36,6 +21,20 @@ public static class RuntimePathPolicy
 
         RejectLinks(rootPath, candidate);
         return candidate;
+    }
+
+    public static string ValidateRelativePath(string relativePath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(relativePath);
+        if (Path.IsPathRooted(relativePath) || relativePath.StartsWith("//", StringComparison.Ordinal) ||
+            relativePath.StartsWith("\\\\", StringComparison.Ordinal) || relativePath.IndexOfAny(AdditionalInvalidCharacters) >= 0 ||
+            relativePath.Any(char.IsControl))
+            throw new InvalidDataException($"Unsafe update path: '{relativePath}'.");
+        var normalized = relativePath.Replace('\\', '/');
+        var segments = normalized.Split('/');
+        if (segments.Length == 0 || segments.Any(segment => segment.Length == 0 || segment is "." or ".." || segment.Length > 255))
+            throw new InvalidDataException($"Unsafe update path: '{relativePath}'.");
+        return normalized;
     }
 
     public static bool IsContainedDirectory(string parent, string candidate)

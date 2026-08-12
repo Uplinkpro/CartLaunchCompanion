@@ -146,9 +146,16 @@ public sealed class TrustedCartStore(string databasePath)
                     RuntimeIntegrityVerifier.ComputeRootFingerprint(approval.Files) != approval.RootFingerprint)
                     throw new InvalidDataException("A trusted runtime approval is invalid.");
                 foreach (var file in approval.Files)
-                    if (file.Path.Length is 0 or > 512 || file.Length < 0 || file.Sha256.Length != 64 || !file.Sha256.All(Uri.IsHexDigit))
+                    if (file.Path.Length is 0 or > 512 || !IsSafeRuntimePath(file.Path) || file.Length < 0 || file.Sha256.Length != 64 || !file.Sha256.All(Uri.IsHexDigit))
                         throw new InvalidDataException("A trusted runtime file record is invalid.");
             }
         }
+    }
+
+    private static bool IsSafeRuntimePath(string path)
+    {
+        try { RuntimePathPolicy.ValidateRelativePath(path); return true; }
+        catch (InvalidDataException) { return false; }
+        catch (ArgumentException) { return false; }
     }
 }

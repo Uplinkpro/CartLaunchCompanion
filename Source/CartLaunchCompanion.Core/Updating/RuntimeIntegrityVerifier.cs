@@ -23,7 +23,7 @@ public sealed class RuntimeIntegrityVerifier
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var normalized = file.Path.Replace('\\', '/');
+            var normalized = RuntimePathPolicy.ValidateRelativePath(file.Path);
             if (!expected.Add(normalized))
             {
                 throw new InvalidDataException($"Duplicate update path: '{file.Path}'.");
@@ -143,6 +143,7 @@ public sealed class RuntimeIntegrityVerifier
 
         foreach (var file in manifest.Files)
         {
+            RuntimePathPolicy.ValidateRelativePath(file.Path);
             if (file.Length < 0 ||
                 file.Path.Length is 0 or > 512 ||
                 file.Sha256.Length != 64 ||

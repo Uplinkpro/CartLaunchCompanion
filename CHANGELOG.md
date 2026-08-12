@@ -23,6 +23,8 @@ The project follows semantic versioning where practical.
 - Made standalone collection and cart-identity writes atomic with same-directory temporary files, disk flush, and failure cleanup
 - Added interruption coverage proving cancelled game, collection, layout, and identity writes preserve prior valid data and remove temporary files
 - Artwork and trailer downloads now guarantee partial `.download` cleanup and replace existing media only after a complete transfer
+- Hardened runtime inventory paths to reject control characters, repeated separators, dot segments, traversal, rooted paths, and ambiguous normalization before staging
+- Added deterministic manifest fuzzing and boundary tests for duplicate fields, nesting, malformed Unicode, randomized bytes, excessive inventories, links, and fingerprint stability
 
 - Added the Phase 3 physical-cart identity foundation with bounded root manifests and stable SHA-256 fingerprints
 - Added a strict per-user trusted-cart database with separate automatic-launch approval and trust revocation

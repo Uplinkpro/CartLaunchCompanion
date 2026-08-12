@@ -170,4 +170,6 @@ Physical Cart support will not be considered ready for automatic launch until it
 
 Manifest parsing should also receive fuzz testing, and the completed automatic-launch design should receive an independent security review before being enabled by default.
 
+Deterministic malformed-input tests now cover cart identity parsing and trusted runtime inventories, including duplicate fields, excessive nesting, malformed Unicode, randomized bytes, unsafe paths, file-count limits, and links. These tests are reproducible in CI; broader coverage-guided fuzzing remains recommended before automatic launch is enabled by default.
+
 The transactional updater foundation and its current fail-closed signing status are documented in [Updater Security](Documentation/Updater-Security.md).
