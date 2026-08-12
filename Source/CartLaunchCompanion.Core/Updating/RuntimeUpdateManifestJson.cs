@@ -5,7 +5,7 @@ namespace CartLaunchCompanion.Core.Updating;
 
 public static class RuntimeUpdateManifestJson
 {
-    public const int MaximumManifestBytes = 64 * 1024;
+    public const int MaximumManifestBytes = 512 * 1024;
 
     private static readonly JsonSerializerOptions Options = new()
     {

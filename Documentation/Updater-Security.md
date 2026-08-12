@@ -25,7 +25,7 @@ Only a payload staged beneath `.cartlaunch/update-staging/` can be activated. Th
 
 ## Manifest requirements
 
-An update manifest is limited to 64 KiB, a JSON depth of 8, and 4,096 payload files. It must identify Cart Launch Companion, the destination platform, security version, launcher entry point, every file length and SHA-256 hash, and a combined root fingerprint.
+An update manifest is limited to 512 KiB, a JSON depth of 8, and 4,096 payload files. It must identify Cart Launch Companion, the destination platform, security version, launcher entry point, every file length and SHA-256 hash, and a combined root fingerprint.
 
 The parser rejects comments, trailing commas, duplicate properties, unknown fields, unsupported versions, malformed hashes, duplicate paths, absolute paths, traversal, network paths, links, junctions, reparse points, missing files, and unexpected files.
 

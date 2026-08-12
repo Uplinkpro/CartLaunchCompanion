@@ -87,6 +87,37 @@ public sealed class RuntimeUpdateTests : IDisposable
     }
 
     [Fact]
+    public async Task ManifestJson_AcceptsProductionSizedManifest()
+    {
+        Directory.CreateDirectory(_root);
+        var path = Path.Combine(_root, "large-manifest.json");
+        var files = Enumerable.Range(0, 2_000)
+            .Select(index => new RuntimeUpdateFile
+            {
+                Path = $"runtime/file-{index:D4}.dll",
+                Length = index + 1,
+                Sha256 = new string('a', 64)
+            })
+            .ToList();
+        var manifest = new RuntimeUpdateManifest
+        {
+            Version = "2.3.0",
+            Platform = "Windows-x64",
+            EntryPoint = "CartLaunchCompanion.Desktop.exe",
+            RootFingerprint = new string('b', 64),
+            SignerKeyId = "test",
+            Signature = "dGVzdA==",
+            Files = files
+        };
+
+        await RuntimeUpdateManifestJson.SaveAsync(path, manifest);
+        Assert.InRange(new FileInfo(path).Length, 64 * 1024 + 1, RuntimeUpdateManifestJson.MaximumManifestBytes);
+
+        var loaded = await RuntimeUpdateManifestJson.LoadAsync(path);
+        Assert.Equal(files.Count, loaded.Files.Count);
+    }
+
+    [Fact]
     public async Task TransactionalUpdater_ActivatesAndCanRollBack()
     {
         var cart = Path.Combine(_root, "Cart");
