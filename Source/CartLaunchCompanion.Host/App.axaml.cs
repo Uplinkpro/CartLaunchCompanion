@@ -23,7 +23,7 @@ public sealed partial class App : Application
             desktop.MainWindow = window;
             if (Program.Arguments.Contains("--background", StringComparer.Ordinal))
             {
-                desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                desktop.ShutdownMode = Avalonia.Controls.ShutdownMode.OnExplicitShutdown;
                 window.Opened += async (_, _) => { await window.ScanMountedCartsAsync(); window.StartPassiveMonitoring(); window.Hide(); };
             }
         }

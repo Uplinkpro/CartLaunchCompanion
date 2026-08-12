@@ -169,7 +169,7 @@
                 </Border>
 
                 <Grid Grid.Row="1"
-                      ColumnDefinitions="220,24,220"
+                      ColumnDefinitions="220,24,220,24,220"
                       HorizontalAlignment="Center"
                       IsVisible="{Binding ShowOnScreenActionButtons}">
                     <Button Grid.Column="0"
@@ -219,7 +219,17 @@
                                        VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
+
+                    <Button Grid.Column="4" Classes="action"
+                            IsVisible="{Binding IsSafeEjectAvailable}"
+                            BorderBrush="{Binding SelectedGame.AccentBrightColor}" BorderThickness="2"
+                            AutomationProperties.Name="Safely eject game cart"
+                            Command="{Binding EjectCartCommand}">
+                        <TextBlock Text="EJECT CART" HorizontalAlignment="Center" />
+                    </Button>
                 </Grid>
+                <TextBlock Grid.Row="2" Text="{Binding EjectStatus}" Classes="muted"
+                           HorizontalAlignment="Center" TextWrapping="Wrap" MaxWidth="700" />
             </Grid>
         </Grid>
 

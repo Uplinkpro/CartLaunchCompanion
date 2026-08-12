@@ -23,6 +23,14 @@ Because game configurations can intentionally name executables, arguments, launc
 
 ## Planned physical cart security model
 
+### Safe removal implementation
+
+- `Eject Cart` appears only when CLC was started by the trusted-cart Host.
+- The launcher sends only a versioned `eject` request and trusted cart ID over a current-user-only local pipe; it cannot provide commands, executables, device paths, or shell text.
+- The Host accepts the request only for an exact process session it launched and still tracks.
+- It closes that process, removes its verified staging directory, flushes writes, and asks the operating system to eject the matching media root.
+- Windows uses bounded native volume operations. Supported Linux gaming distributions use fixed `udisksctl` arguments without a shell.
+
 Physical Cart support is under development and is not part of the 2.3 release. The requirements below are design commitments for that feature, not claims about functionality that has already shipped.
 
 Each physical cart is intended to contain its own portable CLC installation, games, configuration, artwork, and media. A small optional **Cart Launch Host** installed on the computer will detect and start carts that the user has explicitly trusted.

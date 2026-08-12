@@ -7,6 +7,7 @@ using CartLaunchCompanion.Core.Library;
 using CartLaunchCompanion.Core.Platform;
 using CartLaunchCompanion.Core.Portable;
 using CartLaunchCompanion.Core.Updating;
+using CartLaunchCompanion.Core.PhysicalCarts;
 using CartLaunchCompanion.Desktop.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -22,6 +23,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly IRuntimeUpdateService _updateService;
     private readonly Action _exitApplication;
     private readonly Action<bool> _setWindowVisible;
+    private readonly string? _trustedCartId;
 
     private DateTimeOffset _lastInputAt = DateTimeOffset.MinValue;
     private LauncherAction _lastInputAction = LauncherAction.None;
@@ -63,10 +65,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _updateService = updateService;
         _exitApplication = exitApplication;
         _setWindowVisible = setWindowVisible;
+        _trustedCartId = Environment.GetEnvironmentVariable("CLC_TRUSTED_CART_ID");
 
         ReloadCommand = new AsyncRelayCommand(LoadAsync);
         ExitCommand = new RelayCommand(OpenExitConfirmation);
         ConfirmExitCommand = new RelayCommand(_exitApplication);
+        EjectCartCommand = new AsyncRelayCommand(EjectCartAsync, () => IsSafeEjectAvailable);
         CancelExitCommand = new RelayCommand(CancelExitConfirmation);
 
         ReturnHomeCommand = new RelayCommand(
@@ -222,9 +226,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             ? "X"
             : "X / SPACE";
 
+    public bool IsSafeEjectAvailable => !string.IsNullOrWhiteSpace(_trustedCartId);
+    public string EjectStatus { get; private set; } = "";
+
     public IAsyncRelayCommand ReloadCommand { get; }
     public IRelayCommand ExitCommand { get; }
     public IRelayCommand ConfirmExitCommand { get; }
+    public IAsyncRelayCommand EjectCartCommand { get; }
     public IRelayCommand CancelExitCommand { get; }
     public IRelayCommand ReturnHomeCommand { get; }
     public IAsyncRelayCommand ConfirmLaunchCommand { get; }
@@ -817,6 +825,29 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private void CancelExitConfirmation()
     {
         IsExitVisible = false;
+    }
+
+    private async Task EjectCartAsync()
+    {
+        if (_trustedCartId is null) return;
+        try
+        {
+            EjectStatus = "Asking Cart Launch Host to safely remove this cart…";
+            OnPropertyChanged(nameof(EjectStatus));
+            var response = await CartHostEjectProtocol.RequestAsync(_trustedCartId);
+            if (!response.Accepted)
+            {
+                EjectStatus = response.Message;
+                OnPropertyChanged(nameof(EjectStatus));
+                return;
+            }
+            _exitApplication();
+        }
+        catch (Exception ex)
+        {
+            EjectStatus = "Safe eject is unavailable: " + ex.Message;
+            OnPropertyChanged(nameof(EjectStatus));
+        }
     }
 
     private async Task ConfirmLaunchAsync()

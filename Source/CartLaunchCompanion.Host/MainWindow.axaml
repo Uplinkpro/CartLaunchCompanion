@@ -8,7 +8,7 @@
     </StackPanel>
     <TabControl Grid.Row="1">
       <TabItem Header="Install &amp; repair"><ScrollViewer><StackPanel Margin="8,18" Spacing="14">
-        <Border Classes="card" IsVisible="{Binding ShowWindowsScope}"><StackPanel Spacing="9"><TextBlock FontSize="18" FontWeight="SemiBold" Text="Who can use the Host?"/><RadioButton GroupName="scope" Content="Current user — no administrator approval required" IsChecked="True" Checked="CurrentUserScopeChecked"/><RadioButton GroupName="scope" Content="All Windows users — requires administrator approval" Checked="AllUsersScopeChecked"/></StackPanel></Border>
+        <Border Classes="card" IsVisible="{Binding ShowWindowsScope}"><StackPanel Spacing="9"><TextBlock FontSize="18" FontWeight="SemiBold" Text="Who can use the Host?"/><RadioButton GroupName="scope" Content="Current user — no administrator approval required" IsChecked="True" Click="CurrentUserScopeChecked"/><RadioButton GroupName="scope" Content="All Windows users — requires administrator approval" Click="AllUsersScopeChecked"/></StackPanel></Border>
         <Border Classes="card"><StackPanel Spacing="10">
           <TextBlock FontSize="20" FontWeight="SemiBold" Text="What will be installed"/>
           <TextBlock Text="{Binding InstallPurpose}" TextWrapping="Wrap"/>
