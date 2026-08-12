@@ -17,6 +17,9 @@ The project follows semantic versioning where practical.
 - Added Windows current-user and all-users Host installation choices; all-users uses normal administrator confirmation while cart trust remains isolated per user
 - CLC now offers the optional Host installer when no running or installed Host is found
 - Added debounced passive mounted-cart detection that validates only the fixed root identity file and never grants trust or executes software
+- Trust enrollment now records exact Windows and Linux runtime file lengths, SHA-256 hashes, and combined fingerprints
+- Added protected per-user runtime staging with verification before copying, verification after copying, fixed launcher entry points, and automatic failed-session cleanup
+- The Host can manually verify and prepare a trusted connected cart while deliberately providing no execution action yet
 
 ## [2.3.0] - 2026-08-11
 

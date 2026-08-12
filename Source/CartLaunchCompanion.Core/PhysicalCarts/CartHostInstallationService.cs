@@ -40,7 +40,11 @@ public sealed class CartHostInstallationService
     {
         if (removeTrust) DeleteContainedFile(plan.DataDirectory, plan.TrustDatabasePath);
         if (removeSettings) DeleteContainedFile(plan.DataDirectory, plan.SettingsPath);
-        if (removeLogs) DeleteContainedDirectory(plan.DataDirectory, plan.LogsDirectory);
+        if (removeLogs)
+        {
+            DeleteContainedDirectory(plan.DataDirectory, plan.LogsDirectory);
+            DeleteContainedDirectory(plan.DataDirectory, Path.Combine(plan.DataDirectory, "Sessions"));
+        }
     }
 
     private static void DeleteContainedFile(string root, string path)

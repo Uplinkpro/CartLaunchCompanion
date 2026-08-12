@@ -59,6 +59,8 @@ The host will not execute the verified runtime directly from writable removable 
 
 This design reduces file-replacement races, DLL or shared-library substitution, and Linux `noexec` mount compatibility problems while leaving the authoritative portable installation and all user content on the cart.
 
+During trust enrollment, the Host records an exact per-platform runtime inventory containing every relative path, length, SHA-256 hash, and a combined root fingerprint. Preparation verifies the cart against that approved inventory, copies only those approved files to a new per-user session directory, verifies the copied directory again, and exposes only the fixed CLC launcher entry point. Failed or incomplete sessions are removed.
+
 Process creation must:
 
 - launch only the expected CLC executable;

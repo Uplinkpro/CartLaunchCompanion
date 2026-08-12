@@ -159,6 +159,83 @@ public sealed class PhysicalCartSecurityTests : IDisposable
         Assert.Empty(carts);
     }
 
+    [Fact]
+    public async Task Staging_ApprovesVerifiesAndCopiesRuntimeToFixedLocalSession()
+    {
+        var media = await CreateRuntimeCartAsync("good runtime");
+        var identities = new CartIdentityService();
+        var identity = await identities.SaveNewAsync(media, identities.Create("Staging Cart"));
+        var staging = new TrustedRuntimeStagingService();
+        var approvals = await staging.CreateApprovalsAsync(media);
+        var store = new TrustedCartStore(Path.Combine(_root, "trust", "trusted-carts.json"));
+        await store.TrustAsync(identity, false, approvals);
+
+        var prepared = await staging.PrepareAsync(media, identity, await store.LoadAsync(), "Windows-x64", Path.Combine(_root, "sessions"));
+
+        Assert.StartsWith(Path.Combine(_root, "sessions"), prepared.SessionRoot, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("good runtime", await File.ReadAllTextAsync(prepared.ExecutablePath));
+        Assert.Equal(Path.Combine(media, "Cart"), prepared.CartRoot);
+        TrustedRuntimeStagingService.DeleteSession(prepared);
+        Assert.False(Directory.Exists(prepared.SessionRoot));
+    }
+
+    [Fact]
+    public async Task Staging_RejectsRuntimeChangedAfterTrust()
+    {
+        var media = await CreateRuntimeCartAsync("approved runtime");
+        var identities = new CartIdentityService();
+        var identity = await identities.SaveNewAsync(media, identities.Create("Tampered Cart"));
+        var staging = new TrustedRuntimeStagingService();
+        var approvals = await staging.CreateApprovalsAsync(media);
+        var store = new TrustedCartStore(Path.Combine(_root, "trust", "trusted-carts.json"));
+        await store.TrustAsync(identity, false, approvals);
+        await File.WriteAllTextAsync(Path.Combine(media, "Cart", "System", "Windows-x64", "CartLaunchCompanion.Desktop.exe"), "changed runtime");
+
+        await Assert.ThrowsAsync<InvalidDataException>(() => staging.PrepareAsync(
+            media, identity, store.LoadAsync().GetAwaiter().GetResult(), "Windows-x64", Path.Combine(_root, "sessions")));
+    }
+
+    [Fact]
+    public async Task Staging_RejectsUnexpectedRuntimeFileAfterTrust()
+    {
+        var media = await CreateRuntimeCartAsync("approved runtime");
+        var identities = new CartIdentityService();
+        var identity = await identities.SaveNewAsync(media, identities.Create("Extra File Cart"));
+        var staging = new TrustedRuntimeStagingService();
+        var approvals = await staging.CreateApprovalsAsync(media);
+        var store = new TrustedCartStore(Path.Combine(_root, "trust", "trusted-carts.json"));
+        await store.TrustAsync(identity, false, approvals);
+        await File.WriteAllTextAsync(Path.Combine(media, "Cart", "System", "Windows-x64", "unexpected.dll"), "surprise");
+
+        var trust = await store.LoadAsync();
+        var error = await Assert.ThrowsAsync<InvalidDataException>(() => staging.PrepareAsync(
+            media, identity, trust, "Windows-x64", Path.Combine(_root, "sessions")));
+        Assert.Contains("Unexpected", error.Message);
+    }
+
+    [Fact]
+    public async Task Staging_RejectsUntrustedCartBeforeCreatingSession()
+    {
+        var media = await CreateRuntimeCartAsync("runtime");
+        var identities = new CartIdentityService();
+        var identity = await identities.SaveNewAsync(media, identities.Create("Untrusted Cart"));
+        var sessions = Path.Combine(_root, "sessions");
+
+        await Assert.ThrowsAsync<InvalidDataException>(() => new TrustedRuntimeStagingService().PrepareAsync(
+            media, identity, new TrustedCartDatabase(), "Windows-x64", sessions));
+        Assert.False(Directory.Exists(sessions) && Directory.EnumerateFileSystemEntries(sessions).Any());
+    }
+
+    private async Task<string> CreateRuntimeCartAsync(string content)
+    {
+        var media = Path.Combine(_root, "media-" + Guid.NewGuid().ToString("N"));
+        var runtime = Path.Combine(media, "Cart", "System", "Windows-x64");
+        Directory.CreateDirectory(runtime);
+        await File.WriteAllTextAsync(Path.Combine(runtime, "CartLaunchCompanion.Desktop.exe"), content);
+        await File.WriteAllTextAsync(Path.Combine(runtime, "dependency.dll"), "dependency");
+        return media;
+    }
+
     private sealed class StaticMounts(params string[] roots) : IMountRootProvider
     {
         public IEnumerable<string> GetMountedRoots() => roots;

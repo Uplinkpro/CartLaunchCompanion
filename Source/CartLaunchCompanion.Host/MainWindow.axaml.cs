@@ -16,6 +16,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private TrustedCartStore _trustStore;
     private string _status = "Drive monitoring and automatic launch are not enabled in this milestone.";
     private TrustedCartItem? _selectedCart;
+    private ConnectedCartItem? _selectedConnectedCart;
     private PhysicalCartMonitor? _monitor;
 
     public MainWindow()
@@ -38,6 +39,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     public ObservableCollection<TrustedCartItem> TrustedCarts { get; } = [];
     public ObservableCollection<ConnectedCartItem> ConnectedCarts { get; } = [];
     public TrustedCartItem? SelectedCart { get => _selectedCart; set { _selectedCart = value; Changed(); } }
+    public ConnectedCartItem? SelectedConnectedCart { get => _selectedConnectedCart; set { _selectedConnectedCart = value; Changed(); } }
     public string Status { get => _status; set { _status = value; Changed(); } }
     public new event PropertyChangedEventHandler? PropertyChanged;
 
@@ -85,9 +87,11 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         try
         {
             var identity = await new CartIdentityService().LoadAsync(folders[0].Path.LocalPath);
-            await _trustStore.TrustAsync(identity, approveAutoLaunch: false);
+            Status = "Verifying and hashing the cart's CLC runtime before trust is saved…";
+            var approvals = await new TrustedRuntimeStagingService().CreateApprovalsAsync(folders[0].Path.LocalPath);
+            await _trustStore.TrustAsync(identity, approveAutoLaunch: false, approvals);
             await RefreshTrustAsync();
-            Status = $"{identity.Identity.DisplayName} is trusted on this computer. Automatic launch remains disabled.";
+            Status = $"{identity.Identity.DisplayName} is trusted with {approvals.Count} approved platform runtime(s). Automatic launch remains disabled.";
         }
         catch (Exception ex) { Status = "The selected media was not trusted: " + ex.Message; }
     }
@@ -141,6 +145,21 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     }
 
     private async void ScanClicked(object? sender, RoutedEventArgs e) => await ScanMountedCartsAsync();
+    private async void PrepareClicked(object? sender, RoutedEventArgs e)
+    {
+        if (SelectedConnectedCart is null) { Status = "Select a connected cart first."; return; }
+        try
+        {
+            Status = "Verifying the cart runtime, copying it locally, and verifying the local copy…";
+            var identity = await new CartIdentityService().LoadAsync(SelectedConnectedCart.MediaRoot);
+            var platform = OperatingSystem.IsWindows() ? "Windows-x64" : "Linux-x64";
+            var sessions = Path.Combine(_plan.DataDirectory, "Sessions");
+            var prepared = await new TrustedRuntimeStagingService().PrepareAsync(
+                SelectedConnectedCart.MediaRoot, identity, await _trustStore.LoadAsync(), platform, sessions);
+            Status = $"Runtime prepared safely. Nothing was launched. Local executable: {prepared.ExecutablePath}";
+        }
+        catch (Exception ex) { Status = "Runtime preparation was rejected safely: " + ex.Message; }
+    }
     public async Task ScanMountedCartsAsync()
     {
         try

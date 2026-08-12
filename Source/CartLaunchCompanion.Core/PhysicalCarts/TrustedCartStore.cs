@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using CartLaunchCompanion.Core.Updating;
 
 namespace CartLaunchCompanion.Core.PhysicalCarts;
 
@@ -17,11 +18,20 @@ public sealed class TrustedCartRecord
     public int MinimumSecurityVersion { get; set; } = 1;
     public bool AutoLaunchApproved { get; set; }
     public DateTimeOffset TrustedUtc { get; set; }
+    public List<TrustedRuntimeApproval> RuntimeApprovals { get; set; } = [];
+}
+
+public sealed class TrustedRuntimeApproval
+{
+    public string Platform { get; set; } = "";
+    public string EntryPoint { get; set; } = "";
+    public string RootFingerprint { get; set; } = "";
+    public List<RuntimeUpdateFile> Files { get; set; } = [];
 }
 
 public sealed class TrustedCartStore(string databasePath)
 {
-    private const int MaximumBytes = 1024 * 1024;
+    private const int MaximumBytes = 16 * 1024 * 1024;
     private readonly string _path = Path.GetFullPath(databasePath);
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -29,7 +39,7 @@ public sealed class TrustedCartStore(string databasePath)
         AllowTrailingCommas = false,
         PropertyNameCaseInsensitive = false,
         ReadCommentHandling = JsonCommentHandling.Disallow,
-        MaxDepth = 6,
+        MaxDepth = 8,
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
         WriteIndented = true
     };
@@ -54,7 +64,9 @@ public sealed class TrustedCartStore(string databasePath)
         return database;
     }
 
-    public async Task TrustAsync(VerifiedCartIdentity cart, bool approveAutoLaunch, CancellationToken cancellationToken = default)
+    public async Task TrustAsync(VerifiedCartIdentity cart, bool approveAutoLaunch,
+        IReadOnlyList<TrustedRuntimeApproval>? runtimeApprovals = null,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(cart);
         var database = await LoadAsync(cancellationToken);
@@ -66,7 +78,8 @@ public sealed class TrustedCartStore(string databasePath)
             IdentityFingerprint = cart.Fingerprint,
             MinimumSecurityVersion = cart.Identity.SecurityVersion,
             AutoLaunchApproved = approveAutoLaunch,
-            TrustedUtc = DateTimeOffset.UtcNow
+            TrustedUtc = DateTimeOffset.UtcNow,
+            RuntimeApprovals = runtimeApprovals?.ToList() ?? []
         });
         await SaveAsync(database, cancellationToken);
     }
@@ -104,7 +117,7 @@ public sealed class TrustedCartStore(string databasePath)
 
     private static void Validate(TrustedCartDatabase database)
     {
-        if (database.FormatVersion != 1 || database.Carts.Count > 1_000) throw new InvalidDataException("The trusted-cart database version or size is invalid.");
+        if (database.FormatVersion != 1 || database.Carts.Count > 64) throw new InvalidDataException("The trusted-cart database version or size is invalid.");
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var record in database.Carts)
         {
@@ -113,6 +126,19 @@ public sealed class TrustedCartStore(string databasePath)
                 record.IdentityFingerprint.Length != 64 || !record.IdentityFingerprint.All(Uri.IsHexDigit) ||
                 record.MinimumSecurityVersion < 1 || record.TrustedUtc == default)
                 throw new InvalidDataException("A trusted-cart record is invalid.");
+            if (record.RuntimeApprovals.Count > 2) throw new InvalidDataException("A trusted cart has too many platform runtimes.");
+            foreach (var approval in record.RuntimeApprovals)
+            {
+                var expectedEntry = approval.Platform == "Windows-x64" ? "CartLaunchCompanion.Desktop.exe" :
+                    approval.Platform == "Linux-x64" ? "CartLaunchCompanion.Desktop" : "";
+                if (approval.EntryPoint != expectedEntry || approval.RootFingerprint.Length != 64 || !approval.RootFingerprint.All(Uri.IsHexDigit) ||
+                    approval.Files.Count is 0 or > RuntimeIntegrityVerifier.MaximumFiles ||
+                    RuntimeIntegrityVerifier.ComputeRootFingerprint(approval.Files) != approval.RootFingerprint)
+                    throw new InvalidDataException("A trusted runtime approval is invalid.");
+                foreach (var file in approval.Files)
+                    if (file.Path.Length is 0 or > 512 || file.Length < 0 || file.Sha256.Length != 64 || !file.Sha256.All(Uri.IsHexDigit))
+                        throw new InvalidDataException("A trusted runtime file record is invalid.");
+            }
         }
     }
 }
