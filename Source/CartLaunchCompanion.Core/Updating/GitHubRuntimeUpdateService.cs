@@ -1,5 +1,3 @@
-using System.Formats.Tar;
-using System.IO.Compression;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -84,16 +82,17 @@ public sealed class GitHubRuntimeUpdateService(HttpClient httpClient) : IRuntime
                 manifest.Platform != platform || manifest.Version != update.Version)
                 throw new InvalidDataException("The downloaded update manifest is not trusted.");
 
-            var requiredBytes = checked(manifest.Files.Sum(file => file.Length) + update.PayloadBytes);
+            var expandedBytes = RuntimeArchiveExtractor.ValidateExpansion(manifest);
+            var requiredBytes = checked(expandedBytes + update.PayloadBytes);
             var drive = new DriveInfo(Path.GetPathRoot(packageRoot)!);
             if (drive.AvailableFreeSpace < requiredBytes + 128L * 1024 * 1024)
                 throw new IOException("There is not enough free space on the cart for this update.");
 
             await DownloadFileAsync(update.PayloadUri, archivePath, MaximumDownloadBytes, progress, cancellationToken);
             if (platform == "Windows-x64")
-                ExtractZip(archivePath, runtimeRoot);
+                RuntimeArchiveExtractor.ExtractZip(archivePath, runtimeRoot, manifest);
             else
-                ExtractTarGzip(archivePath, runtimeRoot);
+                RuntimeArchiveExtractor.ExtractTarGzip(archivePath, runtimeRoot, manifest);
 
             await new RuntimeIntegrityVerifier().VerifyAsync(runtimeRoot, manifest, cancellationToken);
             File.Delete(archivePath);
@@ -177,40 +176,6 @@ public sealed class GitHubRuntimeUpdateService(HttpClient httpClient) : IRuntime
             response.Dispose();
             UpdateDownloadOriginPolicy.Validate(next);
             uri = next;
-        }
-    }
-
-    private static void ExtractZip(string archivePath, string destination)
-    {
-        using var archive = ZipFile.OpenRead(archivePath);
-        foreach (var entry in archive.Entries)
-        {
-            if (string.IsNullOrEmpty(entry.Name))
-                continue;
-            var output = RuntimePathPolicy.ResolveContainedFile(destination, entry.FullName);
-            Directory.CreateDirectory(Path.GetDirectoryName(output)!);
-            entry.ExtractToFile(output, overwrite: false);
-        }
-    }
-
-    private static void ExtractTarGzip(string archivePath, string destination)
-    {
-        using var file = File.OpenRead(archivePath);
-        using var gzip = new GZipStream(file, CompressionMode.Decompress);
-        using var reader = new TarReader(gzip);
-        while (reader.GetNextEntry() is { } entry)
-        {
-            if (entry.EntryType is TarEntryType.Directory)
-                continue;
-            if (entry.EntryType is not TarEntryType.RegularFile || entry.DataStream is null)
-                throw new InvalidDataException("The Linux update contains an unsupported link or entry type.");
-            var output = RuntimePathPolicy.ResolveContainedFile(destination, entry.Name.TrimStart('.', '/'));
-            Directory.CreateDirectory(Path.GetDirectoryName(output)!);
-            using var target = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-            entry.DataStream.CopyTo(target);
-            target.Flush(flushToDisk: true);
-            if (!OperatingSystem.IsWindows())
-                File.SetUnixFileMode(output, entry.Mode);
         }
     }
 

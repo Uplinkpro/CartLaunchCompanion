@@ -63,7 +63,7 @@ The launcher checks only the official GitHub repository's latest release. It req
 
 Update networking disables automatic redirects so CLC can validate every hop. The API request, advertised assets, and up to five redirects must use HTTPS on the default port, contain no embedded credentials, and target an exact approved GitHub or GitHub release-asset hostname. HTTP, lookalike domains, arbitrary subdomains, custom ports, and redirects to any other host are rejected before response content is trusted.
 
-The manifest signature is verified before archive extraction. ZIP and TAR entries are resolved through the same contained-path policy as the final manifest, and Linux links or other non-file archive entries are rejected. Extracted files must then exactly match the signed file list before the maintenance updater is started. Update checking is opt-in and a network failure never prevents normal offline use.
+The manifest signature is verified before archive extraction. Before downloading the payload, CLC rejects manifests declaring more than 4,096 files, more than 1 GiB for any file, or more than 2 GiB total expanded data. ZIP and TAR extraction then streams through the signed manifest as an exact allowlist: paths, entry count, individual lengths, total size, duplicates, missing files, and unexpected files are enforced before the maintenance updater starts. Linux links and other non-file archive entries are rejected. Every extracted file is subsequently SHA-256 verified against the signed manifest. Update checking is opt-in and a network failure never prevents normal offline use.
 
 ## Tests
 
