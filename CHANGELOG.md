@@ -6,6 +6,8 @@ The project follows semantic versioning where practical.
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-08-11
+
 ### Changed
 
 - Relicensed future source and releases under the PolyForm Noncommercial License 1.0.0
@@ -25,6 +27,11 @@ The project follows semantic versioning where practical.
 - Replaced the single metadata image with dedicated cover, background, logo, and icon previews in the Configurator
 - Added selected-launcher-only host detection and strict same-cart residency rules for games, emulators, ROMs, and companion tools
 - Added an explicit direct-URL download action that validates artwork, stores files locally, updates paths, saves game.json, and refreshes previews
+- Added visual Series Collection shelf organization with drag-and-drop ordering and transactional saving
+- Added SteamGridDB title matching, artwork galleries, refresh controls, deletion controls, and persisted non-Steam matches
+- Added hero and 16:9 background handling with artwork previews and readability checks
+- Added a guided portable cart creator that produces `Cart`, `Games`, `Emulators`, and `Roms` at the media root
+- Added release checks that reject mismatched signing keys, missing assets, empty assets, and debug symbols
 
 ## [2.2.0] - 2026-08-11
 

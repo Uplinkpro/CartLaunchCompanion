@@ -70,6 +70,11 @@ foreach ($folder in @('Logs', 'Cache')) {
     New-Item -ItemType Directory -Path (Join-Path $staging $folder) -Force | Out-Null
 }
 
+# Some native runtime packages carry symbols even when DebugSymbols is disabled.
+# Portable releases intentionally contain no debugging symbol files.
+Get-ChildItem -LiteralPath (Join-Path $staging 'System') -Recurse -File -Filter '*.pdb' |
+    Remove-Item -Force
+
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'README.md') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'LICENSE') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'NOTICE') -Destination $staging

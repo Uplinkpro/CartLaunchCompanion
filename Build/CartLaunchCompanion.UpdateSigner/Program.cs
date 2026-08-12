@@ -55,6 +55,16 @@ signingKey.ImportFromPem(privateKeyPem);
 manifest.Signature = Convert.ToBase64String(
     signingKey.SignData(RuntimeUpdateManifestJson.GetUnsignedCanonicalBytes(manifest), HashAlgorithmName.SHA256));
 
+// Refuse to produce an official manifest when the configured secret does not
+// correspond to the public key compiled into every CLC updater.
+using var officialVerifier = new EcdsaUpdateSignatureVerifier(OfficialUpdateTrust.PublicKeyPem);
+if (!officialVerifier.Verify(manifest))
+{
+    Console.Error.WriteLine(
+        $"CLC_UPDATE_SIGNING_KEY_PEM does not match {OfficialUpdateTrust.KeyId}. No manifest was written.");
+    return 4;
+}
+
 Directory.CreateDirectory(Path.GetDirectoryName(output)!);
 await RuntimeUpdateManifestJson.SaveAsync(output, manifest);
 Console.WriteLine($"Signed {files.Count} files for {platform} {version}.");

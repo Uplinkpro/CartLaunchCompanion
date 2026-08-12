@@ -19,7 +19,7 @@ A portable, fullscreen, controller-first launcher for Windows, Linux, and SteamO
 
 <br>
 
-[**Download 2.2**](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.2.0)
+[**Download latest release**](https://github.com/Uplinkpro/CartLaunchCompanion/releases/latest)
 &nbsp;&nbsp;•&nbsp;&nbsp;
 [Quick start](#quick-start)
 &nbsp;&nbsp;•&nbsp;&nbsp;

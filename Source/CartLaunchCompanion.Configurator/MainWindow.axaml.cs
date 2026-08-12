@@ -155,6 +155,12 @@ public sealed partial class MainWindow : Window
         _viewModel.Reset();
     }
 
+    private async void CreateCartClicked(object? sender, RoutedEventArgs e)
+    {
+        _portablePaths ??= new PortablePathService().Discover(AppContext.BaseDirectory);
+        await new CartPackageDialog(_portablePaths.Root).ShowDialog(this);
+    }
+
     private async void ExistingGameChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (_loadingExistingGame || _viewModel.SelectedExistingGame is null)

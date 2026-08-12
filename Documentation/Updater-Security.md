@@ -60,4 +60,4 @@ The manifest signature is verified before archive extraction. ZIP and TAR entrie
 
 ## Tests
 
-The core test suite covers exact payload verification, modified files, unexpected executables, path escape attempts, unknown manifest fields, transactional activation, manual rollback, and interrupted-update recovery. Additional signing, extraction, download, free-space, removal-during-update, and end-to-end packaging tests are required before the updater is exposed in the launcher interface.
+The core test suite covers exact payload verification, modified files, unexpected executables, path escape attempts, unknown manifest fields, transactional activation, manual rollback, interrupted-update recovery, release discovery, bounded downloads, extraction, and cart-package creation. Tagged releases also refuse to publish when the signing secret does not match the public key compiled into CLC, or when any required release asset is missing or empty.

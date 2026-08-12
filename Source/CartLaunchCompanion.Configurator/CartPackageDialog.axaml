@@ -1,0 +1,41 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CartLaunchCompanion.Configurator.CartPackageDialog"
+        Title="Create a portable game cart" Width="780" Height="650" MinWidth="680" MinHeight="560"
+        WindowStartupLocation="CenterOwner" CanResize="True">
+  <Grid Margin="28" RowDefinitions="Auto,*,Auto" RowSpacing="18">
+    <StackPanel Spacing="5">
+      <TextBlock FontSize="28" FontWeight="Bold" Text="Create a portable game cart"/>
+      <TextBlock Classes="help" Text="Copies a clean, self-contained CLC installation to removable media without source code, build files, logs, caches, or concept drafts."/>
+    </StackPanel>
+    <ScrollViewer Grid.Row="1"><StackPanel Spacing="16">
+      <Border Classes="card"><StackPanel Spacing="10">
+        <TextBlock Classes="section" Text="1. Current Cart source"/>
+        <Grid ColumnDefinitions="*,10,Auto"><TextBox Text="{Binding SourceRoot}" IsReadOnly="True"/><Button Grid.Column="2" Content="Choose published Cart" Click="ChooseSourceClicked"/></Grid>
+        <TextBlock Text="{Binding SourceStatus}" TextWrapping="Wrap" Foreground="#AAB2BE"/>
+      </StackPanel></Border>
+      <Border Classes="card"><StackPanel Spacing="12">
+        <TextBlock Classes="section" Text="2. Choose removable media"/>
+        <Grid ColumnDefinitions="*,10,Auto"><TextBox Text="{Binding DestinationRoot}" IsReadOnly="True" PlaceholderText="No destination selected"/><Button Grid.Column="2" Content="Choose media folder" Click="ChooseDestinationClicked"/></Grid>
+        <TextBlock Text="{Binding DestinationStatus}" TextWrapping="Wrap" Foreground="#AAB2BE"/>
+      </StackPanel></Border>
+      <Border Classes="card"><StackPanel Spacing="11">
+        <TextBlock Classes="section" Text="3. Package contents"/>
+        <TextBlock Text="✓ Cart — launcher, Configurator, updater, configurations, and artwork"/>
+        <TextBlock Text="✓ Games — external native game files"/>
+        <TextBlock Text="✓ Emulators — shared portable emulators"/>
+        <TextBlock Text="✓ Roms — ROM and disc-image library"/>
+        <TextBlock Classes="help" Text="Existing Games, Emulators, and Roms folders are preserved. For safety, an existing non-empty Cart folder is never overwritten."/>
+      </StackPanel></Border>
+      <Border Classes="card"><StackPanel Spacing="10">
+        <TextBlock Classes="section" Text="4. Create and verify"/>
+        <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" Height="10"/>
+        <TextBlock Text="{Binding ResultStatus}" TextWrapping="Wrap" Foreground="#DDE5EF"/>
+      </StackPanel></Border>
+    </StackPanel></ScrollViewer>
+    <Grid Grid.Row="2" ColumnDefinitions="*,Auto,10,Auto">
+      <TextBlock VerticalAlignment="Center" Classes="help" Text="No files are removed from the source or destination."/>
+      <Button Grid.Column="1" Content="Close" Click="CloseClicked"/>
+      <Button x:Name="CreateButton" Grid.Column="3" Content="Create portable cart" Click="CreateClicked" IsEnabled="False" Background="#2F80ED" Foreground="White" FontWeight="SemiBold"/>
+    </Grid>
+  </Grid>
+</Window>

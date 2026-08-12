@@ -26,6 +26,9 @@ jobs:
           $version = '${{ github.ref_name }}'.TrimStart('v')
           "CLC_VERSION=$version" >> $env:GITHUB_ENV
 
+      - name: Test release source
+        run: dotnet test CartLaunchCompanion.Avalonia.sln --configuration Release
+
       - name: Build portable packages
         shell: pwsh
         run: ./Publish-RC1.ps1 -Version $env:CLC_VERSION -OutputRoot "artifacts/$env:CLC_VERSION"
@@ -45,6 +48,27 @@ jobs:
             "$($hash.Hash.ToLowerInvariant())  $($file.Name)"
           }
           Set-Content -LiteralPath "$root/packages/SHA256SUMS.txt" -Value $checksums -Encoding ASCII
+
+      - name: Verify release assets
+        shell: pwsh
+        run: |
+          $root = "artifacts/$env:CLC_VERSION/packages"
+          $required = @(
+            "CartLaunchCompanion-$env:CLC_VERSION-win-x64.zip",
+            "CartLaunchCompanion-$env:CLC_VERSION-linux-x64.tar.gz",
+            "CartLaunchCompanion-$env:CLC_VERSION-portable.zip",
+            'runtime-win-x64.zip',
+            'runtime-linux-x64.tar.gz',
+            'update-win-x64.json',
+            'update-linux-x64.json',
+            'SHA256SUMS.txt'
+          )
+          foreach ($name in $required) {
+            $path = Join-Path $root $name
+            if (!(Test-Path -LiteralPath $path) -or (Get-Item -LiteralPath $path).Length -eq 0) {
+              throw "Required release asset is missing or empty: $name"
+            }
+          }
 
       - name: Publish GitHub release
         shell: pwsh
