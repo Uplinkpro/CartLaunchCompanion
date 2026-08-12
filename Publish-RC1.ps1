@@ -42,7 +42,7 @@ foreach ($runtime in $runtimes) {
 
     $maintenanceDestination = Join-Path $staging (Join-Path 'Maintenance' $runtime.Folder)
     & dotnet publish $updaterProject -c Release -r $runtime.Id --self-contained true `
-        -p:PublishSingleFile=true -p:PublishTrimmed=true `
+        -p:PublishSingleFile=true -p:PublishTrimmed=false `
         -p:DebugType=None -p:DebugSymbols=false -o $maintenanceDestination
     if ($LASTEXITCODE -ne 0) {
         throw "Updater publish failed for $($runtime.Id)."
