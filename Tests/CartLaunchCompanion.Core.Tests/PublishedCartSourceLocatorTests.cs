@@ -30,6 +30,21 @@ public sealed class PublishedCartSourceLocatorTests : IDisposable
     }
 
     [Fact]
+    public void DevelopmentRoot_PrefersCurrentOperatingSystemPackage()
+    {
+        Directory.CreateDirectory(_root);
+        var windows = Path.Combine(_root, "artifacts", "2.3", "windows", "CartLaunchCompanion");
+        var linux = Path.Combine(_root, "artifacts", "2.3", "linux", "CartLaunchCompanion");
+        CreatePublished(windows, "Windows-x64");
+        CreatePublished(linux, "Linux-x64");
+        Directory.SetLastWriteTimeUtc(windows, DateTime.UtcNow.AddHours(-2));
+        Directory.SetLastWriteTimeUtc(linux, DateTime.UtcNow.AddHours(-1));
+
+        var expected = OperatingSystem.IsWindows() ? windows : linux;
+        Assert.Equal(Path.GetFullPath(expected), new PublishedCartSourceLocator().FindBest(_root));
+    }
+
+    [Fact]
     public void DevelopmentRootWithoutArtifacts_IsPreservedForManualSelection()
     {
         Directory.CreateDirectory(_root);

@@ -10,15 +10,20 @@ public sealed class PublishedCartSourceLocator
         var artifacts = Path.Combine(root, "artifacts");
         if (!Directory.Exists(artifacts)) return root;
 
-        return Directory.EnumerateDirectories(artifacts)
+        var candidates = Directory.EnumerateDirectories(artifacts)
             .SelectMany(version => new[]
             {
-                Path.Combine(version, "windows", "CartLaunchCompanion"),
-                Path.Combine(version, "linux", "CartLaunchCompanion"),
-                Path.Combine(version, "staging", "CartLaunchCompanion")
+                new Candidate(Path.Combine(version, "windows", "CartLaunchCompanion"), "Windows-x64"),
+                new Candidate(Path.Combine(version, "linux", "CartLaunchCompanion"), "Linux-x64"),
+                new Candidate(Path.Combine(version, "staging", "CartLaunchCompanion"), "Any")
             })
-            .Where(IsPublishedCart)
-            .OrderByDescending(path => Directory.GetLastWriteTimeUtc(path))
+            .Where(item => IsPublishedCart(item.Path))
+            .ToList();
+        var preferred = OperatingSystem.IsWindows() ? "Windows-x64" : "Linux-x64";
+        return candidates
+            .OrderByDescending(item => item.Platform == preferred)
+            .ThenByDescending(item => Directory.GetLastWriteTimeUtc(item.Path))
+            .Select(item => item.Path)
             .FirstOrDefault() ?? root;
     }
 
@@ -30,4 +35,6 @@ public sealed class PublishedCartSourceLocator
                (Directory.Exists(Path.Combine(system, "Windows-x64")) ||
                 Directory.Exists(Path.Combine(system, "Linux-x64")));
     }
+
+    private sealed record Candidate(string Path, string Platform);
 }
