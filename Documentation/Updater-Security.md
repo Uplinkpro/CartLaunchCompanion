@@ -34,13 +34,14 @@ The parser rejects comments, trailing commas, duplicate properties, unknown fiel
 1. Parse and validate the bounded manifest.
 2. Verify its publisher signature.
 3. Verify every staged file and the root fingerprint.
-4. Write and flush an update journal.
-5. Wait for the running launcher to close.
-6. Move the current platform runtime to `previous-runtime`.
-7. Move the complete staged runtime into the familiar `System/<platform>` location.
-8. Verify the activated runtime again.
-9. Start the new launcher and observe a ten-second startup health window.
-10. Delete the backup only after the new launcher remains running.
+4. Read the installed launcher's embedded product version and require the signed update version to be strictly newer.
+5. Write and flush an update journal.
+6. Wait for the running launcher to close.
+7. Move the current platform runtime to `previous-runtime`.
+8. Move the complete staged runtime into the familiar `System/<platform>` location.
+9. Verify the activated runtime again.
+10. Start the new launcher and observe a ten-second startup health window.
+11. Delete the backup only after the new launcher remains running.
 
 If activation or verification fails, the previous runtime is restored. If the new launcher exits during the health window, it is moved to `failed-runtime`, the previous runtime is restored, and the previous launcher is restarted.
 
@@ -53,6 +54,8 @@ HTTPS transport is not sufficient update authorization. Production manifests are
 Tagged release builds generate platform-specific runtime payloads and signed manifests in GitHub Actions. A forged or modified manifest cannot pass verification with the embedded public key.
 
 CLC uses an embedded key-ID allowlist to support deliberate signing-key rotation. A successor public key must first be added to CLC and distributed in a normal trusted release while the existing key is still active. Only after that rollout may the repository's `CLC_UPDATE_SIGNING_KEY_ID` variable and encrypted private-key secret switch to the successor. The signer refuses IDs absent from the compiled allowlist and refuses private keys that do not match the selected ID. The manifest's key ID is itself covered by the signature, unknown IDs are rejected, and manifests cannot supply their own public keys. Retiring a compromised or obsolete key requires removing it from the allowlist in a subsequent release.
+
+A valid signature does not authorize a downgrade. The maintenance updater independently compares the signed manifest version with the product version embedded in the installed launcher. Equal versions, older versions, malformed versions, and an unverifiable installed version all fail closed before any active runtime files are moved.
 
 ## Download and staging
 

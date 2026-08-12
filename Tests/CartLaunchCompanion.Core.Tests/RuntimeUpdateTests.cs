@@ -166,9 +166,8 @@ public sealed class RuntimeUpdateTests : IDisposable
         var cart = Path.Combine(_root, "Cart");
         var active = Path.Combine(cart, "System", "Windows-x64");
         Directory.CreateDirectory(active);
-        await File.WriteAllTextAsync(
-            Path.Combine(active, "CartLaunchCompanion.Desktop.exe"),
-            "old runtime");
+        var activeEntryPoint = Path.Combine(active, "CartLaunchCompanion.Desktop.exe");
+        File.Copy(typeof(RuntimeUpdateTests).Assembly.Location, activeEntryPoint);
 
         var staging = Path.Combine(
             cart,
@@ -179,7 +178,7 @@ public sealed class RuntimeUpdateTests : IDisposable
         await File.WriteAllTextAsync(
             Path.Combine(staging, "CartLaunchCompanion.Desktop.exe"),
             "new runtime");
-        var manifest = await CreateManifestAsync(staging, "Windows-x64", "2.3.0");
+        var manifest = await CreateManifestAsync(staging, "Windows-x64", "2.4.0");
         manifest.SignerKeyId = "test";
         manifest.Signature = "dGVzdA==";
         var manifestPath = Path.Combine(
@@ -207,8 +206,98 @@ public sealed class RuntimeUpdateTests : IDisposable
         TransactionalRuntimeUpdater.RollBackActivatedUpdate(cart, "Windows-x64");
 
         Assert.Equal(
-            "old runtime",
-            await File.ReadAllTextAsync(Path.Combine(active, "CartLaunchCompanion.Desktop.exe")));
+            await File.ReadAllBytesAsync(typeof(RuntimeUpdateTests).Assembly.Location),
+            await File.ReadAllBytesAsync(Path.Combine(active, "CartLaunchCompanion.Desktop.exe")));
+    }
+
+    [Theory]
+    [InlineData("2.3.0")]
+    [InlineData("2.2.9")]
+    public async Task TransactionalUpdater_RejectsReplayOrDowngrade(string updateVersion)
+    {
+        var cart = Path.Combine(_root, "Cart");
+        var active = Path.Combine(cart, "System", "Windows-x64");
+        Directory.CreateDirectory(active);
+        File.Copy(
+            typeof(RuntimeUpdateTests).Assembly.Location,
+            Path.Combine(active, "CartLaunchCompanion.Desktop.exe"));
+        var staging = Path.Combine(cart, ".cartlaunch", "update-staging", "payload");
+        Directory.CreateDirectory(staging);
+        await File.WriteAllTextAsync(
+            Path.Combine(staging, "CartLaunchCompanion.Desktop.exe"),
+            "signed older runtime");
+        var manifest = await CreateManifestAsync(staging, "Windows-x64", updateVersion);
+        manifest.SignerKeyId = "test";
+        manifest.Signature = "dGVzdA==";
+        var manifestPath = Path.Combine(cart, ".cartlaunch", "update-staging", "manifest.json");
+        await RuntimeUpdateManifestJson.SaveAsync(manifestPath, manifest);
+
+        var updater = new TransactionalRuntimeUpdater(
+            new RuntimeIntegrityVerifier(),
+            new AlwaysTrustedSignatureVerifier());
+        var error = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            updater.ApplyAsync(new RuntimeUpdateRequest(cart, "Windows-x64", staging, manifestPath)));
+
+        Assert.Contains("must be newer", error.Message);
+        Assert.True(File.Exists(Path.Combine(active, "CartLaunchCompanion.Desktop.exe")));
+    }
+
+    [Fact]
+    public async Task TransactionalUpdater_RejectsUnverifiableInstalledVersion()
+    {
+        var cart = Path.Combine(_root, "Cart");
+        var active = Path.Combine(cart, "System", "Windows-x64");
+        Directory.CreateDirectory(active);
+        await File.WriteAllTextAsync(
+            Path.Combine(active, "CartLaunchCompanion.Desktop.exe"),
+            "not a versioned executable");
+        var staging = Path.Combine(cart, ".cartlaunch", "update-staging", "payload");
+        Directory.CreateDirectory(staging);
+        await File.WriteAllTextAsync(
+            Path.Combine(staging, "CartLaunchCompanion.Desktop.exe"),
+            "new runtime");
+        var manifest = await CreateManifestAsync(staging, "Windows-x64", "2.4.0");
+        manifest.SignerKeyId = "test";
+        manifest.Signature = "dGVzdA==";
+        var manifestPath = Path.Combine(cart, ".cartlaunch", "update-staging", "manifest.json");
+        await RuntimeUpdateManifestJson.SaveAsync(manifestPath, manifest);
+
+        var updater = new TransactionalRuntimeUpdater(
+            new RuntimeIntegrityVerifier(),
+            new AlwaysTrustedSignatureVerifier());
+        var error = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            updater.ApplyAsync(new RuntimeUpdateRequest(cart, "Windows-x64", staging, manifestPath)));
+
+        Assert.Contains("cannot be verified", error.Message);
+    }
+
+    [Fact]
+    public async Task TransactionalUpdater_RejectsMalformedSignedVersion()
+    {
+        var cart = Path.Combine(_root, "Cart");
+        var active = Path.Combine(cart, "System", "Windows-x64");
+        Directory.CreateDirectory(active);
+        File.Copy(
+            typeof(RuntimeUpdateTests).Assembly.Location,
+            Path.Combine(active, "CartLaunchCompanion.Desktop.exe"));
+        var staging = Path.Combine(cart, ".cartlaunch", "update-staging", "payload");
+        Directory.CreateDirectory(staging);
+        await File.WriteAllTextAsync(
+            Path.Combine(staging, "CartLaunchCompanion.Desktop.exe"),
+            "new runtime");
+        var manifest = await CreateManifestAsync(staging, "Windows-x64", "release-latest");
+        manifest.SignerKeyId = "test";
+        manifest.Signature = "dGVzdA==";
+        var manifestPath = Path.Combine(cart, ".cartlaunch", "update-staging", "manifest.json");
+        await RuntimeUpdateManifestJson.SaveAsync(manifestPath, manifest);
+
+        var updater = new TransactionalRuntimeUpdater(
+            new RuntimeIntegrityVerifier(),
+            new AlwaysTrustedSignatureVerifier());
+        var error = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            updater.ApplyAsync(new RuntimeUpdateRequest(cart, "Windows-x64", staging, manifestPath)));
+
+        Assert.Contains("manifest version is invalid", error.Message);
     }
 
     [Fact]

@@ -43,6 +43,14 @@ public sealed class TransactionalRuntimeUpdater(
             cancellationToken);
 
         var activeRoot = Path.Combine(cartRoot, "System", request.Platform);
+        var previousVersion = ReadInstalledVersion(activeRoot, manifest.EntryPoint);
+        var updateVersion = ParseManifestVersion(manifest.Version);
+        if (updateVersion <= previousVersion)
+        {
+            throw new InvalidDataException(
+                $"Update version {updateVersion} must be newer than installed version {previousVersion}.");
+        }
+
         var maintenanceRoot = Path.Combine(cartRoot, ".cartlaunch");
         var backupRoot = Path.Combine(maintenanceRoot, "previous-runtime", request.Platform);
         var journalPath = Path.Combine(maintenanceRoot, "update-journal.json");
@@ -50,11 +58,10 @@ public sealed class TransactionalRuntimeUpdater(
         Directory.CreateDirectory(maintenanceRoot);
         Directory.CreateDirectory(Path.GetDirectoryName(backupRoot)!);
 
-        var previousVersion = TryReadAssemblyVersion(activeRoot, manifest.EntryPoint);
         var journal = new RuntimeUpdateJournal
         {
             Platform = request.Platform,
-            PreviousVersion = previousVersion,
+            PreviousVersion = previousVersion.ToString(),
             NewVersion = manifest.Version,
             State = RuntimeUpdateState.Prepared
         };
@@ -281,11 +288,36 @@ public sealed class TransactionalRuntimeUpdater(
         return Task.CompletedTask;
     }
 
-    private static string TryReadAssemblyVersion(string runtimeRoot, string entryPoint)
+    private static Version ReadInstalledVersion(string runtimeRoot, string entryPoint)
     {
-        var path = Path.Combine(runtimeRoot, entryPoint);
-        return File.Exists(path)
-            ? System.Diagnostics.FileVersionInfo.GetVersionInfo(path).ProductVersion ?? ""
-            : "";
+        var path = RuntimePathPolicy.ResolveContainedFile(runtimeRoot, entryPoint);
+        if (!File.Exists(path))
+        {
+            throw new InvalidDataException("The installed runtime entry point is missing.");
+        }
+
+        var versionText = System.Diagnostics.FileVersionInfo.GetVersionInfo(path).ProductVersion;
+        if (!TryParseVersion(versionText, out var version))
+        {
+            throw new InvalidDataException("The installed runtime version cannot be verified.");
+        }
+
+        return version;
+    }
+
+    private static Version ParseManifestVersion(string value)
+    {
+        if (!TryParseVersion(value, out var version))
+        {
+            throw new InvalidDataException("The update manifest version is invalid.");
+        }
+
+        return version;
+    }
+
+    private static bool TryParseVersion(string? value, out Version version)
+    {
+        var numeric = value?.Trim().TrimStart('v', 'V').Split(['-', '+'], 2)[0];
+        return Version.TryParse(numeric, out version!);
     }
 }
