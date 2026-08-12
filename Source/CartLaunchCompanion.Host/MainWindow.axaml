@@ -8,9 +8,11 @@
     </StackPanel>
     <TabControl Grid.Row="1">
       <TabItem Header="Install &amp; repair"><ScrollViewer><StackPanel Margin="8,18" Spacing="14">
+        <Border Classes="card" IsVisible="{Binding ShowWindowsScope}"><StackPanel Spacing="9"><TextBlock FontSize="18" FontWeight="SemiBold" Text="Who can use the Host?"/><RadioButton GroupName="scope" Content="Current user — no administrator approval required" IsChecked="True" Checked="CurrentUserScopeChecked"/><RadioButton GroupName="scope" Content="All Windows users — requires administrator approval" Checked="AllUsersScopeChecked"/></StackPanel></Border>
         <Border Classes="card"><StackPanel Spacing="10">
           <TextBlock FontSize="20" FontWeight="SemiBold" Text="What will be installed"/>
           <TextBlock Text="{Binding InstallPurpose}" TextWrapping="Wrap"/>
+          <TextBlock FontWeight="SemiBold" Text="Installation scope"/><TextBlock Classes="help" Text="{Binding ScopeDescription}"/>
           <TextBlock FontWeight="SemiBold" Text="Local component"/><TextBlock Classes="help" Text="{Binding InstallDirectory}"/>
           <TextBlock FontWeight="SemiBold" Text="Local data"/><TextBlock Classes="help" Text="{Binding DataDirectory}"/>
           <TextBlock FontWeight="SemiBold" Text="Automatic startup"/><TextBlock Classes="help" Text="{Binding StartupRegistration}"/>
@@ -27,6 +29,11 @@
           <ListBox.ItemTemplate><DataTemplate><StackPanel Margin="8" Spacing="3"><TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}"/><TextBlock Classes="help" Text="{Binding CartId}"/><TextBlock Classes="help" Text="{Binding ApprovalText}"/></StackPanel></DataTemplate>
         </ListBox.ItemTemplate></ListBox>
         <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10"><Button Content="Trust connected cart…" Click="TrustClicked"/><Button Content="Revoke selected" Click="RevokeClicked"/></StackPanel>
+      </Grid></TabItem>
+      <TabItem Header="Connected carts"><Grid Margin="8,18" RowDefinitions="Auto,*,Auto" RowSpacing="12">
+        <TextBlock Classes="help" Text="The Host checks only mounted roots for cartlaunch.cartridge.json. Detection does not grant trust and never starts software."/>
+        <ListBox Grid.Row="1" ItemsSource="{Binding ConnectedCarts}"><ListBox.ItemTemplate><DataTemplate><StackPanel Margin="8" Spacing="3"><TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}"/><TextBlock Classes="help" Text="{Binding MediaRoot}"/><TextBlock Classes="help" Text="{Binding TrustText}"/></StackPanel></DataTemplate></ListBox.ItemTemplate></ListBox>
+        <Button Grid.Row="2" Content="Scan mounted media now" HorizontalAlignment="Left" Click="ScanClicked"/>
       </Grid></TabItem>
       <TabItem Header="Uninstall"><ScrollViewer><StackPanel Margin="8,18" Spacing="14">
         <Border Classes="card"><StackPanel Spacing="8"><TextBlock FontSize="20" FontWeight="SemiBold" Text="Remove the local component"/><TextBlock Classes="help" Text="Stops automatic startup and removes the Cart Launch Host runtime. Connected carts are never modified."/></StackPanel></Border>

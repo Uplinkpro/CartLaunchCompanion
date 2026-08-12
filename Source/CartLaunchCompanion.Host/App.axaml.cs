@@ -1,6 +1,8 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using CartLaunchCompanion.Core.PhysicalCarts;
+using Microsoft.Win32;
 
 namespace CartLaunchCompanion.Host;
 
@@ -9,7 +11,34 @@ public sealed partial class App : Application
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
     public override void OnFrameworkInitializationCompleted()
     {
-        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) desktop.MainWindow = new MainWindow();
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            if (Program.Arguments.Contains("--install-all-users", StringComparer.Ordinal))
+            {
+                InstallAllUsersAsync(desktop);
+                base.OnFrameworkInitializationCompleted();
+                return;
+            }
+            var window = new MainWindow();
+            desktop.MainWindow = window;
+            if (Program.Arguments.Contains("--background", StringComparer.Ordinal))
+            {
+                desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                window.Opened += async (_, _) => { await window.ScanMountedCartsAsync(); window.StartPassiveMonitoring(); window.Hide(); };
+            }
+        }
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static async void InstallAllUsersAsync(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        try
+        {
+            var plan = CartHostInstallationPlan.ForAllUsers();
+            await new CartHostInstallationService().InstallFilesAsync(AppContext.BaseDirectory, plan);
+            using var key = Registry.LocalMachine.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", writable: true);
+            key.SetValue("CartLaunchCompanionHost", $"\"{plan.ExecutablePath}\" --background", RegistryValueKind.String);
+        }
+        finally { desktop.Shutdown(); }
     }
 }

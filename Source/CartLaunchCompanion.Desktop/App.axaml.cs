@@ -14,6 +14,7 @@ using CartLaunchCompanion.Core.Metadata;
 using CartLaunchCompanion.Core.Platform;
 using CartLaunchCompanion.Core.Portable;
 using CartLaunchCompanion.Core.Updating;
+using CartLaunchCompanion.Core.PhysicalCarts;
 using CartLaunchCompanion.Desktop.ViewModels;
 using CartLaunchCompanion.Desktop.Views;
 using CartLaunchCompanion.Platform.Linux;
@@ -131,6 +132,14 @@ public partial class App : Application
             base.OnFrameworkInitializationCompleted();
 
             await viewModel.LoadAsync();
+            var hostStatus = new CartHostStatusService().Check();
+            if (!hostStatus.IsAvailable)
+            {
+                var hostFolder = platformService.Current == PlatformKind.Windows ? "Windows-x64" : "Linux-x64";
+                var hostName = platformService.Current == PlatformKind.Windows ? "CartLaunchCompanion.Host.exe" : "CartLaunchCompanion.Host";
+                if (File.Exists(Path.Combine(portablePaths.Root, "Host", hostFolder, hostName)))
+                    await new HostInstallOfferWindow(portablePaths.Root, platformService.Current).ShowDialog(mainWindow);
+            }
             _ = viewModel.CheckForUpdatesSilentlyAsync();
             return;
         }

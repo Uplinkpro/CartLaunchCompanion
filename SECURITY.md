@@ -32,6 +32,7 @@ Each physical cart is intended to contain its own portable CLC installation, gam
 - Installing or uninstalling the Cart Launch Host requires an explicit confirmation screen.
 - The confirmation identifies the component's purpose, every installation location, its startup registration, settings, trust database, and logs.
 - The host runs as the signed-in user. It must not require a Windows service, kernel driver, administrator account, Linux root service, or system-wide `udev` rule for normal operation.
+- Windows offers current-user installation without elevation or an all-users runtime installation through the normal administrator confirmation. In both modes, cart trust records, settings, and logs remain isolated to each signed-in user.
 - Uninstallation stops monitoring, removes automatic startup, removes the local host, and clearly offers removal of trust records, settings, and logs.
 - The local Host runtime and its user data occupy separate directories, so removing executable files cannot implicitly remove trust records, settings, or logs the user chose to preserve.
 - Installing or uninstalling the local host never modifies or deletes a connected physical cart without a separate, explicit cart-management action.

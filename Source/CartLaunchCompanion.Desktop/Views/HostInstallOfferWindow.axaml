@@ -1,0 +1,9 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:views="using:CartLaunchCompanion.Desktop.Views"
+        x:Class="CartLaunchCompanion.Desktop.Views.HostInstallOfferWindow" x:DataType="views:HostInstallOfferWindow" Title="Optional Cart Launch Host"
+        Width="620" Height="390" CanResize="False" WindowStartupLocation="CenterOwner" Background="#0B0D11">
+  <Grid Margin="34" RowDefinitions="Auto,*,Auto" RowSpacing="20">
+    <StackPanel Spacing="8"><TextBlock FontSize="28" FontWeight="Bold" Text="ENABLE PHYSICAL GAME CARTS?"/><TextBlock Foreground="#BFC7D2" TextWrapping="Wrap" Text="Cart Launch Host is not currently running or installed. It is optional and enables trusted-cart detection. Normal CLC launching works without it."/></StackPanel>
+    <Border Grid.Row="1" Padding="18" CornerRadius="12" Background="#151A21" BorderBrush="#34404D" BorderThickness="1"><StackPanel Spacing="9"><TextBlock FontWeight="SemiBold" Text="The installer will let you choose:"/><TextBlock Text="• Current Windows user — no administrator access"/><TextBlock Text="• All Windows users — requires administrator approval" IsVisible="{Binding IsWindows}"/><TextBlock Text="• Exact runtime, data, startup, trust, and log locations"/><TextBlock Foreground="#AAB2BE" TextWrapping="Wrap" Text="No cart will be trusted or launched automatically during installation."/></StackPanel></Border>
+    <Grid Grid.Row="2" ColumnDefinitions="*,12,*"><Button Grid.Column="0" Content="NOT NOW" Click="NotNowClicked"/><Button Grid.Column="2" Content="OPEN HOST INSTALLER" Background="#2F80ED" Foreground="White" Click="InstallClicked"/></Grid>
+  </Grid>
+</Window>

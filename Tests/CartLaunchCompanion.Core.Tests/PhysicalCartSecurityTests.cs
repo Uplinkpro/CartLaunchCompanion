@@ -79,6 +79,17 @@ public sealed class PhysicalCartSecurityTests : IDisposable
     }
 
     [Fact]
+    public void AllUsersInstallation_KeepsTrustDataPerUser()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var allUsers = CartHostInstallationPlan.ForAllUsers();
+        var currentUser = CartHostInstallationPlan.ForCurrentUser();
+        Assert.Equal(CartHostInstallScope.AllUsers, allUsers.Scope);
+        Assert.Equal(currentUser.DataDirectory, allUsers.DataDirectory, ignoreCase: true);
+        Assert.NotEqual(currentUser.InstallDirectory, allUsers.InstallDirectory);
+    }
+
+    [Fact]
     public async Task InstallationService_CopiesOnlyPublishedRuntimeFiles()
     {
         var source = Path.Combine(_root, "published");
@@ -117,6 +128,40 @@ public sealed class PhysicalCartSecurityTests : IDisposable
         Assert.False(File.Exists(plan.TrustDatabasePath));
         Assert.True(File.Exists(plan.SettingsPath));
         Assert.False(Directory.Exists(plan.LogsDirectory));
+    }
+
+    [Fact]
+    public async Task Detector_ChecksOnlyMountRootsAndReturnsValidIdentities()
+    {
+        var valid = Path.Combine(_root, "valid");
+        var ordinary = Path.Combine(_root, "ordinary");
+        Directory.CreateDirectory(valid); Directory.CreateDirectory(ordinary);
+        var identities = new CartIdentityService();
+        await identities.SaveNewAsync(valid, identities.Create("Detected Cart"));
+        var detector = new MountedCartDetector(new StaticMounts(valid, ordinary), identities);
+
+        var carts = await detector.ScanAsync();
+
+        var cart = Assert.Single(carts);
+        Assert.Equal("Detected Cart", cart.Identity.Identity.DisplayName);
+        Assert.Equal(Path.GetFullPath(valid), cart.MediaRoot);
+    }
+
+    [Fact]
+    public async Task Detector_IgnoresMalformedCartWithoutScanningBelowRoot()
+    {
+        var malformed = Path.Combine(_root, "malformed");
+        Directory.CreateDirectory(Path.Combine(malformed, "nested"));
+        await File.WriteAllTextAsync(Path.Combine(malformed, CartIdentityService.FileName), "not json");
+        await File.WriteAllTextAsync(Path.Combine(malformed, "nested", CartIdentityService.FileName), "{}");
+
+        var carts = await new MountedCartDetector(new StaticMounts(malformed), new CartIdentityService()).ScanAsync();
+        Assert.Empty(carts);
+    }
+
+    private sealed class StaticMounts(params string[] roots) : IMountRootProvider
+    {
+        public IEnumerable<string> GetMountedRoots() => roots;
     }
 
     public void Dispose()

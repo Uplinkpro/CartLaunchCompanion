@@ -14,6 +14,9 @@ The project follows semantic versioning where practical.
 - New portable carts now receive a one-time friendly identity while host trust remains a separate per-computer decision
 - Added the Cart Launch Host management utility with explicit install, repair, trust, revocation, and selective uninstall screens
 - Added separate per-user Host runtime and data locations so uninstall can preserve or remove trust, settings, and logs exactly as selected
+- Added Windows current-user and all-users Host installation choices; all-users uses normal administrator confirmation while cart trust remains isolated per user
+- CLC now offers the optional Host installer when no running or installed Host is found
+- Added debounced passive mounted-cart detection that validates only the fixed root identity file and never grants trust or executes software
 
 ## [2.3.0] - 2026-08-11
 
