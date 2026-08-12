@@ -29,6 +29,7 @@ Because game configurations can intentionally name executables, arguments, launc
 - The launcher sends only a versioned `eject` request and trusted cart ID over a current-user-only local pipe; it cannot provide commands, executables, device paths, or shell text.
 - The Host accepts the request only for an exact process session it launched and still tracks.
 - It closes that process, removes its verified staging directory, flushes writes, and asks the operating system to eject the matching media root.
+- Immediately before the operating-system operation, the Host reloads the identity from the tracked mount root and rejects media substitution or identity changes.
 - Windows uses bounded native volume operations. Supported Linux gaming distributions use fixed `udisksctl` arguments without a shell.
 
 Physical Cart support is under development and is not part of the 2.3 release. The requirements below are design commitments for that feature, not claims about functionality that has already shipped.

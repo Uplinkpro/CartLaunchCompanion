@@ -321,8 +321,10 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             await session.StopAsync(TimeSpan.FromSeconds(5));
             for (var attempt = 0; attempt < 50 && _activeLaunches.ContainsKey(mediaRoot); attempt++)
                 await Task.Delay(100);
-            await new SafeMediaEjectService().EjectAsync(mediaRoot);
-            Status = "The cart was safely ejected and can now be removed.";
+            var outcome = await new SafeMediaEjectService().EjectAsync(mediaRoot, cartId);
+            Status = outcome == SafeMediaEjectOutcome.Ejected
+                ? "The cart was safely ejected and can now be removed."
+                : "The cart was already removed. Its verified local session was closed safely.";
         }
         catch (Exception ex) { Status = "The cart was closed but could not be ejected safely: " + ex.Message; }
         finally { _autoLaunchPolicy.Complete(cartId); }
