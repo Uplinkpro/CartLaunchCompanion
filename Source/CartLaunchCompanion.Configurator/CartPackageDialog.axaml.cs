@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
@@ -27,6 +28,7 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
     public string DestinationStatus { get => _destinationStatus; set { _destinationStatus = value; Changed(); } }
     public string ResultStatus { get => _resultStatus; set { _resultStatus = value; Changed(); } }
     public double Progress { get => _progress; set { _progress = value; Changed(); } }
+    public ObservableCollection<ReadinessCheckItem> ReadinessChecks { get; } = [];
     public new event PropertyChangedEventHandler? PropertyChanged;
 
     private async void ChooseDestinationClicked(object? sender, RoutedEventArgs e)
@@ -58,6 +60,7 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
     private void ValidateDestination()
     {
         CreateButton.IsEnabled = false;
+        CreateButton.Content = "Create portable cart";
         if (!ValidateSource() || string.IsNullOrWhiteSpace(DestinationRoot)) return;
         if (string.IsNullOrWhiteSpace(CartName) || CartName.Trim().Length > 80)
         { DestinationStatus = "Enter a cart name between 1 and 80 characters."; return; }
@@ -68,7 +71,12 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
             { DestinationStatus = "Choose a destination outside the current Cart folder."; return; }
             var cart = Path.Combine(destination, "Cart");
             if (Directory.Exists(cart) && Directory.EnumerateFileSystemEntries(cart).Any())
-            { DestinationStatus = "This destination already has a non-empty Cart folder. Choose another location."; return; }
+            {
+                DestinationStatus = "Existing Cart detected. Prepare mode preserves its files and identity, then checks readiness.";
+                CreateButton.Content = "Inspect and prepare cart";
+                CreateButton.IsEnabled = true;
+                return;
+            }
             var required = Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories).Sum(path => new FileInfo(path).Length);
             var root = Path.GetPathRoot(destination);
             if (!string.IsNullOrWhiteSpace(root) && Directory.Exists(root))
@@ -85,18 +93,29 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
 
     private async void CreateClicked(object? sender, RoutedEventArgs e)
     {
-        CreateButton.IsEnabled = false; Progress = 0; ResultStatus = "Staging a clean portable cart…";
+        CreateButton.IsEnabled = false; Progress = 0; ReadinessChecks.Clear();
         try
         {
-            var progress = new Progress<double>(value => Progress = value * 100);
-            var result = await new CartPackageCreator().CreateAsync(new(SourceRoot, DestinationRoot), progress);
-            var identityService = new CartIdentityService();
-            var identity = await identityService.SaveNewAsync(DestinationRoot, identityService.Create(CartName));
-            var requiredFolders = new[] { "Cart", "Games", "Emulators", "Roms" };
-            if (requiredFolders.Any(name => !Directory.Exists(Path.Combine(DestinationRoot, name))))
-                throw new InvalidDataException("Final folder verification failed.");
+            var existing = Directory.Exists(Path.Combine(DestinationRoot, "Cart")) &&
+                           Directory.EnumerateFileSystemEntries(Path.Combine(DestinationRoot, "Cart")).Any();
+            CartPackageResult? result = null;
+            if (!existing)
+            {
+                ResultStatus = "Staging a clean portable cart…";
+                var progress = new Progress<double>(value => Progress = value * 80);
+                result = await new CartPackageCreator().CreateAsync(new(SourceRoot, DestinationRoot), progress);
+            }
+            else ResultStatus = "Inspecting the existing cart without replacing files…";
+
+            var readiness = await new PhysicalCartReadinessService().PrepareAsync(DestinationRoot, CartName);
+            foreach (var check in readiness.Checks)
+                ReadinessChecks.Add(new(check.Name, check.Detail, check.Passed ? "✓" : "✕", check.Passed ? "#69DB8A" : "#FF6B72"));
             Progress = 100;
-            ResultStatus = $"Portable cart created and verified: {result.FilesCopied} files, {FormatBytes(result.BytesCopied)}. Identity {identity.Identity.CartId} was created at the media root. Trust is still granted separately on each computer.";
+            var platforms = readiness.RuntimeApprovals.Count == 0 ? "no verified runtimes" : string.Join(", ", readiness.RuntimeApprovals.Select(item => item.Platform));
+            ResultStatus = readiness.IsReady
+                ? $"Ready for Host trust. Identity: {readiness.Identity!.Identity.DisplayName}. Verified: {platforms}." +
+                  (result is null ? " Existing files and identity were preserved." : $" Copied {result.FilesCopied} files ({FormatBytes(result.BytesCopied)}).")
+                : "Not ready for Host trust yet. Resolve the failed checks below; no existing identity was replaced.";
         }
         catch (Exception ex) { ResultStatus = "Nothing was overwritten. Package creation stopped: " + ex.Message; ValidateDestination(); }
     }
@@ -104,3 +123,5 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
     private static string FormatBytes(long value) => value >= 1_073_741_824 ? $"{value / 1_073_741_824d:0.00} GB" : value >= 1_048_576 ? $"{value / 1_048_576d:0.0} MB" : $"{value / 1024d:0.0} KB";
     private void Changed([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
+
+public sealed record ReadinessCheckItem(string Name, string Detail, string Symbol, string Color);

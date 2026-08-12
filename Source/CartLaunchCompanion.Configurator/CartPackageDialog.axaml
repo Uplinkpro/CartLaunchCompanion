@@ -1,11 +1,11 @@
 <Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="CartLaunchCompanion.Configurator.CartPackageDialog"
-        Title="Create a portable game cart" Width="780" Height="650" MinWidth="680" MinHeight="560"
+        Title="Create or prepare a physical game cart" Width="820" Height="720" MinWidth="700" MinHeight="620"
         WindowStartupLocation="CenterOwner" CanResize="True">
   <Grid Margin="28" RowDefinitions="Auto,*,Auto" RowSpacing="18">
     <StackPanel Spacing="5">
-      <TextBlock FontSize="28" FontWeight="Bold" Text="Create a portable game cart"/>
-      <TextBlock Classes="help" Text="Copies a clean, self-contained CLC installation to removable media without source code, build files, logs, caches, or concept drafts."/>
+      <TextBlock FontSize="28" FontWeight="Bold" Text="Create or prepare a physical game cart"/>
+      <TextBlock Classes="help" Text="Create a clean portable cart, or inspect and prepare an existing cart without replacing its identity or files."/>
     </StackPanel>
     <ScrollViewer Grid.Row="1"><StackPanel Spacing="16">
       <Border Classes="card"><StackPanel Spacing="10">
@@ -16,7 +16,7 @@
       <Border Classes="card"><StackPanel Spacing="12">
         <TextBlock Classes="section" Text="2. Choose removable media"/>
         <TextBlock Text="Cart name" FontWeight="SemiBold"/>
-        <TextBox Text="{Binding CartName}" Watermark="My Game Collection"/>
+        <TextBox Text="{Binding CartName}" PlaceholderText="My Game Collection"/>
         <TextBlock Classes="help" Text="Required. This friendly name appears when you trust the cart on a computer; it does not grant launch permission."/>
         <Grid ColumnDefinitions="*,10,Auto"><TextBox Text="{Binding DestinationRoot}" IsReadOnly="True" PlaceholderText="No destination selected"/><Button Grid.Column="2" Content="Choose media folder" Click="ChooseDestinationClicked"/></Grid>
         <TextBlock Text="{Binding DestinationStatus}" TextWrapping="Wrap" Foreground="#AAB2BE"/>
@@ -30,9 +30,18 @@
         <TextBlock Classes="help" Text="Existing Games, Emulators, and Roms folders are preserved. For safety, an existing non-empty Cart folder is never overwritten."/>
       </StackPanel></Border>
       <Border Classes="card"><StackPanel Spacing="10">
-        <TextBlock Classes="section" Text="4. Create and verify"/>
+        <TextBlock Classes="section" Text="4. Readiness report"/>
         <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" Height="10"/>
         <TextBlock Text="{Binding ResultStatus}" TextWrapping="Wrap" Foreground="#DDE5EF"/>
+        <ItemsControl ItemsSource="{Binding ReadinessChecks}">
+          <ItemsControl.ItemTemplate><DataTemplate>
+            <Grid ColumnDefinitions="28,180,*" Margin="0,3">
+              <TextBlock Text="{Binding Symbol}" Foreground="{Binding Color}" FontWeight="Bold"/>
+              <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="SemiBold"/>
+              <TextBlock Grid.Column="2" Text="{Binding Detail}" TextWrapping="Wrap" Classes="help"/>
+            </Grid>
+          </DataTemplate></ItemsControl.ItemTemplate>
+        </ItemsControl>
       </StackPanel></Border>
     </StackPanel></ScrollViewer>
     <Grid Grid.Row="2" ColumnDefinitions="*,Auto,10,Auto">

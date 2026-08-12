@@ -28,6 +28,8 @@ The project follows semantic versioning where practical.
 - Added a per-user single-instance Host lock to prevent competing monitors and duplicate automatic-launch state
 - Final authorization now re-hashes the staged runtime immediately before process creation to reject local session tampering
 - Added a removable-drive hardware test checklist for Windows, SteamOS, Bazzite, ChimeraOS, and CachyOS
+- Upgraded the Configurator with a guided Create/Prepare Physical Cart workflow that preserves existing identities and files
+- Added a clear readiness report for root folders, cart identity, and verified Windows/Linux runtime inventories before Host trust
 
 - Added the Phase 3 physical-cart identity foundation with bounded root manifests and stable SHA-256 fingerprints
 - Added a strict per-user trusted-cart database with separate automatic-launch approval and trust revocation

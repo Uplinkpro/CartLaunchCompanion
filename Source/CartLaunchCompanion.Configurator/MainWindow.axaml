@@ -20,7 +20,7 @@
                     IsVisible="{Binding HasExistingGames}"
                     SelectionChanged="ExistingGameChanged"/>
           <Button Content="Settings" Click="SettingsClicked"/>
-          <Button Content="Create cart" Click="CreateCartClicked"/>
+          <Button Content="Prepare physical cart" Click="CreateCartClicked"/>
           <Button Content="New" Click="NewClicked"/>
           <Button Content="Open game.json" Click="OpenClicked"/>
           <Button Content="Choose game folder" Click="ChooseFolderClicked"/>
