@@ -50,8 +50,7 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
 
     private bool ValidateSource()
     {
-        var system = Path.Combine(SourceRoot, "System");
-        var valid = Directory.Exists(system) && (Directory.Exists(Path.Combine(system, "Windows-x64")) || Directory.Exists(Path.Combine(system, "Linux-x64")));
+        var valid = PublishedCartSourceLocator.IsPublishedCart(SourceRoot);
         SourceStatus = valid
             ? "Published portable layout detected. Source code and development files will still be excluded."
             : "This is not a published Cart layout yet. Choose a folder containing System/Windows-x64 or System/Linux-x64.";

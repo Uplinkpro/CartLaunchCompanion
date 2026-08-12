@@ -158,7 +158,8 @@ public sealed partial class MainWindow : Window
     private async void CreateCartClicked(object? sender, RoutedEventArgs e)
     {
         _portablePaths ??= new PortablePathService().Discover(AppContext.BaseDirectory);
-        await new CartPackageDialog(_portablePaths.Root).ShowDialog(this);
+        var source = new PublishedCartSourceLocator().FindBest(_portablePaths.Root);
+        await new CartPackageDialog(source).ShowDialog(this);
     }
 
     private async void ExistingGameChanged(object? sender, SelectionChangedEventArgs e)
