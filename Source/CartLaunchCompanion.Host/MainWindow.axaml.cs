@@ -97,17 +97,37 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
 
     private async void TrustClicked(object? sender, RoutedEventArgs e)
     {
-        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = "Choose the root of a connected game cart", AllowMultiple = false });
-        if (folders.Count == 0) return;
+        var mediaRoot = SelectedConnectedCart?.MediaRoot;
+        if (mediaRoot is null)
+        {
+            var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = "Choose the root of a connected game cart", AllowMultiple = false });
+            if (folders.Count == 0) return;
+            mediaRoot = folders[0].Path.LocalPath;
+        }
+        await ReviewAndTrustAsync(mediaRoot);
+    }
+
+    private async Task ReviewAndTrustAsync(string mediaRoot)
+    {
         try
         {
-            var identity = await new CartIdentityService().LoadAsync(folders[0].Path.LocalPath);
-            Status = "Verifying and hashing the cart's CLC runtime before trust is saved…";
-            var approvals = await new TrustedRuntimeStagingService().CreateApprovalsAsync(folders[0].Path.LocalPath);
-            await _trustStore.TrustAsync(identity, approveAutoLaunch: false, approvals);
-            _auditLog.Write(CartHostAuditEvent.TrustGranted, "approved", identity.Identity.CartId);
+            Status = "Checking the cart identity and runtime before trust review…";
+            var report = await new PhysicalCartReadinessService().InspectAsync(mediaRoot);
+            if (!report.IsReady || report.Identity is null)
+            {
+                Status = "The selected media was not trusted because it did not pass cart readiness validation.";
+                return;
+            }
+            if (!await new TrustConfirmationWindow(report, mediaRoot).ShowDialog<bool>(this))
+            {
+                Status = "Trust review cancelled. No permission was saved.";
+                return;
+            }
+            await _trustStore.TrustAsync(report.Identity, approveAutoLaunch: false, report.RuntimeApprovals);
+            _auditLog.Write(CartHostAuditEvent.TrustGranted, "approved", report.Identity.Identity.CartId);
             await RefreshTrustAsync();
-            Status = $"{identity.Identity.DisplayName} is trusted with {approvals.Count} approved platform runtime(s). Automatic launch remains disabled.";
+            await ScanMountedCartsAsync();
+            Status = $"{report.Identity.Identity.DisplayName} is trusted with {report.RuntimeApprovals.Count} approved platform runtime(s). Automatic launch remains disabled.";
         }
         catch (Exception ex) { Status = "The selected media was not trusted: " + ex.Message; }
     }
@@ -270,17 +290,15 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             var report = await new PhysicalCartReadinessService().InspectAsync(request.MediaRoot);
             if (!report.IsReady || report.Identity is null)
                 return new(false, "The selected cart did not pass Host readiness validation.");
-            await Dispatcher.UIThread.InvokeAsync(async () =>
+            Dispatcher.UIThread.Post(async () =>
             {
                 await ScanMountedCartsAsync();
                 SelectedConnectedCart = ConnectedCarts.FirstOrDefault(item =>
                     Path.GetFullPath(item.MediaRoot).Equals(Path.GetFullPath(request.MediaRoot), StringComparison.OrdinalIgnoreCase));
                 Show(); Activate();
-                Status = SelectedConnectedCart is null
-                    ? "The prepared cart is valid but is not currently detected as mounted media."
-                    : "The prepared cart is selected for review. Trust is not granted until you explicitly choose Trust connected cart.";
+                await ReviewAndTrustAsync(request.MediaRoot);
             });
-            return new(true, "The cart is open for explicit trust review.");
+            return new(true, "The cart is open in the Host for explicit trust confirmation.");
         }
         catch (Exception ex) { return new(false, "Trust review was rejected: " + ex.GetType().Name); }
     }

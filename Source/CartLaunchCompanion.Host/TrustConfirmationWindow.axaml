@@ -1,0 +1,37 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CartLaunchCompanion.Host.TrustConfirmationWindow" Title="Review cart trust"
+        Width="720" Height="650" MinWidth="620" MinHeight="560" WindowStartupLocation="CenterOwner">
+  <Grid Margin="30" RowDefinitions="Auto,*,Auto" RowSpacing="18">
+    <StackPanel Spacing="7">
+      <TextBlock FontSize="27" FontWeight="Bold" Text="TRUST THIS CART?"/>
+      <TextBlock Classes="help" Text="Review the verified identity, included runtimes, and exact permission before saving trust."/>
+    </StackPanel>
+    <ScrollViewer Grid.Row="1">
+      <StackPanel Spacing="14">
+        <Border Classes="card"><Grid ColumnDefinitions="Auto,18,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="7">
+          <TextBlock FontWeight="SemiBold" Text="Cart"/><TextBlock Grid.Column="2" FontWeight="SemiBold" Text="{Binding CartName}"/>
+          <TextBlock Grid.Row="1" Text="Cart ID"/><TextBlock Grid.Row="1" Grid.Column="2" Classes="help" Text="{Binding CartId}"/>
+          <TextBlock Grid.Row="2" Text="Security version"/><TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding SecurityVersion}"/>
+          <TextBlock Grid.Row="3" Text="Connected media"/><TextBlock Grid.Row="3" Grid.Column="2" Classes="help" Text="{Binding MediaRoot}" TextWrapping="Wrap"/>
+        </Grid></Border>
+        <Border Classes="card"><StackPanel Spacing="10">
+          <TextBlock FontSize="18" FontWeight="SemiBold" Text="Verified CLC runtimes"/>
+          <ItemsControl ItemsSource="{Binding Runtimes}"><ItemsControl.ItemTemplate><DataTemplate>
+            <Grid Margin="0,4" ColumnDefinitions="*,Auto"><TextBlock FontWeight="SemiBold" Text="{Binding Platform}"/><TextBlock Grid.Column="1" Classes="help" Text="{Binding FileSummary}"/></Grid>
+          </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+        </StackPanel></Border>
+        <Border Classes="card"><StackPanel Spacing="8">
+          <TextBlock FontSize="18" FontWeight="SemiBold" Text="Permission being granted"/>
+          <TextBlock TextWrapping="Wrap" Text="The Host will remember this cart identity and these exact runtime file hashes for your signed-in account on this computer. This permits verified manual launch."/>
+          <TextBlock TextWrapping="Wrap" Foreground="#F2C36B" Text="Automatic launch remains off. Enabling it later requires a separate confirmation for this cart."/>
+        </StackPanel></Border>
+        <CheckBox x:Name="TrustConfirm" Content="I reviewed this cart and want to save this trust permission."/>
+        <TextBlock x:Name="ConfirmationHelp" Classes="help" Text="Nothing is saved until you confirm below."/>
+      </StackPanel>
+    </ScrollViewer>
+    <Grid Grid.Row="2" ColumnDefinitions="*,12,*">
+      <Button Grid.Column="0" Content="CANCEL" Click="CancelClicked"/>
+      <Button Grid.Column="2" Content="TRUST THIS CART" Background="#2F80ED" Foreground="White" Click="ApproveClicked"/>
+    </Grid>
+  </Grid>
+</Window>
