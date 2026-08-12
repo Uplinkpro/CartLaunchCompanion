@@ -185,4 +185,10 @@ $checksums = foreach ($file in Get-ChildItem -LiteralPath $packages -File | Sort
 Set-Content -LiteralPath (Join-Path $packages 'SHA256SUMS.txt') `
     -Value $checksums -Encoding ASCII
 
+& (Join-Path $PSScriptRoot 'Build\Test-ReleasePackages.ps1') `
+    -PackagesPath $packages -Version $version
+if ($LASTEXITCODE -ne 0) {
+    throw 'Release package audit failed.'
+}
+
 Write-Host "$version packages created in $packages" -ForegroundColor Green
