@@ -200,6 +200,71 @@ public sealed class RuntimeUpdateTests : IDisposable
         Assert.False(File.Exists(Path.Combine(maintenance, "update-journal.json")));
     }
 
+    [Theory]
+    [InlineData(RuntimeUpdateState.Prepared)]
+    [InlineData(RuntimeUpdateState.ActiveMovedToBackup)]
+    [InlineData(RuntimeUpdateState.NewRuntimeActivated)]
+    [InlineData(RuntimeUpdateState.Restarted)]
+    public async Task Recovery_RestoresPreviousRuntimeUntilHealthIsConfirmed(
+        RuntimeUpdateState state)
+    {
+        var cart = Path.Combine(_root, "Cart");
+        var active = Path.Combine(cart, "System", "Windows-x64");
+        var maintenance = Path.Combine(cart, ".cartlaunch");
+        var backup = Path.Combine(maintenance, "previous-runtime", "Windows-x64");
+        Directory.CreateDirectory(active);
+        Directory.CreateDirectory(backup);
+        await File.WriteAllTextAsync(
+            Path.Combine(active, "CartLaunchCompanion.Desktop.exe"),
+            "unconfirmed runtime");
+        await File.WriteAllTextAsync(
+            Path.Combine(backup, "CartLaunchCompanion.Desktop.exe"),
+            "known-good runtime");
+        await File.WriteAllTextAsync(
+            Path.Combine(maintenance, "update-journal.json"),
+            JsonSerializer.Serialize(new RuntimeUpdateJournal
+            {
+                Platform = "Windows-x64",
+                State = state
+            }));
+
+        var updater = new TransactionalRuntimeUpdater(
+            new RuntimeIntegrityVerifier(),
+            new AlwaysTrustedSignatureVerifier());
+        await updater.RecoverInterruptedUpdateAsync(cart);
+
+        Assert.Equal(
+            "known-good runtime",
+            await File.ReadAllTextAsync(Path.Combine(
+                active,
+                "CartLaunchCompanion.Desktop.exe")));
+        Assert.False(Directory.Exists(backup));
+        Assert.False(File.Exists(Path.Combine(maintenance, "update-journal.json")));
+    }
+
+    [Fact]
+    public async Task Recovery_RejectsUnconfirmedRuntimeWhenBackupIsMissing()
+    {
+        var cart = Path.Combine(_root, "Cart");
+        var maintenance = Path.Combine(cart, ".cartlaunch");
+        Directory.CreateDirectory(maintenance);
+        await File.WriteAllTextAsync(
+            Path.Combine(maintenance, "update-journal.json"),
+            JsonSerializer.Serialize(new RuntimeUpdateJournal
+            {
+                Platform = "Windows-x64",
+                State = RuntimeUpdateState.NewRuntimeActivated
+            }));
+
+        var updater = new TransactionalRuntimeUpdater(
+            new RuntimeIntegrityVerifier(),
+            new AlwaysTrustedSignatureVerifier());
+
+        var error = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            updater.RecoverInterruptedUpdateAsync(cart));
+        Assert.Contains("previous runtime is missing", error.Message);
+    }
+
     private string CreatePayload(string platform, string content)
     {
         var payload = Path.Combine(_root, platform, "payload");

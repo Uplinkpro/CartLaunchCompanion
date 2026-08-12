@@ -44,7 +44,7 @@ The parser rejects comments, trailing commas, duplicate properties, unknown fiel
 
 If activation or verification fails, the previous runtime is restored. If the new launcher exits during the health window, it is moved to `failed-runtime`, the previous runtime is restored, and the previous launcher is restarted.
 
-An interrupted journal in the `ActiveMovedToBackup` state is recovered on the next maintenance run before another update starts.
+An interrupted journal is recovered before another update starts. Until the ten-second health window completes, every activation state is treated as unconfirmed: if a backup exists, the new runtime is removed and the known-good backup is restored—even if a crash prevented the journal from recording the directory move. Rollback itself ignores cancellation once filesystem replacement has begun, and it never deletes the active runtime unless a backup is actually present.
 
 ## Signing boundary
 
@@ -60,4 +60,4 @@ The manifest signature is verified before archive extraction. ZIP and TAR entrie
 
 ## Tests
 
-The core test suite covers exact payload verification, modified files, unexpected executables, path escape attempts, unknown manifest fields, transactional activation, manual rollback, interrupted-update recovery, release discovery, bounded downloads, extraction, and cart-package creation. Tagged releases also refuse to publish when the signing secret does not match the public key compiled into CLC, or when any required release asset is missing or empty.
+The core test suite covers exact payload verification, modified files, unexpected executables, path escape attempts, unknown manifest fields, transactional activation, manual rollback, every interrupted activation state, missing-backup fail-closed behavior, release discovery, bounded downloads, extraction, and cart-package creation. Tagged releases also refuse to publish when the signing secret does not match the public key compiled into CLC, or when package integrity, contents, or required release assets fail the automated audit.

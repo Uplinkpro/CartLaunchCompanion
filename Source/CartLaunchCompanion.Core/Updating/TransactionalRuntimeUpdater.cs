@@ -89,7 +89,10 @@ public sealed class TransactionalRuntimeUpdater(
         }
         catch
         {
-            await RollBackAsync(activeRoot, backupRoot, cancellationToken);
+            // Once activation starts, rollback must not be cancelled with the
+            // operation that failed. Restoring the known-good runtime is the
+            // final safety boundary.
+            await RollBackAsync(activeRoot, backupRoot, CancellationToken.None);
             throw;
         }
     }
@@ -123,13 +126,34 @@ public sealed class TransactionalRuntimeUpdater(
         var activeRoot = Path.Combine(cartRoot, "System", journal.Platform);
         var backupRoot = Path.Combine(maintenanceRoot, "previous-runtime", journal.Platform);
 
-        if (journal.State == RuntimeUpdateState.ActiveMovedToBackup &&
-            !Directory.Exists(activeRoot) && Directory.Exists(backupRoot))
+        if (journal.State == RuntimeUpdateState.Prepared)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(activeRoot)!);
-            Directory.Move(backupRoot, activeRoot);
+            // The directory move can reach disk before the following journal
+            // update. A backup therefore takes precedence over the older state.
+            if (Directory.Exists(backupRoot))
+            {
+                await RollBackAsync(activeRoot, backupRoot, CancellationToken.None);
+            }
+
             File.Delete(journalPath);
+            return;
         }
+
+        if (journal.State is RuntimeUpdateState.ActiveMovedToBackup or
+            RuntimeUpdateState.NewRuntimeActivated or RuntimeUpdateState.Restarted)
+        {
+            if (!Directory.Exists(backupRoot))
+            {
+                throw new InvalidDataException(
+                    "The interrupted update cannot be recovered because its previous runtime is missing.");
+            }
+
+            await RollBackAsync(activeRoot, backupRoot, CancellationToken.None);
+            File.Delete(journalPath);
+            return;
+        }
+
+        throw new InvalidDataException("The update recovery journal state is invalid.");
     }
 
     public static void CompleteSuccessfulUpdate(string cartRoot, string platform)
@@ -241,16 +265,18 @@ public sealed class TransactionalRuntimeUpdater(
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        if (!Directory.Exists(backupRoot))
+        {
+            return Task.CompletedTask;
+        }
+
         if (Directory.Exists(activeRoot))
         {
             Directory.Delete(activeRoot, recursive: true);
         }
 
-        if (Directory.Exists(backupRoot))
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(activeRoot)!);
-            Directory.Move(backupRoot, activeRoot);
-        }
+        Directory.CreateDirectory(Path.GetDirectoryName(activeRoot)!);
+        Directory.Move(backupRoot, activeRoot);
 
         return Task.CompletedTask;
     }
