@@ -15,6 +15,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
 {
     private CartHostInstallationPlan _plan = CartHostInstallationPlan.ForCurrentUser();
     private TrustedCartStore _trustStore;
+    private CartHostAuditLog _auditLog;
     private string _status = "Drive monitoring and automatic launch are not enabled in this milestone.";
     private TrustedCartItem? _selectedCart;
     private ConnectedCartItem? _selectedConnectedCart;
@@ -29,6 +30,8 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         InitializeComponent();
         DataContext = this;
         _trustStore = new TrustedCartStore(_plan.TrustDatabasePath);
+        _auditLog = new CartHostAuditLog(_plan.LogsDirectory);
+        _auditLog.Write(CartHostAuditEvent.HostStarted, "started");
         _ejectServer = new CartHostEjectServer(HandleEjectRequestAsync);
         _ejectServer.Start();
         Opened += async (_, _) => await RefreshTrustAsync();
@@ -85,6 +88,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     {
         _plan = plan;
         _trustStore = new TrustedCartStore(_plan.TrustDatabasePath);
+        _auditLog = new CartHostAuditLog(_plan.LogsDirectory);
         foreach (var property in new[] { nameof(ScopeDescription), nameof(InstallDirectory), nameof(DataDirectory), nameof(StartupRegistration), nameof(SettingsPath), nameof(TrustDatabasePath), nameof(LogsDirectory) }) Changed(property);
     }
 
@@ -98,6 +102,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             Status = "Verifying and hashing the cart's CLC runtime before trust is saved…";
             var approvals = await new TrustedRuntimeStagingService().CreateApprovalsAsync(folders[0].Path.LocalPath);
             await _trustStore.TrustAsync(identity, approveAutoLaunch: false, approvals);
+            _auditLog.Write(CartHostAuditEvent.TrustGranted, "approved", identity.Identity.CartId);
             await RefreshTrustAsync();
             Status = $"{identity.Identity.DisplayName} is trusted with {approvals.Count} approved platform runtime(s). Automatic launch remains disabled.";
         }
@@ -109,6 +114,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         if (SelectedCart is null) { Status = "Select a trusted cart first."; return; }
         if (await _trustStore.RevokeAsync(SelectedCart.CartId))
         {
+            _auditLog.Write(CartHostAuditEvent.TrustRevoked, "revoked", SelectedCart.CartId);
             Status = $"Trust was revoked for {SelectedCart.DisplayName}. The physical cart was not changed.";
             await RefreshTrustAsync();
         }
@@ -197,12 +203,15 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         {
             Status = "Verifying and preparing the selected cart before confirmation…";
             var identity = await new CartIdentityService().LoadAsync(SelectedConnectedCart.MediaRoot);
+            _auditLog.Write(CartHostAuditEvent.VerificationStarted, "manual", identity.Identity.CartId);
             var platform = OperatingSystem.IsWindows() ? "Windows-x64" : "Linux-x64";
             prepared = await new TrustedRuntimeStagingService().PrepareAsync(
                 SelectedConnectedCart.MediaRoot, identity, await _trustStore.LoadAsync(), platform, Path.Combine(_plan.DataDirectory, "Sessions"));
             var approved = await new LaunchConfirmationWindow(identity.Identity.DisplayName, SelectedConnectedCart.MediaRoot, prepared.ExecutablePath).ShowDialog<bool>(this);
             if (!approved) { TrustedRuntimeStagingService.DeleteSession(prepared); Status = "Launch cancelled. The prepared local session was removed."; return; }
             var session = new PreparedCartLaunchService().Start(prepared);
+            _auditLog.Write(CartHostAuditEvent.VerificationAccepted, "manual", identity.Identity.CartId);
+            _auditLog.Write(CartHostAuditEvent.LaunchStarted, "manual", identity.Identity.CartId);
             _activeLaunches[SelectedConnectedCart.MediaRoot] = session;
             prepared = null;
             Status = "Verified CLC is running from its protected local session. The session will be removed after it exits.";
@@ -210,6 +219,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         }
         catch (Exception ex)
         {
+            _auditLog.Write(CartHostAuditEvent.VerificationRejected, ex.GetType().Name);
             if (prepared is not null) TrustedRuntimeStagingService.DeleteSession(prepared);
             Status = "Launch was rejected safely: " + ex.Message;
         }
@@ -233,6 +243,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             ConnectedCarts.Clear();
             foreach (var cart in detected)
                 ConnectedCarts.Add(new(cart.Identity.Identity.DisplayName, cart.MediaRoot, TrustedCartStore.IsTrusted(trusted, cart.Identity)));
+            _auditLog.Write(CartHostAuditEvent.ScanCompleted, detected.Count == 0 ? "empty" : "found");
             Status = detected.Count == 0 ? "No physical game carts are currently detected." : $"Detected {detected.Count} physical game cart(s). Nothing was launched.";
         }
         catch (Exception ex) { Status = "Mounted-media scan stopped safely: " + ex.Message; }
@@ -242,8 +253,8 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (_monitor is not null) return;
         _monitor = new PhysicalCartMonitor(new MountedCartDetector(new SystemMountRootProvider(), new CartIdentityService()));
-        _monitor.CartInserted += (_, cart) => Dispatcher.UIThread.Post(async () => { await ScanMountedCartsAsync(); await HandleAutomaticInsertionAsync(cart); });
-        _monitor.CartRemoved += (_, root) => Dispatcher.UIThread.Post(async () => { await ScanMountedCartsAsync(); await HandleRemovalAsync(root); });
+        _monitor.CartInserted += (_, cart) => Dispatcher.UIThread.Post(async () => { _auditLog.Write(CartHostAuditEvent.CartInserted, "detected", cart.Identity.Identity.CartId); await ScanMountedCartsAsync(); await HandleAutomaticInsertionAsync(cart); });
+        _monitor.CartRemoved += (_, root) => Dispatcher.UIThread.Post(async () => { _auditLog.Write(CartHostAuditEvent.CartRemoved, "detected"); await ScanMountedCartsAsync(); await HandleRemovalAsync(root); });
         _monitor.Start();
     }
 
@@ -258,18 +269,21 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             cancellation = new CancellationTokenSource();
             _pendingAutoLaunches[cart.MediaRoot] = cancellation;
             Status = $"{cart.Identity.Identity.DisplayName} was inserted. Verifying its approved runtime for automatic launch…";
+            _auditLog.Write(CartHostAuditEvent.VerificationStarted, "automatic", cart.Identity.Identity.CartId);
             var platform = OperatingSystem.IsWindows() ? "Windows-x64" : "Linux-x64";
             var prepared = await new TrustedRuntimeStagingService().PrepareAsync(
                 cart.MediaRoot, cart.Identity, database, platform, Path.Combine(_plan.DataDirectory, "Sessions"), cancellation.Token);
             cancellation.Token.ThrowIfCancellationRequested();
             if (!Directory.Exists(cart.MediaRoot)) { TrustedRuntimeStagingService.DeleteSession(prepared); return; }
             var session = new PreparedCartLaunchService().Start(prepared);
+            _auditLog.Write(CartHostAuditEvent.VerificationAccepted, "automatic", cart.Identity.Identity.CartId);
+            _auditLog.Write(CartHostAuditEvent.LaunchStarted, "automatic", cart.Identity.Identity.CartId);
             _activeLaunches[cart.MediaRoot] = session;
             Status = $"{cart.Identity.Identity.DisplayName} launched automatically from a verified local session.";
             _ = ObserveAutomaticLaunchAsync(cart.MediaRoot, cart.Identity.Identity.CartId, session);
         }
         catch (OperationCanceledException) { Status = "Automatic launch was cancelled because the cart was removed."; }
-        catch (Exception ex) { Status = "Automatic launch was rejected safely: " + ex.Message; }
+        catch (Exception ex) { _auditLog.Write(CartHostAuditEvent.VerificationRejected, ex.GetType().Name, cart.Identity.Identity.CartId); Status = "Automatic launch was rejected safely: " + ex.Message; }
         finally
         {
             if (cancellation is not null) { _pendingAutoLaunches.Remove(cart.MediaRoot); cancellation.Dispose(); }
@@ -299,16 +313,22 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private async Task CompleteLaunchAsync(string mediaRoot, string cartId, PreparedCartLaunchSession session)
     {
         await session.DisposeAsync();
+        _auditLog.Write(CartHostAuditEvent.LaunchEnded, "closed", cartId);
         _activeLaunches.Remove(mediaRoot);
         _autoLaunchPolicy.Complete(cartId);
     }
 
     private Task<CartHostEjectResponse> HandleEjectRequestAsync(CartHostEjectRequest request)
     {
+        _auditLog.Write(CartHostAuditEvent.EjectRequested, "received", request.CartId);
         var match = _activeLaunches.FirstOrDefault(item =>
             item.Value.Runtime.CartId.Equals(request.CartId, StringComparison.OrdinalIgnoreCase));
         if (match.Value is null)
+        {
+            _auditLog.Write(CartHostAuditEvent.EjectRejected, "no_active_session", request.CartId);
             return Task.FromResult(new CartHostEjectResponse(false, "No active verified session matches this trusted cart."));
+        }
+        _auditLog.Write(CartHostAuditEvent.EjectAccepted, "matched", request.CartId);
         Dispatcher.UIThread.Post(async () => await StopAndEjectAsync(match.Key, request.CartId, match.Value));
         return Task.FromResult(new CartHostEjectResponse(true, "Safe removal accepted."));
     }
@@ -325,8 +345,9 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             Status = outcome == SafeMediaEjectOutcome.Ejected
                 ? "The cart was safely ejected and can now be removed."
                 : "The cart was already removed. Its verified local session was closed safely.";
+            _auditLog.Write(outcome == SafeMediaEjectOutcome.Ejected ? CartHostAuditEvent.EjectCompleted : CartHostAuditEvent.EjectAlreadyRemoved, "complete", cartId);
         }
-        catch (Exception ex) { Status = "The cart was closed but could not be ejected safely: " + ex.Message; }
+        catch (Exception ex) { _auditLog.Write(CartHostAuditEvent.EjectFailed, ex.GetType().Name, cartId); Status = "The cart was closed but could not be ejected safely: " + ex.Message; }
         finally { _autoLaunchPolicy.Complete(cartId); }
     }
 
