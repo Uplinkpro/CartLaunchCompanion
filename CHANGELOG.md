@@ -6,6 +6,8 @@ The project follows semantic versioning where practical.
 
 ## [Unreleased]
 
+> Preview builds from this section are for removable-drive hardware validation. Physical-cart Host support remains pre-release until the published hardware checklist passes on Windows, SteamOS, and at least one additional supported Linux gaming distribution.
+
 ### Added
 
 - Hardened signed updates with key rotation, downgrade and replay protection, approved HTTPS origins, bounded redirects, manifest-governed archive extraction, and crash-safe rollback
