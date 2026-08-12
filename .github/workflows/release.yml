@@ -37,6 +37,7 @@ jobs:
         shell: pwsh
         env:
           CLC_UPDATE_SIGNING_KEY_PEM: ${{ secrets.CLC_UPDATE_SIGNING_KEY_PEM }}
+          CLC_UPDATE_SIGNING_KEY_ID: ${{ vars.CLC_UPDATE_SIGNING_KEY_ID }}
         run: |
           $root = "artifacts/$env:CLC_VERSION"
           dotnet run --project Build/CartLaunchCompanion.UpdateSigner -- "$root/windows/CartLaunchCompanion/System/Windows-x64" Windows-x64 $env:CLC_VERSION "$root/packages/update-win-x64.json"

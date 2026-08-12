@@ -24,8 +24,7 @@ internal static class Program
                 await WaitForExitAsync(processId, options.WaitTimeout);
             }
 
-            using var signatures = new EcdsaUpdateSignatureVerifier(
-                UpdateTrustAnchor.OfficialPublicKeyPem);
+            using var signatures = TrustedUpdateSignatureVerifier.CreateOfficial();
             var updater = new TransactionalRuntimeUpdater(
                 new RuntimeIntegrityVerifier(),
                 signatures);

@@ -52,6 +52,8 @@ HTTPS transport is not sufficient update authorization. Production manifests are
 
 Tagged release builds generate platform-specific runtime payloads and signed manifests in GitHub Actions. A forged or modified manifest cannot pass verification with the embedded public key.
 
+CLC uses an embedded key-ID allowlist to support deliberate signing-key rotation. A successor public key must first be added to CLC and distributed in a normal trusted release while the existing key is still active. Only after that rollout may the repository's `CLC_UPDATE_SIGNING_KEY_ID` variable and encrypted private-key secret switch to the successor. The signer refuses IDs absent from the compiled allowlist and refuses private keys that do not match the selected ID. The manifest's key ID is itself covered by the signature, unknown IDs are rejected, and manifests cannot supply their own public keys. Retiring a compromised or obsolete key requires removing it from the allowlist in a subsequent release.
+
 ## Download and staging
 
 The launcher checks only the official GitHub repository's latest release. It requires the expected manifest and payload names for the current platform, limits downloads to 1 GiB, reserves an additional 128 MiB of free space, and stages data beneath `.cartlaunch/update-staging`.

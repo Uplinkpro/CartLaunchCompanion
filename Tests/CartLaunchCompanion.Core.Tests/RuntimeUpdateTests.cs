@@ -118,6 +118,49 @@ public sealed class RuntimeUpdateTests : IDisposable
     }
 
     [Fact]
+    public async Task TrustedSignatureVerifier_AcceptsCurrentAndSuccessorKeys()
+    {
+        using var currentKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        using var successorKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        using var verifier = new TrustedUpdateSignatureVerifier(
+            new Dictionary<string, string>
+            {
+                ["release-current"] = currentKey.ExportSubjectPublicKeyInfoPem(),
+                ["release-successor"] = successorKey.ExportSubjectPublicKeyInfoPem()
+            });
+        var payload = CreatePayload("Windows-x64", "new runtime");
+
+        var currentManifest = await CreateManifestAsync(payload, "Windows-x64", "2.3.0");
+        SignManifest(currentManifest, "release-current", currentKey);
+        var successorManifest = await CreateManifestAsync(payload, "Windows-x64", "2.4.0");
+        SignManifest(successorManifest, "release-successor", successorKey);
+
+        Assert.True(verifier.Verify(currentManifest));
+        Assert.True(verifier.Verify(successorManifest));
+    }
+
+    [Fact]
+    public async Task TrustedSignatureVerifier_RejectsUnknownOrMismatchedKeyId()
+    {
+        using var trustedKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        using var otherKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        using var verifier = new TrustedUpdateSignatureVerifier(
+            new Dictionary<string, string>
+            {
+                ["release-trusted"] = trustedKey.ExportSubjectPublicKeyInfoPem()
+            });
+        var payload = CreatePayload("Windows-x64", "new runtime");
+
+        var unknownManifest = await CreateManifestAsync(payload, "Windows-x64", "2.3.0");
+        SignManifest(unknownManifest, "release-unknown", otherKey);
+        var mismatchedManifest = await CreateManifestAsync(payload, "Windows-x64", "2.3.0");
+        SignManifest(mismatchedManifest, "release-trusted", otherKey);
+
+        Assert.False(verifier.Verify(unknownManifest));
+        Assert.False(verifier.Verify(mismatchedManifest));
+    }
+
+    [Fact]
     public async Task TransactionalUpdater_ActivatesAndCanRollBack()
     {
         var cart = Path.Combine(_root, "Cart");
@@ -303,6 +346,18 @@ public sealed class RuntimeUpdateTests : IDisposable
             Files = files,
             RootFingerprint = RuntimeIntegrityVerifier.ComputeRootFingerprint(files)
         };
+    }
+
+    private static void SignManifest(
+        RuntimeUpdateManifest manifest,
+        string keyId,
+        ECDsa signingKey)
+    {
+        manifest.SignerKeyId = keyId;
+        manifest.Signature = Convert.ToBase64String(signingKey.SignData(
+            RuntimeUpdateManifestJson.GetUnsignedCanonicalBytes(manifest),
+            HashAlgorithmName.SHA256,
+            DSASignatureFormat.Rfc3279DerSequence));
     }
 
     public void Dispose()

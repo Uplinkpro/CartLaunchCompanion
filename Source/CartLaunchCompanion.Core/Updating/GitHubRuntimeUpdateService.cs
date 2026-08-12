@@ -77,8 +77,8 @@ public sealed class GitHubRuntimeUpdateService(HttpClient httpClient) : IRuntime
         {
             await DownloadFileAsync(update.ManifestUri, manifestPath, RuntimeUpdateManifestJson.MaximumManifestBytes, null, cancellationToken);
             var manifest = await RuntimeUpdateManifestJson.LoadAsync(manifestPath, cancellationToken);
-            using var verifier = new EcdsaUpdateSignatureVerifier(OfficialUpdateTrust.PublicKeyPem);
-            if (!manifest.IsSigned || manifest.SignerKeyId != OfficialUpdateTrust.KeyId || !verifier.Verify(manifest) ||
+            using var verifier = TrustedUpdateSignatureVerifier.CreateOfficial();
+            if (!manifest.IsSigned || !verifier.Verify(manifest) ||
                 manifest.Platform != platform || manifest.Version != update.Version)
                 throw new InvalidDataException("The downloaded update manifest is not trusted.");
 
