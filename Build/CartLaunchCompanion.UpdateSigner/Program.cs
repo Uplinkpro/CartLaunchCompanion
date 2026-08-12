@@ -53,7 +53,10 @@ var manifest = new RuntimeUpdateManifest
 using var signingKey = ECDsa.Create();
 signingKey.ImportFromPem(privateKeyPem);
 manifest.Signature = Convert.ToBase64String(
-    signingKey.SignData(RuntimeUpdateManifestJson.GetUnsignedCanonicalBytes(manifest), HashAlgorithmName.SHA256));
+    signingKey.SignData(
+        RuntimeUpdateManifestJson.GetUnsignedCanonicalBytes(manifest),
+        HashAlgorithmName.SHA256,
+        DSASignatureFormat.Rfc3279DerSequence));
 
 // Refuse to produce an official manifest when the configured secret does not
 // correspond to the public key compiled into every CLC updater.
