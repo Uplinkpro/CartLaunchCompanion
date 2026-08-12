@@ -122,9 +122,13 @@
           "type": "string",
           "description": "Portrait cover path relative to the game folder."
         },
+        "hero": {
+          "type": "string",
+          "description": "Optional panoramic hero path relative to the game folder. Displayed at the top and faded into black."
+        },
         "background": {
           "type": "string",
-          "description": "Wide metadata background path relative to the game folder."
+          "description": "Optional full-screen 16:9 background path relative to the game folder. Takes priority over the hero."
         },
         "logo": {
           "type": "string"
@@ -143,6 +147,13 @@
           "type": "boolean"
         },
         "coverUrl": {
+          "type": "string"
+        },
+        "steamGridDbGameId": {
+          "type": ["integer", "null"],
+          "description": "Optional SteamGridDB game ID used for artwork, including non-Steam and delisted games."
+        },
+        "heroUrl": {
           "type": "string"
         },
         "backgroundUrl": {

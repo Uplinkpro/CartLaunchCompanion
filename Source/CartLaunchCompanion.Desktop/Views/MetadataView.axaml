@@ -15,6 +15,19 @@
                Stretch="UniformToFill"
                IsVisible="{Binding SelectedGame.HasBackground}"
                Opacity="0.72" />
+        <Image Source="{Binding SelectedGame.HeroImage}"
+               Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Top"
+               IsVisible="{Binding SelectedGame.HasHeroOnly}"
+               Opacity="0.82" />
+        <Border IsVisible="{Binding SelectedGame.HasHeroOnly}">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                    <GradientStop Color="#00000000" Offset="0.30" />
+                    <GradientStop Color="#52000000" Offset="0.48" />
+                    <GradientStop Color="#FF000000" Offset="0.76" />
+                </LinearGradientBrush>
+            </Border.Background>
+        </Border>
         <Border Background="#52000000" />
         <Border>
             <Border.Background>

@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Net;
 using System.Text.Json;
 using CartLaunchCompanion.Core.Configuration;
 using CartLaunchCompanion.Core.Library;
@@ -26,14 +27,14 @@ public sealed class SteamMetadataService(
         var result = new GameMetadataEnrichmentResult();
         var steamId = ResolveSteamMetadataId(configuration);
 
-        if (string.IsNullOrWhiteSpace(steamId))
+        if (string.IsNullOrWhiteSpace(steamId) && configuration.Artwork.SteamGridDbGameId is null)
             return result;
 
         JsonDocument? steamDocument = null;
 
         try
         {
-            steamDocument = await GetSteamMetadataAsync(
+            if (!string.IsNullOrWhiteSpace(steamId)) steamDocument = await GetSteamMetadataAsync(
                 steamId,
                 portablePaths,
                 cancellationToken);
@@ -72,12 +73,8 @@ public sealed class SteamMetadataService(
         if (!configuration.Artwork.DownloadMissingArtwork)
             return result;
 
-        await DownloadSteamArtworkAsync(
-            gameFolder,
-            configuration,
-            steamId,
-            result,
-            cancellationToken);
+        if (!string.IsNullOrWhiteSpace(steamId))
+            await DownloadSteamArtworkAsync(gameFolder, configuration, steamId, result, cancellationToken);
 
         var settings = await MetadataProviderSettings.LoadAsync(
             portablePaths,
@@ -236,9 +233,9 @@ public sealed class SteamMetadataService(
 
         await DownloadFirstAvailableAsync(
             gameFolder,
-            configuration.Artwork.Background,
+            configuration.Artwork.Hero,
             [baseUrl + "library_hero.jpg"],
-            "Steam background",
+            "Steam hero",
             result,
             cancellationToken);
 
@@ -429,13 +426,12 @@ public sealed class SteamMetadataService(
     {
         try
         {
-            var gameId = await ResolveSteamGridDbGameIdAsync(
-                steamId,
-                apiKey,
-                cancellationToken);
+            var gameId = configuration.Artwork.SteamGridDbGameId ?? await ResolveSteamGridDbGameIdAsync(
+                steamId, apiKey, cancellationToken);
 
             if (gameId is null)
                 return;
+            configuration.Artwork.SteamGridDbGameId = gameId;
 
             await DownloadSteamGridDbAssetAsync(
                 gameFolder,
@@ -446,7 +442,7 @@ public sealed class SteamMetadataService(
 
             await DownloadSteamGridDbAssetAsync(
                 gameFolder,
-                configuration.Artwork.Background,
+                configuration.Artwork.Hero,
                 $"heroes/game/{gameId}?dimensions=3840x1240,1920x620&types=static",
                 apiKey,
                 cancellationToken);
@@ -464,6 +460,10 @@ public sealed class SteamMetadataService(
                 $"icons/game/{gameId}",
                 apiKey,
                 cancellationToken);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized && !cancellationToken.IsCancellationRequested)
+        {
+            result.Warnings.Add("The saved SteamGridDB API key was rejected. Update or remove it in Configurator Settings.");
         }
         catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
         {
@@ -545,7 +545,7 @@ public sealed class SteamMetadataService(
             "https://www.steamgriddb.com/api/v2/" + endpoint);
 
         request.Headers.Authorization =
-            new AuthenticationHeaderValue("Bearer", apiKey);
+            new AuthenticationHeaderValue("Bearer", apiKey.Trim());
 
         using var response = await httpClient.SendAsync(
             request,
@@ -639,7 +639,7 @@ public sealed class SteamMetadataService(
         string gameFolder,
         GameConfiguration configuration) =>
         ResolveMissingDestination(gameFolder, configuration.Artwork.Cover) is not null ||
-        ResolveMissingDestination(gameFolder, configuration.Artwork.Background) is not null ||
+        ResolveMissingDestination(gameFolder, configuration.Artwork.Hero) is not null ||
         ResolveMissingDestination(gameFolder, configuration.Artwork.Logo) is not null ||
         ResolveMissingDestination(gameFolder, configuration.Artwork.Icon) is not null;
 

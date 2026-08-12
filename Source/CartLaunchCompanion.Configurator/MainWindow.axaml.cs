@@ -1,5 +1,7 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using CartLaunchCompanion.Core.Configuration;
 using CartLaunchCompanion.Core.Configuration.Validation;
@@ -22,6 +24,7 @@ public sealed partial class MainWindow : Window
     private bool _startupSetupShown;
     private PortablePaths? _portablePaths;
     private bool _loadingExistingGame;
+    private CollectionGameEditor? _draggedCollectionGame;
 
     public MainWindow()
     {
@@ -33,6 +36,7 @@ public sealed partial class MainWindow : Window
             _viewModel.CollectionLogoPreview = null;
             _viewModel.CoverPreview = null;
             _viewModel.BackgroundPreview = null;
+            _viewModel.HeroPreview = null;
             _viewModel.LogoPreview = null;
             _viewModel.IconPreview = null;
             _httpClient.Dispose();
@@ -49,6 +53,7 @@ public sealed partial class MainWindow : Window
         _ = await MetadataProviderSettings.LoadAsync(_portablePaths);
         await LoadCollectionBrandingAsync();
         await LoadExistingGamesAsync();
+        await LoadCollectionOrganizerAsync();
         var settings = await ConfiguratorSettings.LoadAsync();
         if (!settings.SetupCompleted)
             await new ApiSetupDialog(settings).ShowDialog<bool>(this);
@@ -73,12 +78,15 @@ public sealed partial class MainWindow : Window
         _viewModel.Status = $"Loading metadata for {match.Name}…";
         var configuration = _viewModel.Configuration;
         configuration.Game.Name = match.Name;
-        configuration.Artwork.SteamMetadataId = match.AppId.ToString();
+        if (match.AppId > 0)
+            configuration.Artwork.SteamMetadataId = match.AppId.ToString();
+        if (match.SteamGridDbGameId is not null)
+            configuration.Artwork.SteamGridDbGameId = match.SteamGridDbGameId;
         _viewModel.ArtworkPreview = match.Artwork;
         _viewModel.ArtworkPreviewTitle = $"{match.Name} · Steam App ID {match.AppId}";
-        if (configuration.Launch.Windows.Launcher == LauncherKind.Steam)
+        if (match.AppId > 0 && configuration.Launch.Windows.Launcher == LauncherKind.Steam)
             configuration.Launch.Windows.SteamId = match.AppId.ToString();
-        if (configuration.Launch.Linux.Enabled && configuration.Launch.Linux.Launcher == LauncherKind.Steam)
+        if (match.AppId > 0 && configuration.Launch.Linux.Enabled && configuration.Launch.Linux.Launcher == LauncherKind.Steam)
             configuration.Launch.Linux.SteamId = match.AppId.ToString();
 
         var downloadArtwork = configuration.Artwork.DownloadMissingArtwork;
@@ -87,10 +95,10 @@ public sealed partial class MainWindow : Window
         {
             var paths = new PortablePathService().Discover(AppContext.BaseDirectory);
             var service = new SteamMetadataService(_httpClient, new GamePathResolver());
-            var scratchFolder = Path.Combine(paths.Cache, "ConfiguratorPreview", match.AppId.ToString());
+            var scratchFolder = Path.Combine(paths.Cache, "ConfiguratorPreview", (match.SteamGridDbGameId ?? match.AppId).ToString());
             var result = await service.EnrichAsync(scratchFolder, configuration, paths);
             var openMetadata = new OpenGameMetadataResult();
-            if (HasMissingTextMetadata(configuration))
+            if (match.AppId > 0 && HasMissingTextMetadata(configuration))
                 openMetadata = await new OpenGameMetadataService(_httpClient)
                     .FillMissingAsync(configuration, match.AppId.ToString());
             if (_viewModel.ArtworkPreview is null && !string.IsNullOrWhiteSpace(openMetadata.CoverUrl))
@@ -586,6 +594,169 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private async Task LoadCollectionOrganizerAsync()
+    {
+        foreach (var game in _viewModel.UnassignedCollectionGames.Concat(_viewModel.CollectionShelves.SelectMany(shelf => shelf.Games)))
+            game.Dispose();
+        _viewModel.UnassignedCollectionGames.Clear();
+        _viewModel.CollectionShelves.Clear();
+
+        foreach (var shelf in _viewModel.Collection.Shelves
+                     .Where(item => !string.IsNullOrWhiteSpace(item.Name))
+                     .OrderBy(item => item.Order))
+            _viewModel.CollectionShelves.Add(new CollectionShelfEditor { Name = shelf.Name.Trim() });
+
+        foreach (var option in _viewModel.ExistingGames)
+        {
+            try
+            {
+                var configuration = await GameConfigurationJson.LoadAsync(option.ConfigurationPath);
+                var editor = new CollectionGameEditor { Name = option.Name, ConfigurationPath = option.ConfigurationPath };
+                var folder = Path.GetDirectoryName(option.ConfigurationPath)!;
+                var cover = new GamePathResolver().ResolveExistingWithAnyExtension(folder, configuration.Artwork.Cover);
+                if (cover is not null)
+                {
+                    try { editor.CoverPreview = new Bitmap(cover); } catch { }
+                }
+
+                var shelfName = configuration.Collection.Shelf.Trim();
+                var shelf = _viewModel.CollectionShelves.FirstOrDefault(item =>
+                    string.Equals(item.Name, shelfName, StringComparison.OrdinalIgnoreCase));
+                if (!string.IsNullOrWhiteSpace(shelfName) && shelf is null)
+                {
+                    shelf = new CollectionShelfEditor { Name = shelfName };
+                    _viewModel.CollectionShelves.Add(shelf);
+                }
+                if (shelf is null)
+                    _viewModel.UnassignedCollectionGames.Add(editor);
+                else
+                    shelf.Games.Add(editor);
+            }
+            catch { }
+        }
+
+        foreach (var shelf in _viewModel.CollectionShelves)
+        {
+            var ordered = new List<(CollectionGameEditor Editor, int Order)>();
+            foreach (var editor in shelf.Games)
+            {
+                var configuration = await GameConfigurationJson.LoadAsync(editor.ConfigurationPath);
+                ordered.Add((editor, configuration.Collection.Order));
+            }
+            shelf.Games.Clear();
+            foreach (var item in ordered.OrderBy(item => item.Order).ThenBy(item => item.Editor.Name, StringComparer.OrdinalIgnoreCase))
+                shelf.Games.Add(item.Editor);
+        }
+    }
+
+    private async void CollectionGamePointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is not Control { DataContext: CollectionGameEditor game } || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+            return;
+        _draggedCollectionGame = game;
+        var data = new DataTransfer();
+        data.Add(DataTransferItem.CreateText(game.ConfigurationPath));
+        await DragDrop.DoDragDropAsync(e, data, DragDropEffects.Move);
+        _draggedCollectionGame = null;
+    }
+
+    private static void CollectionDragOver(object? sender, DragEventArgs e)
+    {
+        e.DragEffects = DragDropEffects.Move;
+        e.Handled = true;
+    }
+
+    private void CollectionShelfDrop(object? sender, DragEventArgs e)
+    {
+        if (_draggedCollectionGame is null || sender is not Control { DataContext: CollectionShelfEditor shelf }) return;
+        MoveCollectionGame(_draggedCollectionGame, shelf.Games);
+        e.Handled = true;
+    }
+
+    private void CollectionUnassignedDrop(object? sender, DragEventArgs e)
+    {
+        if (_draggedCollectionGame is null) return;
+        MoveCollectionGame(_draggedCollectionGame, _viewModel.UnassignedCollectionGames);
+        e.Handled = true;
+    }
+
+    private void CollectionGameDrop(object? sender, DragEventArgs e)
+    {
+        if (_draggedCollectionGame is null || sender is not Control { DataContext: CollectionGameEditor target } || ReferenceEquals(_draggedCollectionGame, target)) return;
+        var destination = FindCollection(_viewModel.CollectionShelves.Select(shelf => shelf.Games).Append(_viewModel.UnassignedCollectionGames), target);
+        if (destination is null) return;
+        RemoveCollectionGame(_draggedCollectionGame);
+        destination.Insert(destination.IndexOf(target), _draggedCollectionGame);
+        _viewModel.CollectionLayoutStatus = $"Moved {_draggedCollectionGame.Name}. Save the layout when it looks right.";
+        e.Handled = true;
+    }
+
+    private void MoveCollectionGame(CollectionGameEditor game, System.Collections.ObjectModel.ObservableCollection<CollectionGameEditor> destination)
+    {
+        RemoveCollectionGame(game);
+        destination.Add(game);
+        _viewModel.CollectionLayoutStatus = $"Moved {game.Name}. Save the layout when it looks right.";
+    }
+
+    private void RemoveCollectionGame(CollectionGameEditor game)
+    {
+        _viewModel.UnassignedCollectionGames.Remove(game);
+        foreach (var shelf in _viewModel.CollectionShelves) shelf.Games.Remove(game);
+    }
+
+    private static System.Collections.ObjectModel.ObservableCollection<CollectionGameEditor>? FindCollection(
+        IEnumerable<System.Collections.ObjectModel.ObservableCollection<CollectionGameEditor>> collections,
+        CollectionGameEditor game) => collections.FirstOrDefault(items => items.Contains(game));
+
+    private void AddCollectionShelfClicked(object? sender, RoutedEventArgs e)
+    {
+        var name = _viewModel.NewShelfName.Trim();
+        if (string.IsNullOrWhiteSpace(name)) { _viewModel.CollectionLayoutStatus = "Enter a shelf name first."; return; }
+        if (_viewModel.CollectionShelves.Any(shelf => string.Equals(shelf.Name, name, StringComparison.OrdinalIgnoreCase)))
+        { _viewModel.CollectionLayoutStatus = "That shelf already exists."; return; }
+        _viewModel.CollectionShelves.Add(new CollectionShelfEditor { Name = name });
+        _viewModel.NewShelfName = "";
+        _viewModel.CollectionLayoutStatus = $"Added {name}. Drag games onto it, then save.";
+    }
+
+    private void MoveCollectionShelfClicked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { DataContext: CollectionShelfEditor shelf, Tag: string direction }) return;
+        var index = _viewModel.CollectionShelves.IndexOf(shelf);
+        var destination = direction == "up" ? index - 1 : index + 1;
+        if (destination < 0 || destination >= _viewModel.CollectionShelves.Count) return;
+        _viewModel.CollectionShelves.Move(index, destination);
+    }
+
+    private void RemoveCollectionShelfClicked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { DataContext: CollectionShelfEditor shelf }) return;
+        foreach (var game in shelf.Games.ToArray()) MoveCollectionGame(game, _viewModel.UnassignedCollectionGames);
+        _viewModel.CollectionShelves.Remove(shelf);
+        _viewModel.CollectionLayoutStatus = $"Removed {shelf.Name}; its games are now unassigned. Save to confirm.";
+    }
+
+    private async void SaveCollectionLayoutClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_portablePaths is null) return;
+        var names = _viewModel.CollectionShelves.Select(shelf => shelf.Name.Trim()).ToArray();
+        if (names.Any(string.IsNullOrWhiteSpace) || names.Distinct(StringComparer.OrdinalIgnoreCase).Count() != names.Length)
+        { _viewModel.CollectionLayoutStatus = "Every shelf needs a unique name before saving."; return; }
+        try
+        {
+            _viewModel.Collection.Shelves = _viewModel.CollectionShelves.Select((shelf, index) =>
+                new CollectionShelfConfiguration { Name = shelf.Name.Trim(), Order = (index + 1) * 10 }).ToList();
+            var placements = _viewModel.CollectionShelves.SelectMany(shelf => shelf.Games.Select((game, index) =>
+                    new CollectionGamePlacementUpdate(game.ConfigurationPath, shelf.Name.Trim(), (index + 1) * 10)))
+                .Concat(_viewModel.UnassignedCollectionGames.Select((game, index) =>
+                    new CollectionGamePlacementUpdate(game.ConfigurationPath, "", (index + 1) * 10))).ToArray();
+            await new CollectionLayoutSaveService().SaveAsync(_portablePaths.Root, _viewModel.Collection, placements);
+            if (_gameJsonPath is not null) await LoadGameConfigurationAsync(_gameJsonPath);
+            _viewModel.CollectionLayoutStatus = $"Saved {placements.Length} games across {_viewModel.CollectionShelves.Count} shelves.";
+        }
+        catch (Exception ex) { _viewModel.CollectionLayoutStatus = $"Nothing was changed: {ex.Message}"; }
+    }
+
     private async Task LoadGameConfigurationAsync(string path)
     {
         _viewModel.Configuration = await GameConfigurationJson.LoadAsync(path);
@@ -599,10 +770,183 @@ public sealed partial class MainWindow : Window
     private async void RefreshArtworkClicked(object? sender, RoutedEventArgs e) =>
         await RefreshArtworkPreviewsAsync();
 
+    private async void DeleteArtworkClicked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string asset } || string.IsNullOrWhiteSpace(_gameJsonPath))
+        {
+            _viewModel.Status = "Choose or save a game folder before deleting artwork.";
+            return;
+        }
+        var artwork = _viewModel.Configuration.Artwork;
+        var configuredPath = asset switch
+        {
+            "cover" => artwork.Cover,
+            "hero" => artwork.Hero,
+            "background" => artwork.Background,
+            "logo" => artwork.Logo,
+            "icon" => artwork.Icon,
+            _ => ""
+        };
+        var label = asset == "background" ? "16:9 background" : asset;
+        var folder = Path.GetDirectoryName(_gameJsonPath)!;
+        var path = new GamePathResolver().ResolveExistingWithAnyExtension(folder, configuredPath);
+        if (path is null)
+        {
+            _viewModel.Status = $"No local {label} file was found to delete.";
+            return;
+        }
+        try
+        {
+            // Release the bitmap before deletion so Windows does not retain a file handle.
+            switch (asset)
+            {
+                case "cover": _viewModel.CoverPreview = null; break;
+                case "hero": _viewModel.HeroPreview = null; break;
+                case "background": _viewModel.BackgroundPreview = null; break;
+                case "logo": _viewModel.LogoPreview = null; break;
+                case "icon": _viewModel.IconPreview = null; break;
+            }
+            File.Delete(path);
+            await RefreshArtworkPreviewsAsync();
+            _viewModel.Status = $"Deleted {label}: {Path.GetFileName(path)}. The configured path was kept for easy replacement.";
+        }
+        catch (Exception ex)
+        {
+            await RefreshArtworkPreviewsAsync();
+            _viewModel.Status = $"Could not delete {label}: {ex.Message}";
+        }
+    }
+
+    private async void RefreshApiArtworkClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_portablePaths is null || string.IsNullOrWhiteSpace(_gameJsonPath))
+        {
+            _viewModel.Status = "Choose or save a game folder before refreshing API artwork.";
+            return;
+        }
+        var steamId = _viewModel.Configuration.Artwork.SteamMetadataId.Trim();
+        if (string.IsNullOrWhiteSpace(steamId))
+        {
+            _viewModel.Status = "A Steam metadata ID is needed to refresh downloaded artwork.";
+            return;
+        }
+
+        var gameFolder = Path.GetDirectoryName(_gameJsonPath)!;
+        var working = GameConfigurationJson.Deserialize(GameConfigurationJson.Serialize(_viewModel.Configuration));
+        working.Artwork.DownloadMissingArtwork = true;
+        var managedPaths = new[]
+        {
+            new GamePathResolver().Resolve(gameFolder, working.Artwork.Cover),
+            new GamePathResolver().Resolve(gameFolder, working.Artwork.Hero),
+            new GamePathResolver().Resolve(gameFolder, working.Artwork.Logo),
+            new GamePathResolver().Resolve(gameFolder, working.Artwork.Icon)
+        };
+        var screenshotFolder = Path.Combine(gameFolder, "Artwork", "Screenshots");
+        var backupFolder = Path.Combine(_portablePaths.Cache, "ArtworkRefresh", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(backupFolder);
+        var backups = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        try
+        {
+            _viewModel.Status = $"Refreshing downloaded artwork for {_viewModel.Configuration.Game.Name}…";
+            foreach (var path in managedPaths.Where(File.Exists))
+            {
+                var backup = Path.Combine(backupFolder, Guid.NewGuid().ToString("N") + Path.GetExtension(path));
+                File.Move(path, backup);
+                backups[path] = backup;
+            }
+            if (Directory.Exists(screenshotFolder))
+            {
+                foreach (var path in Directory.EnumerateFiles(screenshotFolder))
+                {
+                    var backup = Path.Combine(backupFolder, "screenshot-" + Guid.NewGuid().ToString("N") + Path.GetExtension(path));
+                    File.Move(path, backup);
+                    backups[path] = backup;
+                }
+            }
+
+            var result = await new SteamMetadataService(_httpClient, new GamePathResolver())
+                .EnrichAsync(gameFolder, working, _portablePaths);
+            var refreshed = 0;
+            foreach (var path in managedPaths.Concat(Directory.Exists(screenshotFolder)
+                         ? Directory.EnumerateFiles(screenshotFolder)
+                         : []))
+            {
+                if (IsReadableImage(path)) { refreshed++; continue; }
+                if (File.Exists(path)) File.Delete(path);
+                if (backups.Remove(path, out var backup)) File.Move(backup, path, true);
+            }
+            foreach (var (path, backup) in backups)
+            {
+                if (!File.Exists(path) && File.Exists(backup)) File.Move(backup, path, true);
+            }
+
+            await RefreshArtworkPreviewsAsync();
+            await RunArtworkAuditAsync();
+            _viewModel.Status = result.Warnings.Count == 0
+                ? $"Updated {refreshed} API artwork files. Custom background and trailer were preserved."
+                : $"Updated {refreshed} Steam artwork files. {string.Join(" ", result.Warnings)} Existing artwork was preserved.";
+        }
+        catch (Exception ex)
+        {
+            foreach (var path in managedPaths)
+                if (File.Exists(path)) File.Delete(path);
+            foreach (var (path, backup) in backups)
+                if (File.Exists(backup)) { Directory.CreateDirectory(Path.GetDirectoryName(path)!); File.Move(backup, path, true); }
+            _viewModel.Status = $"Artwork refresh failed; the previous files were restored: {ex.Message}";
+        }
+        finally
+        {
+            if (Directory.Exists(backupFolder)) Directory.Delete(backupFolder, recursive: true);
+        }
+    }
+
+    private async void BrowseSteamGridDbArtworkClicked(object? sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_gameJsonPath)) { _viewModel.Status = "Choose or save a game folder first."; return; }
+        var settings = await ConfiguratorSettings.LoadAsync();
+        if (string.IsNullOrWhiteSpace(settings.SteamGridDbApiKey)) { _viewModel.Status = "Add a SteamGridDB API key in Settings first."; return; }
+        var gameId = _viewModel.Configuration.Artwork.SteamGridDbGameId;
+        if (gameId is null) { _viewModel.Status = "Match this game by title first so its SteamGridDB game ID can be saved."; return; }
+        var choice = await new SteamGridDbArtworkDialog(new SteamGridDbArtworkService(_httpClient), gameId.Value, settings.SteamGridDbApiKey)
+            .ShowDialog<(SteamGridDbAssetKind Kind, SteamGridDbAsset Asset)?>(this);
+        if (choice is null) return;
+        var folder = Path.GetDirectoryName(_gameJsonPath)!;
+        var artwork = _viewModel.Configuration.Artwork;
+        var configured = choice.Value.Kind switch
+        {
+            SteamGridDbAssetKind.Cover => artwork.Cover,
+            SteamGridDbAssetKind.Hero => artwork.Hero,
+            SteamGridDbAssetKind.Logo => artwork.Logo,
+            _ => artwork.Icon
+        };
+        try
+        {
+            var destination = new GamePathResolver().Resolve(folder, configured);
+            await new SteamGridDbArtworkService(_httpClient).DownloadAsync(choice.Value.Asset, destination);
+            var credit = $"SteamGridDB {choice.Value.Kind}: {choice.Value.Asset.Credit} (asset {choice.Value.Asset.Id})";
+            if (!_viewModel.Configuration.Notes.Contains(credit, StringComparison.OrdinalIgnoreCase))
+                _viewModel.Configuration.Notes = string.IsNullOrWhiteSpace(_viewModel.Configuration.Notes) ? credit : _viewModel.Configuration.Notes.TrimEnd() + Environment.NewLine + credit;
+            await GameConfigurationJson.SaveAsync(_gameJsonPath, _viewModel.Configuration);
+            await RefreshArtworkPreviewsAsync();
+            _viewModel.Status = $"Saved the selected {choice.Value.Kind.ToString().ToLowerInvariant()} and recorded its attribution.";
+        }
+        catch (Exception ex) { _viewModel.Status = "Could not save selected artwork: " + ex.Message; }
+        finally { choice.Value.Asset.Dispose(); }
+    }
+
+    private static bool IsReadableImage(string path)
+    {
+        if (!File.Exists(path)) return false;
+        try { using var image = new Bitmap(path); return image.PixelSize.Width > 0 && image.PixelSize.Height > 0; }
+        catch { return false; }
+    }
+
     private async Task RefreshArtworkPreviewsAsync()
     {
         _viewModel.CoverPreview = null;
         _viewModel.BackgroundPreview = null;
+        _viewModel.HeroPreview = null;
         _viewModel.LogoPreview = null;
         _viewModel.IconPreview = null;
 
@@ -612,6 +956,7 @@ public sealed partial class MainWindow : Window
             : Path.GetDirectoryName(_gameJsonPath);
         _viewModel.CoverPreview = await LoadArtworkPreviewAsync(folder, configuration.Artwork.Cover, configuration.Artwork.CoverUrl);
         _viewModel.BackgroundPreview = await LoadArtworkPreviewAsync(folder, configuration.Artwork.Background, configuration.Artwork.BackgroundUrl);
+        _viewModel.HeroPreview = await LoadArtworkPreviewAsync(folder, configuration.Artwork.Hero, configuration.Artwork.HeroUrl);
         _viewModel.LogoPreview = await LoadArtworkPreviewAsync(folder, configuration.Artwork.Logo, configuration.Artwork.LogoUrl);
         _viewModel.IconPreview = await LoadArtworkPreviewAsync(folder, configuration.Artwork.Icon, configuration.Artwork.IconUrl);
     }
@@ -660,6 +1005,7 @@ public sealed partial class MainWindow : Window
 
             await TryDownloadImageAsync("Cover", artwork.CoverUrl, artworkFolder, path => artwork.Cover = path, completed, failures);
             await TryDownloadImageAsync("Background", artwork.BackgroundUrl, artworkFolder, path => artwork.Background = path, completed, failures);
+            await TryDownloadImageAsync("Hero", artwork.HeroUrl, artworkFolder, path => artwork.Hero = path, completed, failures);
             await TryDownloadImageAsync("Logo", artwork.LogoUrl, artworkFolder, path => artwork.Logo = path, completed, failures);
             await TryDownloadImageAsync("Icon", artwork.IconUrl, artworkFolder, path => artwork.Icon = path, completed, failures);
             await TryDownloadTrailerAsync(artwork.TrailerUrl, mediaFolder, path => artwork.Trailer = path, completed, failures);
@@ -837,7 +1183,7 @@ public sealed partial class MainWindow : Window
                     : await GameConfigurationJson.LoadAsync(option.ConfigurationPath);
                 var folder = Path.GetDirectoryName(option.ConfigurationPath)!;
                 AuditImage(option.Name, "Cover", folder, configuration.Artwork.Cover, resolver);
-                AuditImage(option.Name, "Background", folder, configuration.Artwork.Background, resolver);
+                AuditStageArtwork(option.Name, folder, configuration.Artwork, resolver);
                 AuditImage(option.Name, "Logo", folder, configuration.Artwork.Logo, resolver);
                 AuditImage(option.Name, "Icon", folder, configuration.Artwork.Icon, resolver);
             }
@@ -872,6 +1218,28 @@ public sealed partial class MainWindow : Window
         catch
         {
             _viewModel.ArtworkAuditResults.Add(new ArtworkAuditItem(game, asset, "✕", "#FF6B72", "Unreadable image"));
+        }
+    }
+
+    private void AuditStageArtwork(string game, string folder, ArtworkConfiguration artwork, GamePathResolver resolver)
+    {
+        var background = resolver.ResolveExistingWithAnyExtension(folder, artwork.Background);
+        var hero = resolver.ResolveExistingWithAnyExtension(folder, artwork.Hero);
+        var path = background ?? hero;
+        var label = background is not null ? "16:9 background" : "Hero";
+        if (path is null)
+        {
+            _viewModel.ArtworkAuditResults.Add(new ArtworkAuditItem(game, "Hero / background", "✕", "#FF6B72", "Both are missing"));
+            return;
+        }
+        try
+        {
+            using var image = new Bitmap(path);
+            _viewModel.ArtworkAuditResults.Add(new ArtworkAuditItem(game, label, "✓", "#69DB8A", $"{image.PixelSize.Width} × {image.PixelSize.Height}"));
+        }
+        catch
+        {
+            _viewModel.ArtworkAuditResults.Add(new ArtworkAuditItem(game, label, "✕", "#FF6B72", "Unreadable image"));
         }
     }
 

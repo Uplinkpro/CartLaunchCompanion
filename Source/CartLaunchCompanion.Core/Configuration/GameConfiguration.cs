@@ -46,15 +46,18 @@ public sealed class GameInformation
 public sealed class ArtworkConfiguration
 {
     public string Cover { get; set; } = "Artwork/Cover.jpg";
+    public string Hero { get; set; } = "Artwork/Hero.jpg";
     public string Background { get; set; } = "Artwork/Background.jpg";
     public string Logo { get; set; } = "Artwork/Logo.png";
     public string Icon { get; set; } = "Artwork/Icon.png";
     public string Trailer { get; set; } = "Media/Trailer.mp4";
 
     public string SteamMetadataId { get; set; } = "";
+    public long? SteamGridDbGameId { get; set; }
     public bool DownloadMissingArtwork { get; set; } = true;
 
     public string CoverUrl { get; set; } = "";
+    public string HeroUrl { get; set; } = "";
     public string BackgroundUrl { get; set; } = "";
     public string LogoUrl { get; set; } = "";
     public string IconUrl { get; set; } = "";

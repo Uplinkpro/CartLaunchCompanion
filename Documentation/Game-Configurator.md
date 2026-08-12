@@ -40,7 +40,7 @@ Enter a title or a numeric Steam App ID and select **Find on Steam**. The result
 
 Choose the exact game or edition from the results. The configurator then fills the Steam ID and available game information automatically.
 
-Name searches combine Steam's current Store catalogue with SteamGridDB. Delisted historical games can therefore appear as legacy matches. When Steam no longer publishes the legacy App ID, select the match and enter its known numeric Steam App ID before continuing.
+Name searches combine Steam's current Store catalogue with SteamGridDB. Non-Steam, console, emulated, and delisted games can therefore be matched and saved with a SteamGridDB game ID even when no Steam App ID exists. Steam IDs remain optional and are used separately for Steam descriptions, screenshots, and trailers.
 
 ## Requirement labels
 
@@ -52,7 +52,7 @@ Use **Open game.json** to edit an existing Version 2 configuration. Saving uses 
 
 ## Custom Series Collection placement
 
-Open **Series collection** to place the game on an era, generation, platform, or themed shelf. Enter the shelf name exactly as it appears in `Config/collection.json`, then choose its order within that shelf. Using 10, 20, 30, and similar values leaves room to insert games later.
+Open **Series collection** to arrange every saved game visually. Drag cover cards between shelves or onto another card to reorder them. Shelves can be added, renamed, reordered, or removed; removing one safely returns its games to **Unassigned**. **Save collection layout** updates `Config/collection.json` and every affected `game.json` as one transaction, restoring earlier files if any write fails.
 
 This step writes the game's `collection.shelf` and `collection.order` values. The collection-wide name, logo, accent color, and shelf definitions remain in `Config/collection.json`; start from `Config/collection.example.json`. Shelves without games are hidden automatically.
 
@@ -60,11 +60,15 @@ The Series collection page also previews the collection-wide header logo. Use a 
 
 ## Artwork sanity check
 
-The Review & Save page checks every saved game’s cover, background, logo, and icon. A checkmark means the file exists and can be decoded as an image; an X identifies missing or unreadable artwork. The current game is checked from the fields presently shown in the editor, while other games are loaded from their saved `game.json` files. The audit also runs after saving.
+The Review & Save page checks every saved game’s cover, hero or 16:9 background, logo, and icon. A checkmark means the file exists and can be decoded as an image; an X identifies missing or unreadable artwork. The current game is checked from the fields presently shown in the editor, while other games are loaded from their saved `game.json` files. The audit also runs after saving.
 
 The Artwork & Media page begins with a metadata-screen mockup showing the cover, background, logo, and icon together. Each local file-path field then has its own preview directly underneath. Local files take priority, with the corresponding configured URL used as a preview fallback. Missing assets are labeled individually, and **Refresh previews** reloads the page after manual path or URL changes.
 
-Direct download addresses are not fetched merely by saving text fields. Use **Download artwork and save** beneath those fields to download supplied cover, background, logo, icon, and direct-video URLs into the game folder. Images must decode successfully and are limited to 25 MB each; direct videos are limited to 1 GB. Successful downloads update the local paths, save `game.json`, refresh previews, and rerun the artwork sanity check. YouTube links remain streaming fallbacks and are not downloaded as files.
+Steam and SteamGridDB panoramic artwork is stored as a **Hero**, displayed across the top, and faded into true black without stretching. A user-supplied 16:9 background is a separate full-screen option and takes priority when present.
+
+**Browse SteamGridDB artwork** provides ranked Cover, Hero, Logo, and Icon galleries. Results default to static artwork with adult, humor, and epilepsy-tagged entries excluded. Selecting an asset downloads and validates its full-resolution file and records the artist and asset attribution. **Update all API artwork** safely refreshes API-managed assets and screenshots while preserving custom 16:9 backgrounds and local trailers. Individual local artwork files can be removed with **Delete file** without clearing their reusable configured paths.
+
+Direct download addresses are not fetched merely by saving text fields. Use **Download artwork and save** beneath those fields to download supplied cover, hero, 16:9 background, logo, icon, and direct-video URLs into the game folder. Images must decode successfully and are limited to 25 MB each; direct videos are limited to 1 GB. Successful downloads update the local paths, save `game.json`, refresh previews, and rerun the artwork sanity check. YouTube links remain streaming fallbacks and are not downloaded as files.
 
 ## Emulator launches
 

@@ -41,7 +41,11 @@ public static class MetadataSecretStore
 
     private static void WriteWindows(string key, string value)
     {
-        if (string.IsNullOrWhiteSpace(value)) return;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            CredDelete(Target(key), 1, 0);
+            return;
+        }
         var bytes = System.Text.Encoding.Unicode.GetBytes(value);
         var blob = Marshal.AllocCoTaskMem(bytes.Length);
         try
@@ -79,7 +83,16 @@ public static class MetadataSecretStore
 
     private static async Task WriteLinuxAsync(string key, string value, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(value)) return;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            try
+            {
+                using var clear = StartSecretTool(["clear", "application", ApplicationName, "key", key]);
+                await clear.WaitForExitAsync(cancellationToken);
+            }
+            catch (Win32Exception) { }
+            return;
+        }
         Process process;
         try
         {
@@ -140,6 +153,8 @@ public static class MetadataSecretStore
     private static extern bool CredWrite(ref NativeCredential credential, uint flags);
     [DllImport("advapi32.dll", EntryPoint = "CredReadW", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern bool CredRead(string target, uint type, uint flags, out IntPtr credential);
+    [DllImport("advapi32.dll", EntryPoint = "CredDeleteW", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern bool CredDelete(string target, uint type, uint flags);
     [DllImport("advapi32.dll")]
     private static extern void CredFree(IntPtr buffer);
 }

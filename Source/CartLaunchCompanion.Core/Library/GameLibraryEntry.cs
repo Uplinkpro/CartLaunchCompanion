@@ -13,6 +13,7 @@ public sealed class GameLibraryEntry
     public bool ImportedFromVersion1 { get; init; }
 
     public string? CoverPath { get; init; }
+    public string? HeroPath { get; init; }
     public string? BackgroundPath { get; init; }
     public string? LogoPath { get; init; }
     public string? IconPath { get; init; }

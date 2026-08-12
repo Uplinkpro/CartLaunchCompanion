@@ -13,7 +13,7 @@
       <Button Grid.Column="2" Content="Search Steam" Click="SearchClicked"/>
     </Grid>
     <Border Grid.Row="2" Classes="card">
-      <Grid RowDefinitions="Auto,*,Auto">
+      <Grid RowDefinitions="Auto,*">
         <TextBlock x:Name="StatusText" Foreground="#AAB2BE" Text="Enter a game name to begin."/>
         <ListBox x:Name="ResultsList" Grid.Row="1" Margin="0,12,0,0" SelectionChanged="ResultSelected">
           <ListBox.ItemTemplate>
@@ -30,15 +30,6 @@
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ListBox>
-        <Border x:Name="LegacyIdPanel" Grid.Row="2" IsVisible="False" Background="#2A2418" BorderBrush="#66522C" BorderThickness="1" CornerRadius="7" Padding="12" Margin="0,10,0,0">
-          <Grid ColumnDefinitions="*,12,220">
-            <StackPanel>
-              <TextBlock FontWeight="SemiBold" Text="Historical Steam App ID required"/>
-              <TextBlock Classes="help" Text="This delisted SteamGridDB match is not in Steam’s current catalog. Enter its known App ID to continue."/>
-            </StackPanel>
-            <TextBox x:Name="LegacyAppIdBox" Grid.Column="2" PlaceholderText="Example: 12170" TextChanged="LegacyAppIdChanged"/>
-          </Grid>
-        </Border>
       </Grid>
     </Border>
     <Grid Grid.Row="3" ColumnDefinitions="*,Auto,10,Auto">

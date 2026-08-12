@@ -37,6 +37,7 @@
             <Button Grid.Column="1" Content="Get SteamGridDB key ↗" Click="GetSteamGridDbKeyClicked"/>
           </Grid>
           <TextBox x:Name="SteamGridDbKeyBox" PasswordChar="●" PlaceholderText="Paste SteamGridDB API key" Margin="0,14,0,0"/>
+          <TextBlock x:Name="SteamGridDbKeyStatus" Classes="help" Margin="0,7,0,0"/>
         </StackPanel></Border>
 
         <StackPanel>

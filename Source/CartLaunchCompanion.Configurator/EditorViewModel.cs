@@ -17,6 +17,7 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     private string _artworkPreviewTitle = "No artwork selected yet";
     private Bitmap? _coverPreview;
     private Bitmap? _backgroundPreview;
+    private Bitmap? _heroPreview;
     private Bitmap? _logoPreview;
     private Bitmap? _iconPreview;
     private string _pathStatus = "Choose a game configuration folder before locating portable files.";
@@ -27,6 +28,8 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     private string _artworkAuditSummary = "Artwork has not been checked yet.";
     private string _windowsLauncherStatus = "Choose a launcher, then verify only that launcher on this computer.";
     private string _linuxLauncherStatus = "Choose a launcher, then verify only that launcher on this computer or Steam Deck.";
+    private string _newShelfName = "";
+    private string _collectionLayoutStatus = "Drag a game card onto a shelf, then save the layout.";
 
     public GameConfiguration Configuration { get => _configuration; set { _configuration = value; Changed(); Changed(nameof(JsonPreview)); } }
     public string FilePath { get => _filePath; set { _filePath = value; Changed(); } }
@@ -37,11 +40,15 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     public string ArtworkPreviewTitle { get => _artworkPreviewTitle; set { _artworkPreviewTitle = value; Changed(); } }
     public bool HasArtworkPreview => ArtworkPreview is not null;
     public Bitmap? CoverPreview { get => _coverPreview; set { _coverPreview?.Dispose(); _coverPreview = value; Changed(); Changed(nameof(HasCoverPreview)); } }
-    public Bitmap? BackgroundPreview { get => _backgroundPreview; set { _backgroundPreview?.Dispose(); _backgroundPreview = value; Changed(); Changed(nameof(HasBackgroundPreview)); } }
+    public Bitmap? BackgroundPreview { get => _backgroundPreview; set { _backgroundPreview?.Dispose(); _backgroundPreview = value; Changed(); Changed(nameof(HasBackgroundPreview)); Changed(nameof(HasHeroOnlyPreview)); Changed(nameof(HasStagePreview)); } }
+    public Bitmap? HeroPreview { get => _heroPreview; set { _heroPreview?.Dispose(); _heroPreview = value; Changed(); Changed(nameof(HasHeroPreview)); Changed(nameof(HasHeroOnlyPreview)); Changed(nameof(HasStagePreview)); } }
     public Bitmap? LogoPreview { get => _logoPreview; set { _logoPreview?.Dispose(); _logoPreview = value; Changed(); Changed(nameof(HasLogoPreview)); } }
     public Bitmap? IconPreview { get => _iconPreview; set { _iconPreview?.Dispose(); _iconPreview = value; Changed(); Changed(nameof(HasIconPreview)); } }
     public bool HasCoverPreview => CoverPreview is not null;
     public bool HasBackgroundPreview => BackgroundPreview is not null;
+    public bool HasHeroPreview => HeroPreview is not null;
+    public bool HasHeroOnlyPreview => HeroPreview is not null && BackgroundPreview is null;
+    public bool HasStagePreview => BackgroundPreview is not null || HeroPreview is not null;
     public bool HasLogoPreview => LogoPreview is not null;
     public bool HasIconPreview => IconPreview is not null;
     public string PathStatus { get => _pathStatus; set { _pathStatus = value; Changed(); } }
@@ -55,6 +62,10 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     public string ArtworkAuditSummary { get => _artworkAuditSummary; set { _artworkAuditSummary = value; Changed(); } }
     public string WindowsLauncherStatus { get => _windowsLauncherStatus; set { _windowsLauncherStatus = value; Changed(); } }
     public string LinuxLauncherStatus { get => _linuxLauncherStatus; set { _linuxLauncherStatus = value; Changed(); } }
+    public ObservableCollection<CollectionShelfEditor> CollectionShelves { get; } = [];
+    public ObservableCollection<CollectionGameEditor> UnassignedCollectionGames { get; } = [];
+    public string NewShelfName { get => _newShelfName; set { _newShelfName = value; Changed(); } }
+    public string CollectionLayoutStatus { get => _collectionLayoutStatus; set { _collectionLayoutStatus = value; Changed(); } }
     public bool HasExistingGames => ExistingGames.Count > 0;
     public Array LauncherKinds { get; } = Enum.GetValues<LauncherKind>();
     public Array PreferredPlatforms { get; } = Enum.GetValues<PreferredPlatform>();
@@ -72,7 +83,7 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
     public void NotifyExistingGamesChanged() => Changed(nameof(HasExistingGames));
     public void RefreshPreview() => JsonPreview = GameConfigurationJson.Serialize(Configuration);
-    public void Reset() { Configuration = CreateDefault(); FilePath = "No game folder selected"; Status = "New configuration ready."; PathStatus = "Choose a game configuration folder before locating portable files."; ArtworkPreview = null; CoverPreview = null; BackgroundPreview = null; LogoPreview = null; IconPreview = null; ArtworkPreviewTitle = "No artwork selected yet"; RefreshPreview(); }
+    public void Reset() { Configuration = CreateDefault(); FilePath = "No game folder selected"; Status = "New configuration ready."; PathStatus = "Choose a game configuration folder before locating portable files."; ArtworkPreview = null; CoverPreview = null; HeroPreview = null; BackgroundPreview = null; LogoPreview = null; IconPreview = null; ArtworkPreviewTitle = "No artwork selected yet"; RefreshPreview(); }
     private static GameConfiguration CreateDefault() { var c = new GameConfiguration(); c.Launch.Linux.Enabled = false; return c; }
     private void Changed([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }

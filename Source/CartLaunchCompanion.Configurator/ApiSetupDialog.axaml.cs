@@ -20,6 +20,9 @@ public sealed partial class ApiSetupDialog : Window
         InitializeComponent();
         SteamKeyBox.Text = settings.SteamWebApiKey;
         SteamGridDbKeyBox.Text = settings.SteamGridDbApiKey;
+        SteamGridDbKeyStatus.Text = string.IsNullOrWhiteSpace(settings.SteamGridDbApiKey)
+            ? "No SteamGridDB key is currently stored."
+            : $"Stored SteamGridDB value: {settings.SteamGridDbApiKey.Length} characters. Paste the complete key if this looks too short.";
     }
 
     private void GetSteamKeyClicked(object? sender, RoutedEventArgs e) => OpenOfficialPage(
@@ -49,8 +52,14 @@ public sealed partial class ApiSetupDialog : Window
             return;
         }
 
+        var steamGridDbKey = SteamGridDbKeyBox.Text?.Trim() ?? "";
+        if (steamGridDbKey.Length is > 0 and < 20)
+        {
+            StatusText.Text = $"The SteamGridDB value is only {steamGridDbKey.Length} characters and appears incomplete. Paste the full key, or clear the field to disable SteamGridDB.";
+            return;
+        }
         _settings.SteamWebApiKey = steamKey;
-        _settings.SteamGridDbApiKey = SteamGridDbKeyBox.Text?.Trim() ?? "";
+        _settings.SteamGridDbApiKey = steamGridDbKey;
         _settings.SetupCompleted = true;
         await _settings.SaveAsync();
         Close(true);

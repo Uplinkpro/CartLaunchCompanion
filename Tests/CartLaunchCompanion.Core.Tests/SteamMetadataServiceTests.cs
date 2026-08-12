@@ -77,7 +77,7 @@ public sealed class SteamMetadataServiceTests : IDisposable
         foreach (var relativePath in new[]
                  {
                      configuration.Artwork.Cover,
-                     configuration.Artwork.Background,
+                     configuration.Artwork.Hero,
                      configuration.Artwork.Logo,
                      configuration.Artwork.Icon
                  })

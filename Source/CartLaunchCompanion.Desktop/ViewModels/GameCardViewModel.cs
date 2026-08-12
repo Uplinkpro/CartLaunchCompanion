@@ -27,7 +27,20 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
             () => _openGame(this));
 
         CoverImage = TryLoadBitmap(entry.CoverPath);
-        BackgroundImage = TryLoadBitmap(entry.BackgroundPath);
+        var background = TryLoadBitmap(entry.BackgroundPath);
+        var hero = TryLoadBitmap(entry.HeroPath);
+        // Older configurations stored Steam's panoramic library hero in Background.
+        // Recognize it by shape so existing carts immediately render correctly.
+        if (background is not null && background.PixelSize.Width / (double)background.PixelSize.Height >= 2.25)
+        {
+            if (hero is null)
+                hero = background;
+            else
+                background.Dispose();
+            background = null;
+        }
+        BackgroundImage = background;
+        HeroImage = hero;
         LogoImage = TryLoadBitmap(entry.LogoPath);
         LauncherLogoImage = TryLoadBitmap(
             ResolveLauncherAssetPath(entry, "Logo.png"));
@@ -39,7 +52,7 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
                 _screenshotImages.Add(screenshot);
         }
 
-        _currentScreenshotImage = _screenshotImages.FirstOrDefault() ?? BackgroundImage;
+        _currentScreenshotImage = _screenshotImages.FirstOrDefault() ?? BackgroundImage ?? HeroImage;
         var indicatorCount = _screenshotImages.Count > 0
             ? _screenshotImages.Count
             : CurrentScreenshotImage is not null ? 1 : 0;
@@ -127,6 +140,7 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
     public string GlyphForegroundColor => Theme.GlyphForeground;
 
     public Bitmap? CoverImage { get; }
+    public Bitmap? HeroImage { get; }
     public Bitmap? BackgroundImage { get; }
     public Bitmap? LogoImage { get; }
     public Bitmap? LauncherLogoImage { get; }
@@ -139,6 +153,8 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
     public bool HasCover => CoverImage is not null;
     public bool HasNoCover => CoverImage is null;
     public bool HasBackground => BackgroundImage is not null;
+    public bool HasHero => HeroImage is not null;
+    public bool HasHeroOnly => BackgroundImage is null && HeroImage is not null;
     public bool HasLogo => LogoImage is not null;
     public bool HasNoLogo => LogoImage is null;
     public bool HasTrailer => Entry.TrailerPath is not null;
@@ -213,6 +229,7 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
         _screenshotTimer.Tick -= AdvanceScreenshot;
         CoverImage?.Dispose();
         BackgroundImage?.Dispose();
+        if (!ReferenceEquals(HeroImage, BackgroundImage)) HeroImage?.Dispose();
         LogoImage?.Dispose();
         LauncherLogoImage?.Dispose();
         foreach (var screenshot in _screenshotImages)

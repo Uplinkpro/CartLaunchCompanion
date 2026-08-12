@@ -103,6 +103,9 @@
 
             <Image Source="{Binding SelectedGame.BackgroundImage}"
                    Stretch="UniformToFill" Opacity="0.14" Margin="-24" />
+            <Image Source="{Binding SelectedGame.HeroImage}"
+                   IsVisible="{Binding SelectedGame.HasHeroOnly}"
+                   Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Top" Opacity="0.14" />
 
             <Border Background="#B2030406" />
 

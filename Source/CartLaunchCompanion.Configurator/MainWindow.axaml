@@ -65,8 +65,9 @@
                       BorderBrush="#3A4451" BorderThickness="1" CornerRadius="10" ClipToBounds="True">
                 <Grid>
                   <Image Source="{Binding BackgroundPreview}" Stretch="UniformToFill" IsVisible="{Binding HasBackgroundPreview}"/>
-                  <TextBlock Text="BACKGROUND MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasBackgroundPreview}"/>
-                  <Border><Border.Background><LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%"><GradientStop Color="#26000000" Offset="0"/><GradientStop Color="#B8000000" Offset="1"/></LinearGradientBrush></Border.Background></Border>
+                  <Image Source="{Binding HeroPreview}" Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Top" IsVisible="{Binding HasHeroOnlyPreview}"/>
+                  <TextBlock Text="HERO OR 16:9 BACKGROUND MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasStagePreview}"/>
+                  <Border><Border.Background><LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%"><GradientStop Color="#26000000" Offset="0"/><GradientStop Color="#FF000000" Offset="0.78"/></LinearGradientBrush></Border.Background></Border>
                   <Image Source="{Binding LogoPreview}" Width="300" Height="92" Stretch="Uniform"
                          HorizontalAlignment="Left" VerticalAlignment="Top" Margin="34,28,0,0" IsVisible="{Binding HasLogoPreview}"/>
                   <Border Width="76" Height="76" HorizontalAlignment="Right" VerticalAlignment="Top"
@@ -88,26 +89,36 @@
           <Border Classes="card"><StackPanel>
             <TextBlock Classes="section" Text="Automatic metadata"/><TextBlock Classes="help" Margin="0,4,0,20" Text="Steam is the simplest way to fill missing artwork and game information."/>
             <local:LabeledField Label="Steam metadata ID" Description="Optional. The number in the game’s Steam store address. It can be used even when the game launches elsewhere."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.SteamMetadataId}" PlaceholderText="Example: 3240220"/></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="SteamGridDB game ID" Description="Optional. Identifies artwork for non-Steam, delisted, console, and emulated games. Find on Steam can populate this from a title match."><local:LabeledField.FieldContent><NumericUpDown Value="{Binding Configuration.Artwork.SteamGridDbGameId}" Minimum="1" Maximum="9223372036854775807"/></local:LabeledField.FieldContent></local:LabeledField>
             <local:LabeledField Label="Download missing artwork" Description="Optional. When enabled, the launcher tries online sources if local artwork is missing."><local:LabeledField.FieldContent><ToggleSwitch IsChecked="{Binding Configuration.Artwork.DownloadMissingArtwork}" OnContent="Enabled" OffContent="Disabled"/></local:LabeledField.FieldContent></local:LabeledField>
+            <Border Background="#101923" BorderBrush="#31506E" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,8,0,0">
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel><TextBlock FontWeight="SemiBold" Text="Refresh downloaded artwork"/><TextBlock Classes="help" Text="Redownloads API-managed cover, hero, logo, icon, and screenshots. Your custom 16:9 background and local trailer are preserved."/></StackPanel>
+                <Button Grid.Column="1" Content="Update all API artwork" Click="RefreshApiArtworkClicked" Margin="14,0,0,0"/>
+              </Grid>
+            </Border>
+            <Button Content="Browse SteamGridDB artwork" Click="BrowseSteamGridDbArtworkClicked" HorizontalAlignment="Left"/>
           </StackPanel></Border>
           <Border Classes="card"><StackPanel>
             <TextBlock Classes="section" Text="Local files"/><TextBlock Classes="help" Margin="0,4,0,20" Text="Paths are normally relative to this game folder. Keep the defaults when using the standard Artwork and Media folders."/>
-            <local:LabeledField Label="Cover art" Description="Optional. Portrait cover image shown on the shelf."><local:LabeledField.FieldContent><StackPanel Spacing="8"><TextBox Text="{Binding Configuration.Artwork.Cover}"/><Border Height="190" Background="#080A0D" CornerRadius="7" Padding="6"><Grid><Image Source="{Binding CoverPreview}" Stretch="Uniform" IsVisible="{Binding HasCoverPreview}"/><TextBlock Text="COVER MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasCoverPreview}"/></Grid></Border></StackPanel></local:LabeledField.FieldContent></local:LabeledField>
-            <local:LabeledField Label="Background" Description="Optional. Large image behind the game interface."><local:LabeledField.FieldContent><StackPanel Spacing="8"><TextBox Text="{Binding Configuration.Artwork.Background}"/><Border Height="220" Background="#080A0D" CornerRadius="7" Padding="6"><Grid><Image Source="{Binding BackgroundPreview}" Stretch="Uniform" IsVisible="{Binding HasBackgroundPreview}"/><TextBlock Text="BACKGROUND MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasBackgroundPreview}"/></Grid></Border></StackPanel></local:LabeledField.FieldContent></local:LabeledField>
-            <local:LabeledField Label="Logo" Description="Optional. Transparent game logo displayed in the header."><local:LabeledField.FieldContent><StackPanel Spacing="8"><TextBox Text="{Binding Configuration.Artwork.Logo}"/><Border Height="150" Background="#080A0D" CornerRadius="7" Padding="6"><Grid><Image Source="{Binding LogoPreview}" Stretch="Uniform" IsVisible="{Binding HasLogoPreview}"/><TextBlock Text="LOGO MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasLogoPreview}"/></Grid></Border></StackPanel></local:LabeledField.FieldContent></local:LabeledField>
-            <local:LabeledField Label="Icon" Description="Optional. Small square game or launcher icon."><local:LabeledField.FieldContent><StackPanel Spacing="8"><TextBox Text="{Binding Configuration.Artwork.Icon}"/><Border Width="170" Height="170" HorizontalAlignment="Left" Background="#080A0D" CornerRadius="7" Padding="6"><Grid><Image Source="{Binding IconPreview}" Stretch="Uniform" IsVisible="{Binding HasIconPreview}"/><TextBlock Text="ICON MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasIconPreview}"/></Grid></Border></StackPanel></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Cover art" Description="Optional. Portrait cover image shown on the shelf."><local:LabeledField.FieldContent><StackPanel Spacing="8"><Grid ColumnDefinitions="*,8,Auto"><TextBox Text="{Binding Configuration.Artwork.Cover}"/><Button Grid.Column="2" Content="Delete file" Tag="cover" Click="DeleteArtworkClicked"/></Grid><Border Height="190" Background="#080A0D" CornerRadius="7" Padding="6"><Grid><Image Source="{Binding CoverPreview}" Stretch="Uniform" IsVisible="{Binding HasCoverPreview}"/><TextBlock Text="COVER MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasCoverPreview}"/></Grid></Border></StackPanel></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Hero" Description="Optional. Wide artwork, usually around 1920 × 620, placed across the top and faded into true black. Steam supplies this automatically."><local:LabeledField.FieldContent><StackPanel Spacing="8"><Grid ColumnDefinitions="*,8,Auto"><TextBox Text="{Binding Configuration.Artwork.Hero}"/><Button Grid.Column="2" Content="Delete file" Tag="hero" Click="DeleteArtworkClicked"/></Grid><Border Height="150" Background="#080A0D" CornerRadius="7" Padding="6"><Grid><Image Source="{Binding HeroPreview}" Stretch="Uniform" IsVisible="{Binding HasHeroPreview}"/><TextBlock Text="HERO MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasHeroPreview}"/></Grid></Border></StackPanel></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="16:9 background" Description="Optional. A user-supplied full-screen 16:9 image. When present, it takes priority over the scraped hero."><local:LabeledField.FieldContent><StackPanel Spacing="8"><Grid ColumnDefinitions="*,8,Auto"><TextBox Text="{Binding Configuration.Artwork.Background}"/><Button Grid.Column="2" Content="Delete file" Tag="background" Click="DeleteArtworkClicked"/></Grid><Border Height="220" Background="#080A0D" CornerRadius="7" Padding="6"><Grid><Image Source="{Binding BackgroundPreview}" Stretch="Uniform" IsVisible="{Binding HasBackgroundPreview}"/><TextBlock Text="16:9 BACKGROUND MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasBackgroundPreview}"/></Grid></Border></StackPanel></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Logo" Description="Optional. Transparent game logo displayed in the header."><local:LabeledField.FieldContent><StackPanel Spacing="8"><Grid ColumnDefinitions="*,8,Auto"><TextBox Text="{Binding Configuration.Artwork.Logo}"/><Button Grid.Column="2" Content="Delete file" Tag="logo" Click="DeleteArtworkClicked"/></Grid><Border Height="150" Background="#080A0D" CornerRadius="7" Padding="6"><Grid><Image Source="{Binding LogoPreview}" Stretch="Uniform" IsVisible="{Binding HasLogoPreview}"/><TextBlock Text="LOGO MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasLogoPreview}"/></Grid></Border></StackPanel></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Icon" Description="Optional. Small square game or launcher icon."><local:LabeledField.FieldContent><StackPanel Spacing="8"><Grid ColumnDefinitions="*,8,Auto"><TextBox Text="{Binding Configuration.Artwork.Icon}"/><Button Grid.Column="2" Content="Delete file" Tag="icon" Click="DeleteArtworkClicked"/></Grid><Border Width="170" Height="170" HorizontalAlignment="Left" Background="#080A0D" CornerRadius="7" Padding="6"><Grid><Image Source="{Binding IconPreview}" Stretch="Uniform" IsVisible="{Binding HasIconPreview}"/><TextBlock Text="ICON MISSING" Foreground="#707986" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasIconPreview}"/></Grid></Border></StackPanel></local:LabeledField.FieldContent></local:LabeledField>
             <local:LabeledField Label="Local trailer" Description="Optional. A local video such as Media/Trailer.mp4 or snap.mp4."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.Trailer}"/></local:LabeledField.FieldContent></local:LabeledField>
           </StackPanel></Border>
           <Border Classes="card"><StackPanel>
             <TextBlock Classes="section" Text="Direct download addresses"/><TextBlock Classes="help" Margin="0,4,0,20" Text="Optional fallbacks. Paste a direct web address only when you want to override automatic metadata."/>
             <local:LabeledField Label="Cover URL" Description="Optional. Direct address for a portrait cover image."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.CoverUrl}"/></local:LabeledField.FieldContent></local:LabeledField>
-            <local:LabeledField Label="Background URL" Description="Optional. Direct address for a background image."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.BackgroundUrl}"/></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Hero URL" Description="Optional. Direct address for wide hero artwork."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.HeroUrl}"/></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="16:9 background URL" Description="Optional. Direct address for a full-screen 16:9 background."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.BackgroundUrl}"/></local:LabeledField.FieldContent></local:LabeledField>
             <local:LabeledField Label="Logo URL" Description="Optional. Direct address for a transparent logo."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.LogoUrl}"/></local:LabeledField.FieldContent></local:LabeledField>
             <local:LabeledField Label="Icon URL" Description="Optional. Direct address for a square icon."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.IconUrl}"/></local:LabeledField.FieldContent></local:LabeledField>
             <local:LabeledField Label="Trailer URL" Description="Optional. A YouTube link or direct video address used when no local trailer is available."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Artwork.TrailerUrl}"/></local:LabeledField.FieldContent></local:LabeledField>
             <Border Background="#102419" BorderBrush="#347A4D" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,8,0,0">
               <Grid ColumnDefinitions="*,Auto">
-                <StackPanel><TextBlock FontWeight="SemiBold" Text="Download files into this game configuration"/><TextBlock Classes="help" Text="Downloads the supplied cover, background, logo, icon, and direct video URLs; validates images; updates local paths; and saves game.json."/></StackPanel>
+                <StackPanel><TextBlock FontWeight="SemiBold" Text="Download files into this game configuration"/><TextBlock Classes="help" Text="Downloads the supplied cover, hero, 16:9 background, logo, icon, and direct video URLs; validates images; updates local paths; and saves game.json."/></StackPanel>
                 <Button Grid.Column="1" Content="Download artwork and save" Click="DownloadArtworkAndSaveClicked" Margin="14,0,0,0"/>
               </Grid>
             </Border>
@@ -218,11 +229,49 @@
               <Button Content="Choose and add collection logo" Click="ChooseCollectionLogoClicked" HorizontalAlignment="Left"/>
             </StackPanel>
           </Grid></Border>
-          <Border Classes="card"><StackPanel>
-            <TextBlock Classes="section" Text="Custom Series Collection"/>
-            <TextBlock Classes="help" Margin="0,4,0,20" Text="Optional. Place this game on an era, generation, platform, or themed shelf. The collection launcher reads these values from game.json."/>
-            <local:LabeledField Label="Shelf name" Description="Optional. Must match a shelf in Config/collection.json, such as The 3D Era. Leave blank to use the collection's default shelf."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Collection.Shelf}" PlaceholderText="Example: The 3D Era"/></local:LabeledField.FieldContent></local:LabeledField>
-            <local:LabeledField Label="Order within shelf" Description="Optional. Lower numbers appear first. Use 10, 20, 30, and so on to leave room for games added later."><local:LabeledField.FieldContent><NumericUpDown Value="{Binding Configuration.Collection.Order}" Minimum="-10000" Maximum="10000" Increment="10"/></local:LabeledField.FieldContent></local:LabeledField>
+          <Border Classes="card"><StackPanel Spacing="14">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel><TextBlock Classes="section" Text="Collection shelf organizer"/><TextBlock Classes="help" Text="Drag cover cards between shelves or onto another card to change their order. Nothing is written until you save."/></StackPanel>
+              <Button Grid.Column="1" Content="Save collection layout" Click="SaveCollectionLayoutClicked"/>
+            </Grid>
+            <Grid ColumnDefinitions="*,10,Auto"><TextBox Text="{Binding NewShelfName}" PlaceholderText="New shelf name, such as The 3D Era"/><Button Grid.Column="2" Content="Add shelf" Click="AddCollectionShelfClicked"/></Grid>
+            <TextBlock Text="{Binding CollectionLayoutStatus}" Foreground="#AAB2BE" TextWrapping="Wrap"/>
+
+            <Border Background="#151B23" BorderBrush="#485361" BorderThickness="1" CornerRadius="9" Padding="14"
+                    DragDrop.AllowDrop="True" DragDrop.DragOver="CollectionDragOver" DragDrop.Drop="CollectionUnassignedDrop">
+              <StackPanel Spacing="10">
+                <TextBlock FontSize="16" FontWeight="SemiBold" Text="Unassigned games"/>
+                <ItemsControl ItemsSource="{Binding UnassignedCollectionGames}">
+                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate><DataTemplate>
+                    <Border Width="126" Height="178" Margin="0,0,10,10" Background="#090C10" BorderBrush="#5B6878" BorderThickness="1" CornerRadius="7" ClipToBounds="True"
+                            PointerPressed="CollectionGamePointerPressed" DragDrop.AllowDrop="True" DragDrop.DragOver="CollectionDragOver" DragDrop.Drop="CollectionGameDrop">
+                      <Grid RowDefinitions="*,Auto"><Grid><Image Source="{Binding CoverPreview}" Stretch="UniformToFill" IsVisible="{Binding HasCoverPreview}"/><TextBlock Text="NO COVER" Foreground="#6E7783" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasCoverPreview}"/></Grid><Border Grid.Row="1" Background="#E5151A21" Padding="7"><TextBlock Text="{Binding Name}" FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap" MaxHeight="34"/></Border></Grid>
+                    </Border>
+                  </DataTemplate></ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
+            <ItemsControl ItemsSource="{Binding CollectionShelves}">
+              <ItemsControl.ItemTemplate><DataTemplate>
+                <Border Background="#151B23" BorderBrush="#485361" BorderThickness="1" CornerRadius="9" Padding="14" Margin="0,0,0,12"
+                        DragDrop.AllowDrop="True" DragDrop.DragOver="CollectionDragOver" DragDrop.Drop="CollectionShelfDrop">
+                  <StackPanel Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto,6,Auto,6,Auto"><TextBox Text="{Binding Name}" FontSize="16" FontWeight="SemiBold"/><Button Grid.Column="1" Content="↑" Tag="up" Click="MoveCollectionShelfClicked"/><Button Grid.Column="3" Content="↓" Tag="down" Click="MoveCollectionShelfClicked"/><Button Grid.Column="5" Content="Remove" Click="RemoveCollectionShelfClicked"/></Grid>
+                    <ItemsControl ItemsSource="{Binding Games}">
+                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate><DataTemplate>
+                        <Border Width="126" Height="178" Margin="0,0,10,10" Background="#090C10" BorderBrush="#6B7B8F" BorderThickness="1" CornerRadius="7" ClipToBounds="True"
+                                PointerPressed="CollectionGamePointerPressed" DragDrop.AllowDrop="True" DragDrop.DragOver="CollectionDragOver" DragDrop.Drop="CollectionGameDrop">
+                          <Grid RowDefinitions="*,Auto"><Grid><Image Source="{Binding CoverPreview}" Stretch="UniformToFill" IsVisible="{Binding HasCoverPreview}"/><TextBlock Text="NO COVER" Foreground="#6E7783" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasCoverPreview}"/></Grid><Border Grid.Row="1" Background="#E5151A21" Padding="7"><TextBlock Text="{Binding Name}" FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap" MaxHeight="34"/></Border></Grid>
+                        </Border>
+                      </DataTemplate></ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+              </DataTemplate></ItemsControl.ItemTemplate>
+            </ItemsControl>
           </StackPanel></Border>
           <Border Classes="card"><StackPanel Spacing="9">
             <TextBlock Classes="section" Text="How the collection launcher works"/>

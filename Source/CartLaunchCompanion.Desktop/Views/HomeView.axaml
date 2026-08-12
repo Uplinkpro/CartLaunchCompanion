@@ -74,24 +74,60 @@
     </UserControl.Styles>
 
     <Grid Background="#030406">
-        <controls:StudioRenderer ShowArchitecture="True" />
-
-        <!-- The room inherits a soft, cinematic impression of the selected game. -->
+        <!-- A seamless frosted atmosphere inherited from the selected game. -->
         <Image Source="{Binding SelectedGame.BackgroundImage}"
                IsVisible="{Binding IsHomeVisible}"
                Stretch="UniformToFill"
-               Opacity="0.24"
-               Margin="-28">
+               Opacity="0.30"
+               Margin="-34">
             <Image.Effect>
-                <BlurEffect Radius="22" />
+                <BlurEffect Radius="5" />
             </Image.Effect>
         </Image>
+        <Image Source="{Binding SelectedGame.HeroImage}"
+               IsVisible="{Binding SelectedGame.HasHeroOnly}"
+               Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Top"
+               Opacity="0.82">
+            <Image.Effect><BlurEffect Radius="5" /></Image.Effect>
+            <Image.OpacityMask>
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                    <GradientStop Color="#FFFFFFFF" Offset="0.00" />
+                    <GradientStop Color="#FFFFFFFF" Offset="0.50" />
+                    <GradientStop Color="#FAFFFFFF" Offset="0.58" />
+                    <GradientStop Color="#E8FFFFFF" Offset="0.65" />
+                    <GradientStop Color="#C8FFFFFF" Offset="0.72" />
+                    <GradientStop Color="#98FFFFFF" Offset="0.79" />
+                    <GradientStop Color="#60FFFFFF" Offset="0.86" />
+                    <GradientStop Color="#30FFFFFF" Offset="0.92" />
+                    <GradientStop Color="#10FFFFFF" Offset="0.97" />
+                    <GradientStop Color="#00FFFFFF" Offset="1.00" />
+                </LinearGradientBrush>
+            </Image.OpacityMask>
+        </Image>
+        <Border Background="#08080B10" />
         <Border IsVisible="{Binding IsHomeVisible}">
             <Border.Background>
                 <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
-                    <GradientStop Color="#58000000" Offset="0" />
-                    <GradientStop Color="#98000000" Offset="0.60" />
-                    <GradientStop Color="#F0000000" Offset="1" />
+                    <GradientStop Color="#00000000" Offset="0.000" />
+                    <GradientStop Color="#00000000" Offset="0.053" />
+                    <GradientStop Color="#00000000" Offset="0.105" />
+                    <GradientStop Color="#00000000" Offset="0.158" />
+                    <GradientStop Color="#00000000" Offset="0.211" />
+                    <GradientStop Color="#00000000" Offset="0.263" />
+                    <GradientStop Color="#00000000" Offset="0.316" />
+                    <GradientStop Color="#08000000" Offset="0.368" />
+                    <GradientStop Color="#12000000" Offset="0.421" />
+                    <GradientStop Color="#20000000" Offset="0.474" />
+                    <GradientStop Color="#32000000" Offset="0.526" />
+                    <GradientStop Color="#48000000" Offset="0.579" />
+                    <GradientStop Color="#62000000" Offset="0.632" />
+                    <GradientStop Color="#7E000000" Offset="0.684" />
+                    <GradientStop Color="#9A000000" Offset="0.737" />
+                    <GradientStop Color="#B6000000" Offset="0.789" />
+                    <GradientStop Color="#D0000000" Offset="0.842" />
+                    <GradientStop Color="#E6000000" Offset="0.895" />
+                    <GradientStop Color="#F6000000" Offset="0.947" />
+                    <GradientStop Color="#FF000000" Offset="1.000" />
                 </LinearGradientBrush>
             </Border.Background>
         </Border>
@@ -220,20 +256,13 @@
                             <DataTemplate x:DataType="vm:GameShelfViewModel">
                                 <StackPanel Spacing="2" Margin="0,0,0,8"
                                             HorizontalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="10,0"
-                                                HorizontalAlignment="Center"
+                                    <StackPanel Margin="10,0" HorizontalAlignment="Center"
                                                 IsVisible="{Binding HasName}">
-                                        <Border Height="2" Width="84"
-                                                VerticalAlignment="Center"
-                                                Background="#70FFFFFF" />
                                         <TextBlock Text="{Binding Name}"
                                                    Foreground="White"
                                                    FontSize="15"
                                                    FontWeight="Bold"
                                                    LetterSpacing="2" />
-                                        <Border Height="2" Width="84"
-                                                VerticalAlignment="Center"
-                                                Background="#70FFFFFF" />
                                     </StackPanel>
                                     <ItemsControl ItemsSource="{Binding Games}">
                                         <ItemsControl.ItemsPanel>
@@ -399,11 +428,6 @@
                 </Border>
 
             </Grid>
-
-            <Border Grid.Row="3"
-                    Height="1"
-                    Background="#22FFFFFF"
-                    Margin="80,8,80,12" />
 
             <StackPanel Grid.Row="4"
                         Orientation="Horizontal"

@@ -185,6 +185,9 @@ public sealed class GameLibraryService(
             CoverPath = pathResolver.ResolveExistingWithAnyExtension(
                 folder,
                 configuration.Artwork.Cover),
+            HeroPath = pathResolver.ResolveExistingWithAnyExtension(
+                folder,
+                configuration.Artwork.Hero),
             BackgroundPath = pathResolver.ResolveExistingWithAnyExtension(
                 folder,
                 configuration.Artwork.Background),

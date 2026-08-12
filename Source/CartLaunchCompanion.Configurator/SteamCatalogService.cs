@@ -10,10 +10,10 @@ public sealed record SteamCatalogMatch(
     Bitmap? Artwork = null,
     long? SteamGridDbGameId = null)
 {
-    public bool RequiresSteamAppId => AppId == 0;
-    public string SourceText => RequiresSteamAppId
-        ? $"SteamGridDB legacy match · Game {SteamGridDbGameId} · Steam App ID needed"
-        : $"Steam App ID: {AppId}";
+    public bool HasSteamAppId => AppId > 0;
+    public string SourceText => HasSteamAppId
+        ? SteamGridDbGameId is null ? $"Steam App ID: {AppId}" : $"Steam App ID: {AppId} · SteamGridDB game {SteamGridDbGameId}"
+        : $"SteamGridDB game {SteamGridDbGameId} · Artwork available without Steam";
 }
 
 public sealed class SteamCatalogService(HttpClient httpClient)
@@ -56,15 +56,15 @@ public sealed class SteamCatalogService(HttpClient httpClient)
         var matches = steamMatches
             .Concat(steamGridDbMatches)
             .GroupBy(match => Normalize(match.Name))
-            .Select(group => group.OrderBy(match => match.RequiresSteamAppId).First())
+            .Select(group => group.OrderByDescending(match => match.HasSteamAppId).First())
             .OrderByDescending(match => match.Score)
             .ThenBy(match => match.Name.Length)
             .Take(12)
             .ToArray();
 
-        return await Task.WhenAll(matches.Select(match => match.RequiresSteamAppId
-            ? LoadSteamGridDbArtworkAsync(match, steamGridDbApiKey, cancellationToken)
-            : LoadArtworkAsync(match, cancellationToken)));
+        return await Task.WhenAll(matches.Select(match => match.HasSteamAppId
+            ? LoadArtworkAsync(match, cancellationToken)
+            : LoadSteamGridDbArtworkAsync(match, steamGridDbApiKey, cancellationToken)));
     }
 
     private async Task<SteamCatalogMatch[]> SearchSteamGridDbAsync(

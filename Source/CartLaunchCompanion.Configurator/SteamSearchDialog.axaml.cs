@@ -77,27 +77,17 @@ public sealed partial class SteamSearchDialog : Window
     private void ResultSelected(object? sender, SelectionChangedEventArgs e)
     {
         var match = SelectedMatch;
-        LegacyIdPanel.IsVisible = match?.RequiresSteamAppId == true;
-        LegacyAppIdBox.Text = "";
         RefreshUseButton();
     }
 
-    private void LegacyAppIdChanged(object? sender, TextChangedEventArgs e) => RefreshUseButton();
-
     private void RefreshUseButton()
     {
-        UseButton.IsEnabled = SelectedMatch is { } match &&
-            (!match.RequiresSteamAppId || uint.TryParse(LegacyAppIdBox.Text?.Trim(), out var id) && id > 0);
+        UseButton.IsEnabled = SelectedMatch is not null;
     }
 
     private void UseClicked(object? sender, RoutedEventArgs e)
     {
         if (SelectedMatch is not { } match) return;
-        if (match.RequiresSteamAppId)
-        {
-            if (!uint.TryParse(LegacyAppIdBox.Text?.Trim(), out var id) || id == 0) return;
-            match = match with { AppId = id };
-        }
         Close(match);
     }
     private void CancelClicked(object? sender, RoutedEventArgs e) => Close(null);

@@ -11,6 +11,8 @@ public sealed class CollectionConfiguration
     public string Logo { get; set; } = "";
     public string AccentColor { get; set; } = "#C08AFF";
     public string DefaultShelf { get; set; } = "";
+    public string ArtworkStyle { get; set; } = "official";
+    public bool AllowHumorArtwork { get; set; }
     public List<CollectionShelfConfiguration> Shelves { get; set; } = [];
 }
 
