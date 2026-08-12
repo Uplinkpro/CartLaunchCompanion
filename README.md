@@ -25,6 +25,8 @@ A portable, fullscreen, controller-first launcher for Windows, Linux, and SteamO
 &nbsp;&nbsp;•&nbsp;&nbsp;
 [Game Configurator](#game-configurator)
 &nbsp;&nbsp;•&nbsp;&nbsp;
+[Physical game carts](#physical-game-carts)
+&nbsp;&nbsp;•&nbsp;&nbsp;
 [Documentation](#documentation)
 &nbsp;&nbsp;•&nbsp;&nbsp;
 [Report an issue](https://github.com/Uplinkpro/CartLaunchCompanion/issues/new)
@@ -233,6 +235,78 @@ Steam and SteamGridDB keys are optional and are stored in Windows Credential Man
 
 See the [Game Configurator guide](Documentation/Game-Configurator.md) for the complete workflow.
 
+## Physical game carts
+
+CLC can turn a USB drive, portable SSD, or other removable media into a self-contained game cart. The launcher, configuration, artwork, and supported platform runtimes remain on the cart. An optional **Cart Launch Host** on each computer provides trusted insertion detection, protected local staging, automatic launch, and safe eject.
+
+Normal portable CLC use does not require the Host. Install it only on computers where you want the physical-cart workflow.
+
+### 1. Prepare the media
+
+1. Format or empty the removable media as appropriate for the computers that will use it.
+2. Open **Game Configurator** and choose **Prepare physical cart**.
+3. Enter a friendly cart name and choose the media root—not a folder inside it.
+4. Select **Create portable cart**. Existing `Games`, `Emulators`, and `Roms` folders are preserved; a non-empty existing `Cart` folder is never overwritten.
+5. Review the readiness report. A cart is ready when its folders, identity, and at least one platform runtime pass verification.
+
+The resulting media root contains:
+
+```text
+GameCart/
+├── cartlaunch.cartridge.json
+├── Cart/          # CLC, Configurator, Host, updater, configuration, and artwork
+├── Games/         # Installed native game files, when kept on the cart
+├── Emulators/     # Shared portable emulators
+└── Roms/          # ROMs and disc images
+```
+
+Game definitions still live under `Cart/Games`. The root-level `Games` directory is for the actual game files. Steam or the operating system may add their own folders alongside these.
+
+### 2. Install the optional Host
+
+When CLC detects that the Host is unavailable, it offers to open the Host installer. The installer shows every runtime, data, startup, trust, settings, and log location before making changes.
+
+- **Current user** is recommended and does not require administrator access.
+- **All Windows users** installs the runtime for all users and requires the normal Windows administrator confirmation. Trust records and settings remain separate for each signed-in user.
+- The Host does not install a service, driver, or system-wide Linux rule.
+- Installation never trusts a cart or enables automatic launch.
+
+Use **Install or repair** again whenever the local Host files need to be refreshed. Repair preserves trust records, settings, and logs.
+
+### 3. Review and trust the cart
+
+After preparation, choose **Review trust in Host**. The Host independently verifies the cart identity and complete CLC runtime inventory, then shows:
+
+- the cart name and unique ID;
+- its security version and connected-media path;
+- each verified platform runtime and file count;
+- the exact permission being stored for the signed-in user on that computer.
+
+Trust requires an explicit acknowledgment. It permits verified manual launch only. **Automatic launch remains off** until separately enabled for that individual cart. Trust can be revoked at any time from **Trusted carts** without changing files on the physical media.
+
+### 4. Launch safely
+
+For a manual launch, open **Connected carts**, select the cart, and choose **Verify and launch selected**. The Host checks the identity and every approved file, copies only the approved CLC runtime into a new user-only local session, verifies the copy again, and asks for one final launch confirmation.
+
+CLC runs from that protected local session rather than directly from writable removable media. The cart is passed only as its data root, and the temporary local session is removed after CLC exits.
+
+Automatic launch is a separate per-cart option under **Trusted carts**. When enabled, insertion follows the same identity, integrity, staging, and final-authorization checks. If the cart changes, disappears, is revoked, or fails verification, nothing launches.
+
+### 5. Eject and remove the cart
+
+While CLC is running as a trusted physical cart, choose its **Eject cart** action. The Host closes only that verified CLC process, removes its protected local session, flushes pending writes, and asks the operating system to eject the matching media. Wait for the success message before unplugging the drive.
+
+If safe eject fails, close applications using the media and try again. Do not unplug the cart while configuration, artwork, game saves, or updates are being written.
+
+### 6. Revoke trust or uninstall
+
+- **Revoke selected** removes only the selected cart's local approval. It does not alter the cart.
+- **Disable automatic launch** keeps manual trust but stops insertion-based launching.
+- The **Uninstall** tab removes automatic startup and the local Host runtime only after explicit confirmation.
+- Trust records, settings, and logs are optional removal choices. Connected carts are never modified by Host uninstall.
+
+See [Security](SECURITY.md) for the threat model and [Physical Cart Hardware Test Checklist](Documentation/Physical-Cart-Hardware-Test-Checklist.md) before relying on a new drive or operating-system configuration.
+
 ## Custom Series Collection launcher
 
 Custom Series Collection mode turns one Cart Launch Companion installation into a focused launcher for a franchise, genre, platform, or personal theme. For example, one portable cart can become **The Grand Theft Auto Master Collection**, with separate shelves for the Topdown, 3D, and HD eras.
@@ -305,6 +379,9 @@ CartLaunchCompanion/
 ├── Start Cart Launch Companion.sh
 ├── Game Configurator.bat
 ├── Game Configurator.sh
+├── Host/
+│   ├── Windows-x64/
+│   └── Linux-x64/
 ├── Assets/
 ├── Config/
 ├── Games/

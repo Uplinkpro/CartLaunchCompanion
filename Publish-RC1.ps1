@@ -98,11 +98,13 @@ Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'LICENSE') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'NOTICE') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'COMMERCIAL-LICENSE.md') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'CHANGELOG.md') -Destination $staging
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'SECURITY.md') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Docs\2.0\ReleaseCandidate1.md') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Docs\2.0\UpgradeGuide.md') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Game-Configurator.md') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Emulator-Launch-Guide.md') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Updater-Security.md') -Destination $staging
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Physical-Cart-Hardware-Test-Checklist.md') -Destination $staging
 
 # Generated concept drafts are development assets; portable releases include only final collection artwork.
 Get-ChildItem -LiteralPath (Join-Path $staging 'Assets\Collections') -Directory -Recurse -ErrorAction SilentlyContinue |
