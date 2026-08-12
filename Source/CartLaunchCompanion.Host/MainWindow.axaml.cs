@@ -24,6 +24,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private readonly Dictionary<string, CancellationTokenSource> _pendingAutoLaunches = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, PreparedCartLaunchSession> _activeLaunches = new(StringComparer.OrdinalIgnoreCase);
     private readonly CartHostEjectServer _ejectServer;
+    private readonly CartHostTrustReviewServer _trustReviewServer;
 
     public MainWindow()
     {
@@ -34,8 +35,10 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         _auditLog.Write(CartHostAuditEvent.HostStarted, "started");
         _ejectServer = new CartHostEjectServer(HandleEjectRequestAsync);
         _ejectServer.Start();
+        _trustReviewServer = new CartHostTrustReviewServer(HandleTrustReviewRequestAsync);
+        _trustReviewServer.Start();
         Opened += async (_, _) => await RefreshTrustAsync();
-        Closed += async (_, _) => await _ejectServer.DisposeAsync();
+        Closed += async (_, _) => { await _ejectServer.DisposeAsync(); await _trustReviewServer.DisposeAsync(); };
     }
 
     public string InstallPurpose => "Runs only for your signed-in account. It will eventually detect inserted carts, verify carts you approved, and stage verified CLC runtime files locally before launch.";
@@ -259,6 +262,31 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         _monitor.CartRemoved += (_, root) => Dispatcher.UIThread.Post(async () => { _auditLog.Write(CartHostAuditEvent.CartRemoved, "detected"); await ScanMountedCartsAsync(); await HandleRemovalAsync(root); });
         _monitor.Start();
     }
+
+    private async Task<CartHostTrustReviewResponse> HandleTrustReviewRequestAsync(CartHostTrustReviewRequest request)
+    {
+        try
+        {
+            var report = await new PhysicalCartReadinessService().InspectAsync(request.MediaRoot);
+            if (!report.IsReady || report.Identity is null)
+                return new(false, "The selected cart did not pass Host readiness validation.");
+            await Dispatcher.UIThread.InvokeAsync(async () =>
+            {
+                await ScanMountedCartsAsync();
+                SelectedConnectedCart = ConnectedCarts.FirstOrDefault(item =>
+                    Path.GetFullPath(item.MediaRoot).Equals(Path.GetFullPath(request.MediaRoot), StringComparison.OrdinalIgnoreCase));
+                Show(); Activate();
+                Status = SelectedConnectedCart is null
+                    ? "The prepared cart is valid but is not currently detected as mounted media."
+                    : "The prepared cart is selected for review. Trust is not granted until you explicitly choose Trust connected cart.";
+            });
+            return new(true, "The cart is open for explicit trust review.");
+        }
+        catch (Exception ex) { return new(false, "Trust review was rejected: " + ex.GetType().Name); }
+    }
+
+    public Task<CartHostTrustReviewResponse> ReviewPreparedCartAsync(string mediaRoot) =>
+        HandleTrustReviewRequestAsync(new CartHostTrustReviewRequest(1, "review-trust", mediaRoot));
 
     private async Task HandleAutomaticInsertionAsync(DetectedPhysicalCart cart)
     {

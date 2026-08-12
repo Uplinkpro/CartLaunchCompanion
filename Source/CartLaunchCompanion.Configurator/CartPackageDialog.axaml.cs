@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
+using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
@@ -116,8 +117,38 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
                 ? $"Ready for Host trust. Identity: {readiness.Identity!.Identity.DisplayName}. Verified: {platforms}." +
                   (result is null ? " Existing files and identity were preserved." : $" Copied {result.FilesCopied} files ({FormatBytes(result.BytesCopied)}).")
                 : "Not ready for Host trust yet. Resolve the failed checks below; no existing identity was replaced.";
+            ReviewTrustButton.IsVisible = readiness.IsReady;
         }
         catch (Exception ex) { ResultStatus = "Nothing was overwritten. Package creation stopped: " + ex.Message; ValidateDestination(); }
+    }
+    private async void ReviewTrustClicked(object? sender, RoutedEventArgs e)
+    {
+        ReviewTrustButton.IsEnabled = false;
+        try
+        {
+            CartHostTrustReviewResponse response;
+            try { response = await CartHostTrustReviewProtocol.RequestAsync(DestinationRoot); }
+            catch
+            {
+                var status = new CartHostStatusService().Check();
+                var executable = status.InstalledPlan?.ExecutablePath ?? FindBundledHost();
+                if (executable is null) { ResultStatus = "Cart Launch Host is not installed. Install it from CLC, then review trust again."; return; }
+                Process.Start(new ProcessStartInfo(executable) { UseShellExecute = false, ArgumentList = { "--review-cart", DestinationRoot } });
+                await Task.Delay(750);
+                response = await CartHostTrustReviewProtocol.RequestAsync(DestinationRoot);
+            }
+            ResultStatus = response.Message + " Trust and automatic launch remain separate confirmations.";
+        }
+        catch (Exception ex) { ResultStatus = "Cart Launch Host could not open the trust review: " + ex.Message; }
+        finally { ReviewTrustButton.IsEnabled = true; }
+    }
+
+    private string? FindBundledHost()
+    {
+        var platform = OperatingSystem.IsWindows() ? "Windows-x64" : "Linux-x64";
+        var name = OperatingSystem.IsWindows() ? "CartLaunchCompanion.Host.exe" : "CartLaunchCompanion.Host";
+        var candidates = new[] { Path.Combine(SourceRoot, "Host", platform, name), Path.Combine(SourceRoot, "System", platform, name) };
+        return candidates.FirstOrDefault(File.Exists);
     }
     private void CloseClicked(object? sender, RoutedEventArgs e) => Close();
     private static string FormatBytes(long value) => value >= 1_073_741_824 ? $"{value / 1_073_741_824d:0.00} GB" : value >= 1_048_576 ? $"{value / 1_048_576d:0.0} MB" : $"{value / 1024d:0.0} KB";

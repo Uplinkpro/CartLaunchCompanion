@@ -111,6 +111,7 @@ Communication between CLC and the Cart Launch Host is local and restricted to th
 - Messages have a version, strict size limits, and a small allowlist of operations.
 - Unknown JSON fields, malformed or truncated payloads, unsafe endpoint names, and unsupported protocol versions are rejected.
 - The protocol has no generic `execute` operation.
+- The Configurator trust-review handoff can only request that the Host validate, display, and select a media root. It cannot grant trust or approve automatic launch.
 
 ### Media and presentation
 

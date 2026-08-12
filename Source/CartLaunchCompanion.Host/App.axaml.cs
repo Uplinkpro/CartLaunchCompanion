@@ -21,6 +21,9 @@ public sealed partial class App : Application
             }
             var window = new MainWindow();
             desktop.MainWindow = window;
+            var reviewIndex = Array.IndexOf(Program.Arguments, "--review-cart");
+            if (reviewIndex >= 0 && reviewIndex + 1 < Program.Arguments.Length)
+                window.Opened += async (_, _) => await window.ReviewPreparedCartAsync(Program.Arguments[reviewIndex + 1]);
             if (Program.Arguments.Contains("--background", StringComparer.Ordinal))
             {
                 desktop.ShutdownMode = Avalonia.Controls.ShutdownMode.OnExplicitShutdown;
