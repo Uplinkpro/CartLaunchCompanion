@@ -263,6 +263,57 @@ public sealed class PhysicalCartSecurityTests : IDisposable
         Assert.Throws<InvalidDataException>(() => new PreparedCartLaunchService().CreateStartInfo(prepared));
     }
 
+    [Fact]
+    public async Task AutoLaunchPolicy_RequiresSeparateApprovalAndSuppressesDuplicates()
+    {
+        Directory.CreateDirectory(_root);
+        var identities = new CartIdentityService();
+        var cart = await identities.SaveNewAsync(_root, identities.Create("Automatic Cart"));
+        var store = new TrustedCartStore(Path.Combine(_root, "trust", "trusted-carts.json"));
+        await store.TrustAsync(cart, false);
+        var policy = new AutomaticCartLaunchPolicy(TimeSpan.FromSeconds(30));
+        var now = DateTimeOffset.UtcNow;
+
+        Assert.Equal(AutomaticLaunchDecision.NotApproved, policy.TryBegin(await store.LoadAsync(), cart, now));
+        await store.SetAutoLaunchAsync(cart.Identity.CartId, true);
+        var approved = await store.LoadAsync();
+        Assert.Equal(AutomaticLaunchDecision.Allowed, policy.TryBegin(approved, cart, now));
+        Assert.Equal(AutomaticLaunchDecision.AlreadyActive, policy.TryBegin(approved, cart, now.AddSeconds(1)));
+        policy.Complete(cart.Identity.CartId);
+        Assert.Equal(AutomaticLaunchDecision.RateLimited, policy.TryBegin(approved, cart, now.AddSeconds(5)));
+        Assert.Equal(AutomaticLaunchDecision.Allowed, policy.TryBegin(approved, cart, now.AddSeconds(31)));
+    }
+
+    [Fact]
+    public async Task AutoLaunchApproval_CanBeDisabledWithoutRevokingTrust()
+    {
+        Directory.CreateDirectory(_root);
+        var identities = new CartIdentityService();
+        var cart = await identities.SaveNewAsync(_root, identities.Create("Toggle Cart"));
+        var store = new TrustedCartStore(Path.Combine(_root, "trust", "trusted-carts.json"));
+        await store.TrustAsync(cart, true);
+        Assert.True(await store.SetAutoLaunchAsync(cart.Identity.CartId, false));
+        var database = await store.LoadAsync();
+        Assert.True(TrustedCartStore.IsTrusted(database, cart));
+        Assert.False(TrustedCartStore.IsTrusted(database, cart, requireAutoLaunch: true));
+    }
+
+    [Fact]
+    public async Task Monitor_EstablishesBaselineWithoutReportingExistingCartAsInserted()
+    {
+        var media = Path.Combine(_root, "existing");
+        Directory.CreateDirectory(media);
+        var identities = new CartIdentityService();
+        await identities.SaveNewAsync(media, identities.Create("Already Connected"));
+        await using var monitor = new PhysicalCartMonitor(
+            new MountedCartDetector(new StaticMounts(media), identities), TimeSpan.FromMilliseconds(20));
+        var inserted = 0;
+        monitor.CartInserted += (_, _) => Interlocked.Increment(ref inserted);
+        monitor.Start();
+        await Task.Delay(100);
+        Assert.Equal(0, inserted);
+    }
+
     private async Task<string> CreateRuntimeCartAsync(string content)
     {
         var media = Path.Combine(_root, "media-" + Guid.NewGuid().ToString("N"));

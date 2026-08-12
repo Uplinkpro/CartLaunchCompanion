@@ -22,6 +22,9 @@ The project follows semantic versioning where practical.
 - The Host can manually verify and prepare a trusted connected cart while deliberately providing no execution action yet
 - Added a separately confirmed manual trusted-cart launch using one fixed staged executable, one structured cart-root argument, no command shell, and a sanitized environment
 - Protected launch sessions track the exact CLC child process and remove their local runtime after it exits or when launch is cancelled
+- Added explicit per-cart automatic-launch approval that can be disabled independently without revoking cart trust
+- Insert-triggered launch requires identity trust, auto-launch approval, approved runtime verification, duplicate suppression, and retry rate limiting
+- Removing a cart cancels in-progress preparation or closes only that cart's tracked CLC process before cleaning its local session
 
 ## [2.3.0] - 2026-08-11
 

@@ -60,6 +60,7 @@ public sealed class PhysicalCartMonitor(MountedCartDetector detector, TimeSpan? 
     private readonly CancellationTokenSource _stop = new();
     private Task? _loop;
     private HashSet<string> _known = new(StringComparer.OrdinalIgnoreCase);
+    private bool _baselineEstablished;
     public event EventHandler<DetectedPhysicalCart>? CartInserted;
     public event EventHandler<string>? CartRemoved;
 
@@ -73,6 +74,12 @@ public sealed class PhysicalCartMonitor(MountedCartDetector detector, TimeSpan? 
             try { carts = await detector.ScanAsync(cancellationToken); }
             catch (OperationCanceledException) { break; }
             var current = carts.Select(cart => cart.MediaRoot).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            if (!_baselineEstablished)
+            {
+                _known = current;
+                _baselineEstablished = true;
+                continue;
+            }
             foreach (var cart in carts.Where(cart => !_known.Contains(cart.MediaRoot))) CartInserted?.Invoke(this, cart);
             foreach (var removed in _known.Where(root => !current.Contains(root))) CartRemoved?.Invoke(this, removed);
             _known = current;

@@ -5,6 +5,7 @@ using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using CartLaunchCompanion.Core.PhysicalCarts;
 using Microsoft.Win32;
 
@@ -18,6 +19,9 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private TrustedCartItem? _selectedCart;
     private ConnectedCartItem? _selectedConnectedCart;
     private PhysicalCartMonitor? _monitor;
+    private readonly AutomaticCartLaunchPolicy _autoLaunchPolicy = new();
+    private readonly Dictionary<string, CancellationTokenSource> _pendingAutoLaunches = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, PreparedCartLaunchSession> _activeAutoLaunches = new(StringComparer.OrdinalIgnoreCase);
 
     public MainWindow()
     {
@@ -102,6 +106,26 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         if (await _trustStore.RevokeAsync(SelectedCart.CartId))
         {
             Status = $"Trust was revoked for {SelectedCart.DisplayName}. The physical cart was not changed.";
+            await RefreshTrustAsync();
+        }
+    }
+
+    private async void EnableAutoLaunchClicked(object? sender, RoutedEventArgs e)
+    {
+        if (SelectedCart is null) { Status = "Select a trusted cart first."; return; }
+        if (!await new AutoLaunchApprovalWindow(SelectedCart.DisplayName, SelectedCart.CartId).ShowDialog<bool>(this)) return;
+        if (await _trustStore.SetAutoLaunchAsync(SelectedCart.CartId, true))
+        {
+            Status = $"Automatic launch is enabled only for {SelectedCart.DisplayName}.";
+            await RefreshTrustAsync();
+        }
+    }
+    private async void DisableAutoLaunchClicked(object? sender, RoutedEventArgs e)
+    {
+        if (SelectedCart is null) { Status = "Select a trusted cart first."; return; }
+        if (await _trustStore.SetAutoLaunchAsync(SelectedCart.CartId, false))
+        {
+            Status = $"Automatic launch is disabled for {SelectedCart.DisplayName}.";
             await RefreshTrustAsync();
         }
     }
@@ -212,9 +236,60 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (_monitor is not null) return;
         _monitor = new PhysicalCartMonitor(new MountedCartDetector(new SystemMountRootProvider(), new CartIdentityService()));
-        _monitor.CartInserted += async (_, _) => await ScanMountedCartsAsync();
-        _monitor.CartRemoved += async (_, _) => await ScanMountedCartsAsync();
+        _monitor.CartInserted += (_, cart) => Dispatcher.UIThread.Post(async () => { await ScanMountedCartsAsync(); await HandleAutomaticInsertionAsync(cart); });
+        _monitor.CartRemoved += (_, root) => Dispatcher.UIThread.Post(async () => { await ScanMountedCartsAsync(); await HandleRemovalAsync(root); });
         _monitor.Start();
+    }
+
+    private async Task HandleAutomaticInsertionAsync(DetectedPhysicalCart cart)
+    {
+        CancellationTokenSource? cancellation = null;
+        try
+        {
+            var database = await _trustStore.LoadAsync();
+            var decision = _autoLaunchPolicy.TryBegin(database, cart.Identity, DateTimeOffset.UtcNow);
+            if (decision != AutomaticLaunchDecision.Allowed) return;
+            cancellation = new CancellationTokenSource();
+            _pendingAutoLaunches[cart.MediaRoot] = cancellation;
+            Status = $"{cart.Identity.Identity.DisplayName} was inserted. Verifying its approved runtime for automatic launch…";
+            var platform = OperatingSystem.IsWindows() ? "Windows-x64" : "Linux-x64";
+            var prepared = await new TrustedRuntimeStagingService().PrepareAsync(
+                cart.MediaRoot, cart.Identity, database, platform, Path.Combine(_plan.DataDirectory, "Sessions"), cancellation.Token);
+            cancellation.Token.ThrowIfCancellationRequested();
+            if (!Directory.Exists(cart.MediaRoot)) { TrustedRuntimeStagingService.DeleteSession(prepared); return; }
+            var session = new PreparedCartLaunchService().Start(prepared);
+            _activeAutoLaunches[cart.MediaRoot] = session;
+            Status = $"{cart.Identity.Identity.DisplayName} launched automatically from a verified local session.";
+            _ = ObserveAutomaticLaunchAsync(cart.MediaRoot, cart.Identity.Identity.CartId, session);
+        }
+        catch (OperationCanceledException) { Status = "Automatic launch was cancelled because the cart was removed."; }
+        catch (Exception ex) { Status = "Automatic launch was rejected safely: " + ex.Message; }
+        finally
+        {
+            if (cancellation is not null) { _pendingAutoLaunches.Remove(cart.MediaRoot); cancellation.Dispose(); }
+            if (!_activeAutoLaunches.ContainsKey(cart.MediaRoot)) _autoLaunchPolicy.Complete(cart.Identity.Identity.CartId);
+        }
+    }
+    private async Task HandleRemovalAsync(string mediaRoot)
+    {
+        if (_pendingAutoLaunches.Remove(mediaRoot, out var pending)) pending.Cancel();
+        if (_activeAutoLaunches.TryGetValue(mediaRoot, out var session))
+        {
+            Status = "The active cart was removed. Closing its verified CLC session safely…";
+            try { await session.StopAsync(TimeSpan.FromSeconds(5)); }
+            catch (Exception ex) { Status = "The cart session required forced cleanup: " + ex.Message; }
+        }
+    }
+    private async Task ObserveAutomaticLaunchAsync(string mediaRoot, string cartId, PreparedCartLaunchSession session)
+    {
+        try { await session.WaitForExitAsync(); }
+        catch (Exception ex) { Status = "The automatic cart session ended unexpectedly: " + ex.Message; }
+        finally
+        {
+            await session.DisposeAsync();
+            _activeAutoLaunches.Remove(mediaRoot);
+            _autoLaunchPolicy.Complete(cartId);
+        }
     }
 
     private static void RegisterStartup(CartHostInstallationPlan plan)

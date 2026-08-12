@@ -10,6 +10,20 @@ public sealed record PreparedCartLaunchSession(Process Process, PreparedCartRunt
         return Process.ExitCode;
     }
 
+    public async Task StopAsync(TimeSpan gracefulTimeout, CancellationToken cancellationToken = default)
+    {
+        if (Process.HasExited) return;
+        try { Process.CloseMainWindow(); } catch (InvalidOperationException) { }
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(gracefulTimeout);
+        try { await Process.WaitForExitAsync(timeout.Token); }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            if (!Process.HasExited) Process.Kill(entireProcessTree: true);
+            await Process.WaitForExitAsync(cancellationToken);
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         try { if (!Process.HasExited) await Process.WaitForExitAsync(); }

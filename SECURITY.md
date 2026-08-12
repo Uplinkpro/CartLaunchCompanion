@@ -73,6 +73,8 @@ Process creation must:
 
 Manual physical-cart launch additionally requires a separate confirmation showing the cart name, connected media root, and verified local executable. The Host starts only the `PreparedCartRuntime` returned by protected staging, supplies exactly one structured `--cart-root` argument, removes runtime-injection environment variables, tracks the exact child process, and deletes the local runtime session after that process exits. This confirmation does not enable automatic launch.
 
+Automatic launch is a separate per-cart approval. An insertion can launch only after the identity, approval, minimum security version, and complete runtime inventory all match. The Host suppresses duplicate sessions, rate-limits retries, cancels verification when media disappears, and closes only the exact tracked CLC child if its backing cart is removed.
+
 ### Path and parser hardening
 
 The host will reject:

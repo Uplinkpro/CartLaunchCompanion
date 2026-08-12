@@ -28,7 +28,7 @@
         <ListBox Grid.Row="1" ItemsSource="{Binding TrustedCarts}" SelectedItem="{Binding SelectedCart}">
           <ListBox.ItemTemplate><DataTemplate><StackPanel Margin="8" Spacing="3"><TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}"/><TextBlock Classes="help" Text="{Binding CartId}"/><TextBlock Classes="help" Text="{Binding ApprovalText}"/></StackPanel></DataTemplate>
         </ListBox.ItemTemplate></ListBox>
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10"><Button Content="Trust connected cart…" Click="TrustClicked"/><Button Content="Revoke selected" Click="RevokeClicked"/></StackPanel>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10"><Button Content="Trust connected cart…" Click="TrustClicked"/><Button Content="Enable automatic launch" Click="EnableAutoLaunchClicked"/><Button Content="Disable automatic launch" Click="DisableAutoLaunchClicked"/><Button Content="Revoke selected" Click="RevokeClicked"/></StackPanel>
       </Grid></TabItem>
       <TabItem Header="Connected carts"><Grid Margin="8,18" RowDefinitions="Auto,*,Auto" RowSpacing="12">
         <TextBlock Classes="help" Text="The Host checks only mounted roots for cartlaunch.cartridge.json. Detection does not grant trust and never starts software."/>

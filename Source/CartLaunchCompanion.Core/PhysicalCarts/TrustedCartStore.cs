@@ -92,6 +92,16 @@ public sealed class TrustedCartStore(string databasePath)
         return removed;
     }
 
+    public async Task<bool> SetAutoLaunchAsync(string cartId, bool approved, CancellationToken cancellationToken = default)
+    {
+        var database = await LoadAsync(cancellationToken);
+        var record = database.Carts.SingleOrDefault(item => string.Equals(item.CartId, cartId, StringComparison.OrdinalIgnoreCase));
+        if (record is null) return false;
+        record.AutoLaunchApproved = approved;
+        await SaveAsync(database, cancellationToken);
+        return true;
+    }
+
     public static bool IsTrusted(TrustedCartDatabase database, VerifiedCartIdentity cart, bool requireAutoLaunch = false) =>
         database.Carts.Any(record =>
             string.Equals(record.CartId, cart.Identity.CartId, StringComparison.OrdinalIgnoreCase) &&
