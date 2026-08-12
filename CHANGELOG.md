@@ -8,6 +8,10 @@ The project follows semantic versioning where practical.
 
 ### Added
 
+- Hardened signed updates with key rotation, downgrade and replay protection, approved HTTPS origins, bounded redirects, manifest-governed archive extraction, and crash-safe rollback
+- Added automated release-package audits for checksums, platform separation, documentation, Linux executable modes, and development-file leakage
+- Added update maintenance-path protection against symbolic links, junctions, reparse points, and abandoned staging accumulation
+
 - Added Host-authorized safe eject for verified physical-cart sessions on Windows and supported Linux gaming distributions
 - Added current-user-only, size-bounded eject requests that cannot carry arbitrary commands or device paths
 - Unified manual and automatic trusted-cart session tracking so either launch type can be closed and cleaned safely

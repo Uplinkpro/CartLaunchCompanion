@@ -71,7 +71,10 @@ public sealed class GitHubRuntimeUpdateService(HttpClient httpClient) : IRuntime
         var runtimeRoot = Path.Combine(packageRoot, "runtime");
         var manifestPath = Path.Combine(packageRoot, "manifest.json");
         var archivePath = Path.Combine(packageRoot, platform == "Windows-x64" ? "runtime.zip" : "runtime.tar.gz");
+        UpdateFilesystemGuard.ValidateCartMaintenancePaths(cartRoot, stagingBase, packageRoot, runtimeRoot);
+        UpdateFilesystemGuard.CleanupAbandonedStaging(cartRoot, packageRoot);
         Directory.CreateDirectory(runtimeRoot);
+        UpdateFilesystemGuard.ValidateCartMaintenancePaths(cartRoot, stagingBase, packageRoot, runtimeRoot);
 
         try
         {
@@ -89,6 +92,7 @@ public sealed class GitHubRuntimeUpdateService(HttpClient httpClient) : IRuntime
                 throw new IOException("There is not enough free space on the cart for this update.");
 
             await DownloadFileAsync(update.PayloadUri, archivePath, MaximumDownloadBytes, progress, cancellationToken);
+            UpdateFilesystemGuard.ValidateCartMaintenancePaths(cartRoot, stagingBase, packageRoot, runtimeRoot, archivePath);
             if (platform == "Windows-x64")
                 RuntimeArchiveExtractor.ExtractZip(archivePath, runtimeRoot, manifest);
             else
@@ -102,7 +106,10 @@ public sealed class GitHubRuntimeUpdateService(HttpClient httpClient) : IRuntime
         catch
         {
             if (Directory.Exists(packageRoot))
+            {
+                UpdateFilesystemGuard.ValidateCartMaintenancePaths(cartRoot, stagingBase, packageRoot);
                 Directory.Delete(packageRoot, recursive: true);
+            }
             throw;
         }
     }

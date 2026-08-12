@@ -41,7 +41,7 @@ Cart Launch Companion turns a curated collection of PC games into a focused cons
 
 Everything stays together in one portable folder: the application, game configurations, artwork, media, cache, and logs. Move it to another drive, a living-room PC, or a handheld without rebuilding the library from scratch.
 
-> **Current release:** [Version 2.2](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.2.0) is available for Windows, Linux, and SteamOS from the stable `main` branch.
+> **Current release:** [Version 2.3](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.3.0) is available for Windows, Linux, and SteamOS. Physical-cart Host support is implemented on `main` and awaiting hardware validation for a future release.
 
 ## Preview
 
@@ -154,7 +154,7 @@ Everything stays together in one portable folder: the application, game configur
 
 ## Download
 
-Download [Cart Launch Companion 2.2](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.2.0), or browse [all GitHub releases](https://github.com/Uplinkpro/CartLaunchCompanion/releases).
+Download [Cart Launch Companion 2.3](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.3.0), or browse [all GitHub releases](https://github.com/Uplinkpro/CartLaunchCompanion/releases).
 
 Version 2.2 provides three packages:
 
@@ -544,7 +544,7 @@ Cart Launch Companion is built with:
 
 ## Project status
 
-Version 2.2 is the current stable release. Reports are especially useful for:
+Version 2.3 is the current stable release. Reports are especially useful for:
 
 - physical Steam Deck and SteamOS hardware;
 - different controller models and hot-plug behavior;
@@ -603,7 +603,7 @@ The project is not affiliated with or endorsed by Valve, Microsoft, Rockstar Gam
 
 ### Bring your PC game library to the couch.
 
-[Download 2.2](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.2.0)
+[Download 2.3](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.3.0)
 &nbsp;&nbsp;•&nbsp;&nbsp;
 [Documentation](#documentation)
 &nbsp;&nbsp;•&nbsp;&nbsp;

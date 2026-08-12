@@ -21,6 +21,8 @@ public sealed class TransactionalRuntimeUpdater(
         ValidateRequestPaths(request);
 
         var cartRoot = Path.TrimEndingDirectorySeparator(Path.GetFullPath(request.CartRoot));
+        UpdateFilesystemGuard.ValidateCartMaintenancePaths(
+            cartRoot, request.StagedRuntimeRoot, request.ManifestPath);
         await RecoverInterruptedUpdateAsync(cartRoot, cancellationToken);
 
         var manifest = await RuntimeUpdateManifestJson.LoadAsync(
@@ -55,6 +57,10 @@ public sealed class TransactionalRuntimeUpdater(
         var backupRoot = Path.Combine(maintenanceRoot, "previous-runtime", request.Platform);
         var journalPath = Path.Combine(maintenanceRoot, "update-journal.json");
 
+        UpdateFilesystemGuard.ValidateCartMaintenancePaths(
+            cartRoot, activeRoot, maintenanceRoot, backupRoot, journalPath,
+            request.StagedRuntimeRoot, request.ManifestPath);
+
         Directory.CreateDirectory(maintenanceRoot);
         Directory.CreateDirectory(Path.GetDirectoryName(backupRoot)!);
 
@@ -76,12 +82,15 @@ public sealed class TransactionalRuntimeUpdater(
 
             if (Directory.Exists(activeRoot))
             {
+                UpdateFilesystemGuard.ValidateCartMaintenancePaths(cartRoot, activeRoot, backupRoot);
                 Directory.Move(activeRoot, backupRoot);
             }
 
             journal.State = RuntimeUpdateState.ActiveMovedToBackup;
             await WriteJournalAsync(journalPath, journal, cancellationToken);
 
+            UpdateFilesystemGuard.ValidateCartMaintenancePaths(
+                cartRoot, request.StagedRuntimeRoot, activeRoot, backupRoot);
             Directory.Move(request.StagedRuntimeRoot, activeRoot);
             journal.State = RuntimeUpdateState.NewRuntimeActivated;
             await WriteJournalAsync(journalPath, journal, cancellationToken);
@@ -110,6 +119,7 @@ public sealed class TransactionalRuntimeUpdater(
     {
         var maintenanceRoot = Path.Combine(Path.GetFullPath(cartRoot), ".cartlaunch");
         var journalPath = Path.Combine(maintenanceRoot, "update-journal.json");
+        UpdateFilesystemGuard.ValidateCartMaintenancePaths(cartRoot, maintenanceRoot, journalPath);
         if (!File.Exists(journalPath))
         {
             return;
@@ -132,6 +142,8 @@ public sealed class TransactionalRuntimeUpdater(
 
         var activeRoot = Path.Combine(cartRoot, "System", journal.Platform);
         var backupRoot = Path.Combine(maintenanceRoot, "previous-runtime", journal.Platform);
+        UpdateFilesystemGuard.ValidateCartMaintenancePaths(
+            cartRoot, activeRoot, backupRoot, journalPath);
 
         if (journal.State == RuntimeUpdateState.Prepared)
         {
@@ -165,9 +177,12 @@ public sealed class TransactionalRuntimeUpdater(
 
     public static void CompleteSuccessfulUpdate(string cartRoot, string platform)
     {
-        var maintenanceRoot = Path.Combine(Path.GetFullPath(cartRoot), ".cartlaunch");
+        var fullCartRoot = Path.GetFullPath(cartRoot);
+        var maintenanceRoot = Path.Combine(fullCartRoot, ".cartlaunch");
         var backupRoot = Path.Combine(maintenanceRoot, "previous-runtime", platform);
         var journalPath = Path.Combine(maintenanceRoot, "update-journal.json");
+        UpdateFilesystemGuard.ValidateCartMaintenancePaths(
+            fullCartRoot, maintenanceRoot, backupRoot, journalPath);
 
         if (Directory.Exists(backupRoot))
         {
@@ -187,6 +202,8 @@ public sealed class TransactionalRuntimeUpdater(
         var maintenanceRoot = Path.Combine(fullCartRoot, ".cartlaunch");
         var backupRoot = Path.Combine(maintenanceRoot, "previous-runtime", platform);
         var failedRoot = Path.Combine(maintenanceRoot, "failed-runtime", platform);
+        UpdateFilesystemGuard.ValidateCartMaintenancePaths(
+            fullCartRoot, activeRoot, maintenanceRoot, backupRoot, failedRoot);
 
         if (!Directory.Exists(backupRoot))
         {

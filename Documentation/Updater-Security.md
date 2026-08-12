@@ -2,7 +2,7 @@
 
 The Cart Launch Updater is a small maintenance component intended to update the portable CLC runtime on a cart after the launcher closes. It does not update games, collection configuration, artwork, media, or user metadata.
 
-> The updater is under active pre-release testing. Update checks and installation are always initiated by the user; offline launching remains unaffected.
+> The signed updater is available in 2.3 and continues to receive defense-in-depth hardening on `main`. Update checks and installation are always initiated by the user; offline launching remains unaffected.
 
 ## Portable layout
 
@@ -22,6 +22,8 @@ CartLaunchCompanion/
 ```
 
 Only a payload staged beneath `.cartlaunch/update-staging/` can be activated. The destination platform must be exactly `Windows-x64` or `Linux-x64`.
+
+The cart root and every existing component of the active runtime, maintenance, staging, backup, failed-runtime, manifest, journal, and archive paths are rejected if they are symbolic links, junctions, or reparse points. These checks run before download and again immediately before extraction and filesystem replacement. Abandoned staging directories older than seven days are removed without following links; encountering a linked staging entry fails closed.
 
 ## Manifest requirements
 
