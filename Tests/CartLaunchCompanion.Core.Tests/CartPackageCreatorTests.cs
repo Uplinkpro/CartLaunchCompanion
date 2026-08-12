@@ -1,4 +1,5 @@
 using CartLaunchCompanion.Core.Portable;
+using CartLaunchCompanion.Core.PhysicalCarts;
 
 namespace CartLaunchCompanion.Core.Tests;
 
@@ -26,6 +27,9 @@ public sealed class CartPackageCreatorTests
             Assert.True(Directory.Exists(Path.Combine(media, "Games")));
             Assert.True(Directory.Exists(Path.Combine(media, "Emulators")));
             Assert.True(Directory.Exists(Path.Combine(media, "Roms")));
+            var identities = new CartIdentityService();
+            var identity = await identities.SaveNewAsync(media, identities.Create("Test Cart"));
+            Assert.Equal(identity.Identity.CartId, (await identities.LoadAsync(media)).Identity.CartId);
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }

@@ -15,6 +15,9 @@
       </StackPanel></Border>
       <Border Classes="card"><StackPanel Spacing="12">
         <TextBlock Classes="section" Text="2. Choose removable media"/>
+        <TextBlock Text="Cart name" FontWeight="SemiBold"/>
+        <TextBox Text="{Binding CartName}" Watermark="My Game Collection"/>
+        <TextBlock Classes="help" Text="Required. This friendly name appears when you trust the cart on a computer; it does not grant launch permission."/>
         <Grid ColumnDefinitions="*,10,Auto"><TextBox Text="{Binding DestinationRoot}" IsReadOnly="True" PlaceholderText="No destination selected"/><Button Grid.Column="2" Content="Choose media folder" Click="ChooseDestinationClicked"/></Grid>
         <TextBlock Text="{Binding DestinationStatus}" TextWrapping="Wrap" Foreground="#AAB2BE"/>
       </StackPanel></Border>

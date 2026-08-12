@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using CartLaunchCompanion.Core.PhysicalCarts;
 using CartLaunchCompanion.Core.Portable;
 
 namespace CartLaunchCompanion.Configurator;
@@ -12,6 +13,7 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
     private string _sourceRoot = "";
     private string _sourceStatus = "";
     private string _destinationRoot = "";
+    private string _cartName = "";
     private string _destinationStatus = "Choose the root of the removable drive or a new empty test folder.";
     private string _resultStatus = "Ready after a valid destination is selected.";
     private double _progress;
@@ -21,6 +23,7 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
     public string SourceRoot { get => _sourceRoot; set { _sourceRoot = value; Changed(); } }
     public string SourceStatus { get => _sourceStatus; set { _sourceStatus = value; Changed(); } }
     public string DestinationRoot { get => _destinationRoot; set { _destinationRoot = value; Changed(); } }
+    public string CartName { get => _cartName; set { _cartName = value; Changed(); ValidateDestination(); } }
     public string DestinationStatus { get => _destinationStatus; set { _destinationStatus = value; Changed(); } }
     public string ResultStatus { get => _resultStatus; set { _resultStatus = value; Changed(); } }
     public double Progress { get => _progress; set { _progress = value; Changed(); } }
@@ -56,6 +59,8 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
     {
         CreateButton.IsEnabled = false;
         if (!ValidateSource() || string.IsNullOrWhiteSpace(DestinationRoot)) return;
+        if (string.IsNullOrWhiteSpace(CartName) || CartName.Trim().Length > 80)
+        { DestinationStatus = "Enter a cart name between 1 and 80 characters."; return; }
         try
         {
             var source = Path.GetFullPath(SourceRoot); var destination = Path.GetFullPath(DestinationRoot);
@@ -85,11 +90,13 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
         {
             var progress = new Progress<double>(value => Progress = value * 100);
             var result = await new CartPackageCreator().CreateAsync(new(SourceRoot, DestinationRoot), progress);
+            var identityService = new CartIdentityService();
+            var identity = await identityService.SaveNewAsync(DestinationRoot, identityService.Create(CartName));
             var requiredFolders = new[] { "Cart", "Games", "Emulators", "Roms" };
             if (requiredFolders.Any(name => !Directory.Exists(Path.Combine(DestinationRoot, name))))
                 throw new InvalidDataException("Final folder verification failed.");
             Progress = 100;
-            ResultStatus = $"Portable cart created and verified: {result.FilesCopied} files, {FormatBytes(result.BytesCopied)}. You can now copy games, emulators, and ROMs into their matching root folders.";
+            ResultStatus = $"Portable cart created and verified: {result.FilesCopied} files, {FormatBytes(result.BytesCopied)}. Identity {identity.Identity.CartId} was created at the media root. Trust is still granted separately on each computer.";
         }
         catch (Exception ex) { ResultStatus = "Nothing was overwritten. Package creation stopped: " + ex.Message; ValidateDestination(); }
     }

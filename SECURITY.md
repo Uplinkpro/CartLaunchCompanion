@@ -10,7 +10,7 @@ Security fixes are provided for the latest published release and the current `ma
 
 ## Current application security
 
-The following statements apply to the currently published 2.2 release:
+The following statements apply to the currently published 2.3 release:
 
 - Game launch targets and optional companion applications come from user-managed `game.json` files.
 - CLC does not treat downloaded metadata or artwork as permission to launch a program.
@@ -23,7 +23,7 @@ Because game configurations can intentionally name executables, arguments, launc
 
 ## Planned physical cart security model
 
-Physical Cart support is under development and is not part of the 2.2 release. The requirements below are design commitments for that feature, not claims about functionality that has already shipped.
+Physical Cart support is under development and is not part of the 2.3 release. The requirements below are design commitments for that feature, not claims about functionality that has already shipped.
 
 Each physical cart is intended to contain its own portable CLC installation, games, configuration, artwork, and media. A small optional **Cart Launch Host** installed on the computer will detect and start carts that the user has explicitly trusted.
 
