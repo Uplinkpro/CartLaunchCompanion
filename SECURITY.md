@@ -84,6 +84,8 @@ Manual physical-cart launch additionally requires a separate confirmation showin
 
 Automatic launch is a separate per-cart approval. An insertion can launch only after the identity, approval, minimum security version, and complete runtime inventory all match. The Host suppresses duplicate sessions, rate-limits retries, cancels verification when media disappears, and closes only the exact tracked CLC child if its backing cart is removed.
 
+After protected staging completes, the Host reloads the connected cart identity and current trust database immediately before process creation. Removal, identity substitution, trust revocation, or runtime-approval changes during staging therefore fail closed and the partial local session is deleted.
+
 ### Path and parser hardening
 
 The host will reject:

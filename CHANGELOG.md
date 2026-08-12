@@ -18,6 +18,8 @@ The project follows semantic versioning where practical.
 - Added fail-safe, structured Host audit logs with sanitized event results, pseudonymous cart tokens, 512 KiB rotation, and three-file retention
 - Added Host lifecycle coverage for immediate trust revocation, data-preserving repair, all eight uninstall retention combinations, and path-containment rejection
 - Host uninstall now always removes transient protected runtime sessions while preserving trust, settings, and logs exactly as selected
+- Added a final pre-launch authorization gate that reloads cart identity, trust, and runtime approval after staging to close removal, substitution, and revocation races
+- Added race coverage proving cancellation removes partial staging sessions and changed approval fingerprints cannot launch
 
 - Added the Phase 3 physical-cart identity foundation with bounded root manifests and stable SHA-256 fingerprints
 - Added a strict per-user trusted-cart database with separate automatic-launch approval and trust revocation

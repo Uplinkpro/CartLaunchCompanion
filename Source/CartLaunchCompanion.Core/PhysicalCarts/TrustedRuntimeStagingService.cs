@@ -7,7 +7,7 @@ public sealed record PreparedCartRuntime(
     string SessionRoot, string ExecutablePath, string CartRoot,
     string Platform, string CartId, string RuntimeFingerprint);
 
-public sealed class TrustedRuntimeStagingService
+public sealed class TrustedRuntimeStagingService(Action<string>? fileCopied = null)
 {
     public async Task<IReadOnlyList<TrustedRuntimeApproval>> CreateApprovalsAsync(
         string mediaRoot, CancellationToken cancellationToken = default)
@@ -60,6 +60,7 @@ public sealed class TrustedRuntimeStagingService
                 await using var input = new FileStream(inputPath, FileMode.Open, FileAccess.Read, FileShare.Read, 128 * 1024, true);
                 await using var output = new FileStream(outputPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 128 * 1024, true);
                 await input.CopyToAsync(output, cancellationToken);
+                fileCopied?.Invoke(file.Path);
             }
             await VerifyApprovalAsync(session, approval, cancellationToken);
             var executable = RuntimePathPolicy.ResolveContainedFile(session, approval.EntryPoint);
@@ -128,5 +129,34 @@ public sealed class TrustedRuntimeStagingService
     {
         if ((info.Attributes & FileAttributes.ReparsePoint) != 0 || info.LinkTarget is not null)
             throw new InvalidDataException(message);
+    }
+}
+
+public sealed class PreparedCartAuthorizationService(
+    CartIdentityService? identities = null)
+{
+    private readonly CartIdentityService _identities = identities ?? new CartIdentityService();
+
+    public async Task ValidateImmediatelyBeforeLaunchAsync(
+        PreparedCartRuntime prepared,
+        TrustedCartStore trustStore,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(prepared);
+        ArgumentNullException.ThrowIfNull(trustStore);
+        var mediaRoot = Directory.GetParent(Path.GetFullPath(prepared.CartRoot))?.FullName
+            ?? throw new InvalidDataException("The prepared cart root is invalid.");
+        if (!Directory.Exists(prepared.CartRoot))
+            throw new InvalidDataException("The connected cart was removed before launch.");
+        var identity = await _identities.LoadAsync(mediaRoot, cancellationToken);
+        if (!identity.Identity.CartId.Equals(prepared.CartId, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("The connected cart identity changed before launch.");
+        var trust = await trustStore.LoadAsync(cancellationToken);
+        if (!TrustedCartStore.IsTrusted(trust, identity))
+            throw new InvalidDataException("Trust was revoked before launch.");
+        var approval = trust.Carts.Single(item => item.CartId.Equals(prepared.CartId, StringComparison.OrdinalIgnoreCase))
+            .RuntimeApprovals.SingleOrDefault(item => item.Platform == prepared.Platform);
+        if (approval is null || !approval.RootFingerprint.Equals(prepared.RuntimeFingerprint, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("The approved runtime changed before launch.");
     }
 }

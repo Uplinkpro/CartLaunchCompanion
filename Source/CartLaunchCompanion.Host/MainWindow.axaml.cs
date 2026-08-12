@@ -210,6 +210,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
                 SelectedConnectedCart.MediaRoot, identity, await _trustStore.LoadAsync(), platform, Path.Combine(_plan.DataDirectory, "Sessions"));
             var approved = await new LaunchConfirmationWindow(identity.Identity.DisplayName, SelectedConnectedCart.MediaRoot, prepared.ExecutablePath).ShowDialog<bool>(this);
             if (!approved) { TrustedRuntimeStagingService.DeleteSession(prepared); Status = "Launch cancelled. The prepared local session was removed."; return; }
+            await new PreparedCartAuthorizationService().ValidateImmediatelyBeforeLaunchAsync(prepared, _trustStore);
             var session = new PreparedCartLaunchService().Start(prepared);
             _auditLog.Write(CartHostAuditEvent.VerificationAccepted, "manual", identity.Identity.CartId);
             _auditLog.Write(CartHostAuditEvent.LaunchStarted, "manual", identity.Identity.CartId);
@@ -276,6 +277,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
                 cart.MediaRoot, cart.Identity, database, platform, Path.Combine(_plan.DataDirectory, "Sessions"), cancellation.Token);
             cancellation.Token.ThrowIfCancellationRequested();
             if (!Directory.Exists(cart.MediaRoot)) { TrustedRuntimeStagingService.DeleteSession(prepared); return; }
+            await new PreparedCartAuthorizationService().ValidateImmediatelyBeforeLaunchAsync(prepared, _trustStore, cancellation.Token);
             var session = new PreparedCartLaunchService().Start(prepared);
             _auditLog.Write(CartHostAuditEvent.VerificationAccepted, "automatic", cart.Identity.Identity.CartId);
             _auditLog.Write(CartHostAuditEvent.LaunchStarted, "automatic", cart.Identity.Identity.CartId);
