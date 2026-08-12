@@ -178,7 +178,9 @@ public sealed class RuntimeUpdateTests : IDisposable
         await File.WriteAllTextAsync(
             Path.Combine(staging, "CartLaunchCompanion.Desktop.exe"),
             "new runtime");
-        var manifest = await CreateManifestAsync(staging, "Windows-x64", "2.4.0");
+        var installedVersion = typeof(RuntimeUpdateTests).Assembly.GetName().Version!;
+        var newerVersion = new Version(installedVersion.Major, installedVersion.Minor + 1, 0);
+        var manifest = await CreateManifestAsync(staging, "Windows-x64", newerVersion.ToString());
         manifest.SignerKeyId = "test";
         manifest.Signature = "dGVzdA==";
         var manifestPath = Path.Combine(

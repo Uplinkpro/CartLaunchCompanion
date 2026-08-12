@@ -25,7 +25,7 @@ public sealed class CartContentPathConverterTests : IDisposable
 
         Assert.True(result.IsPortable);
         Assert.Equal(category, result.Category);
-        Assert.DoesNotContain(Path.GetPathRoot(selected)!, result.ConfiguredPath);
+        Assert.False(Path.IsPathRooted(result.ConfiguredPath));
         Assert.Equal(Path.GetRelativePath(config, selected).Replace('\\', '/'), result.ConfiguredPath);
     }
 
