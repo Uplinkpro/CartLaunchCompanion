@@ -10,6 +10,8 @@ Files selected from the media root's `Games`, `Emulators`, `Roms`, or `Cart` fol
 
 Files outside the cart are reported as non-portable and are not saved by the locator.
 
+Launcher verification is opt-in and checks only the launcher selected for that platform. The launcher itself may be installed anywhere on the host computer, but game files must remain on the same media as `Cart`. Native games are accepted from the cart's `Games` folder; emulators from `Emulators`; ROMs from `Roms`; and Steam/Xbox-managed content from `SteamLibrary`, `steamapps`, or `XboxGames` at the media root. A manually located host launcher folder is confirmed for the current setup session and is never written into `game.json`.
+
 The Game Configurator is a separate desktop app for creating and editing Version 2 game folders without writing JSON by hand.
 
 On first launch, the online metadata setup appears before the editor. It provides official registration links for a Steam Web API key and an optional SteamGridDB API key. The setup can be reopened later with **Settings**. API keys are stored in Windows Credential Manager or the Linux desktop keyring and are never kept in `game.json` or plain-text settings files.

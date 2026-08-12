@@ -25,6 +25,8 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     private string _collectionLogoStatus = "No collection logo configured.";
     private ExistingGameOption? _selectedExistingGame;
     private string _artworkAuditSummary = "Artwork has not been checked yet.";
+    private string _windowsLauncherStatus = "Choose a launcher, then verify only that launcher on this computer.";
+    private string _linuxLauncherStatus = "Choose a launcher, then verify only that launcher on this computer or Steam Deck.";
 
     public GameConfiguration Configuration { get => _configuration; set { _configuration = value; Changed(); Changed(nameof(JsonPreview)); } }
     public string FilePath { get => _filePath; set { _filePath = value; Changed(); } }
@@ -51,6 +53,8 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     public ExistingGameOption? SelectedExistingGame { get => _selectedExistingGame; set { _selectedExistingGame = value; Changed(); } }
     public ObservableCollection<ArtworkAuditItem> ArtworkAuditResults { get; } = [];
     public string ArtworkAuditSummary { get => _artworkAuditSummary; set { _artworkAuditSummary = value; Changed(); } }
+    public string WindowsLauncherStatus { get => _windowsLauncherStatus; set { _windowsLauncherStatus = value; Changed(); } }
+    public string LinuxLauncherStatus { get => _linuxLauncherStatus; set { _linuxLauncherStatus = value; Changed(); } }
     public bool HasExistingGames => ExistingGames.Count > 0;
     public Array LauncherKinds { get; } = Enum.GetValues<LauncherKind>();
     public Array PreferredPlatforms { get; } = Enum.GetValues<PreferredPlatform>();

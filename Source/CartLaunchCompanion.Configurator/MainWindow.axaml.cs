@@ -15,6 +15,7 @@ public sealed partial class MainWindow : Window
     private readonly EditorViewModel _viewModel = new();
     private readonly GameConfigurationValidator _validator = new();
     private readonly CartContentPathConverter _cartPathConverter = new();
+    private readonly HostLauncherDetectionService _hostLauncherDetector = new();
     private readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
     private string? _gameJsonPath;
     private bool _startupSetupShown;
@@ -227,6 +228,27 @@ public sealed partial class MainWindow : Window
         if (!result.IsPortable)
             return;
 
+        var validCategory = target.EndsWith("-game", StringComparison.Ordinal)
+            ? CartContentPathConverter.IsGameContentCategory(result.Category)
+            : target.EndsWith("-emulator", StringComparison.Ordinal)
+                ? CartContentPathConverter.IsEmulatorCategory(result.Category)
+                : target.EndsWith("-rom", StringComparison.Ordinal)
+                    ? CartContentPathConverter.IsRomCategory(result.Category)
+                    : result.Category is "Cart" or "Games" or "Emulators";
+        if (!validCategory)
+        {
+            var expected = target.EndsWith("-game", StringComparison.Ordinal)
+                ? "Games or a launcher-managed library on this cart"
+                : target.EndsWith("-emulator", StringComparison.Ordinal)
+                    ? "Emulators"
+                    : target.EndsWith("-rom", StringComparison.Ordinal)
+                        ? "Roms"
+                        : "Cart, Games, or Emulators";
+            _viewModel.PathStatus = $"NOT SAVED · Choose this file from the cart's {expected} folder.";
+            _viewModel.Status = _viewModel.PathStatus;
+            return;
+        }
+
         var configuration = _viewModel.Configuration;
         var workingDirectory = Path.GetDirectoryName(result.ConfiguredPath)?.Replace('\\', '/') ?? "";
         var processName = Path.GetFileNameWithoutExtension(result.ConfiguredPath);
@@ -293,6 +315,42 @@ public sealed partial class MainWindow : Window
         _viewModel.Configuration = GameConfigurationJson.Deserialize(
             GameConfigurationJson.Serialize(configuration));
         _viewModel.RefreshPreview();
+    }
+
+    private void VerifySelectedLauncherClicked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string platform })
+            return;
+        var isWindows = platform == "windows";
+        var launcher = isWindows
+            ? _viewModel.Configuration.Launch.Windows.Launcher
+            : _viewModel.Configuration.Launch.Linux.Launcher;
+        var result = _hostLauncherDetector.Detect(
+            launcher,
+            isWindows ? CartLaunchCompanion.Core.Platform.PlatformKind.Windows : CartLaunchCompanion.Core.Platform.PlatformKind.Linux);
+        var message = result.Found
+            ? $"✓ {result.Message}{(string.IsNullOrWhiteSpace(result.Location) ? "" : $" Found at {result.Location}")}"
+            : $"✕ {result.Message}";
+        if (isWindows) _viewModel.WindowsLauncherStatus = message;
+        else _viewModel.LinuxLauncherStatus = message;
+        _viewModel.Status = message;
+    }
+
+    private async void LocateLauncherFolderClicked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string platform })
+            return;
+        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = "Locate the selected launcher on this computer",
+            AllowMultiple = false
+        });
+        if (folders.Count == 0) return;
+        var location = folders[0].Path.LocalPath;
+        var message = $"✓ Launcher folder confirmed at {location}. This host-only location will not be written into game.json.";
+        if (platform == "windows") _viewModel.WindowsLauncherStatus = message;
+        else _viewModel.LinuxLauncherStatus = message;
+        _viewModel.Status = message;
     }
 
     private async void ChooseCollectionLogoClicked(object? sender, RoutedEventArgs e)

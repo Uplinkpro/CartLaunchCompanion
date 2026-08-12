@@ -10,6 +10,9 @@ public sealed class CartContentPathConverterTests : IDisposable
     [InlineData("Games", "Game.exe")]
     [InlineData("Emulators", "retroarch.exe")]
     [InlineData("Roms", "game.chd")]
+    [InlineData("SteamLibrary", "game.exe")]
+    [InlineData("steamapps", "appmanifest_10.acf")]
+    [InlineData("XboxGames", "game.exe")]
     public void ConvertsMediaContentToConfigurationRelativePath(string category, string fileName)
     {
         var config = Path.Combine(_root, "Cart", "Games", "Example");
@@ -49,6 +52,16 @@ public sealed class CartContentPathConverterTests : IDisposable
         var result = new CartContentPathConverter().Convert(config, selected);
 
         Assert.False(result.IsPortable);
+    }
+
+    [Fact]
+    public void ClassifiesTargetSpecificFolders()
+    {
+        Assert.True(CartContentPathConverter.IsGameContentCategory("Games"));
+        Assert.True(CartContentPathConverter.IsGameContentCategory("SteamLibrary"));
+        Assert.True(CartContentPathConverter.IsEmulatorCategory("Emulators"));
+        Assert.True(CartContentPathConverter.IsRomCategory("Roms"));
+        Assert.False(CartContentPathConverter.IsGameContentCategory("Emulators"));
     }
 
     public void Dispose()

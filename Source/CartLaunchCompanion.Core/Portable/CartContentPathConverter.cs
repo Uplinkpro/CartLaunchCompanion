@@ -9,7 +9,17 @@ public sealed record CartContentPathResult(
 
 public sealed class CartContentPathConverter
 {
-    private static readonly string[] AllowedMediaFolders = ["Games", "Emulators", "Roms"];
+    private static readonly string[] AllowedMediaFolders =
+        ["Games", "Emulators", "Roms", "SteamLibrary", "steamapps", "XboxGames"];
+
+    public static bool IsGameContentCategory(string category) =>
+        category is "Games" or "SteamLibrary" or "steamapps" or "XboxGames";
+
+    public static bool IsEmulatorCategory(string category) =>
+        string.Equals(category, "Emulators", StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsRomCategory(string category) =>
+        string.Equals(category, "Roms", StringComparison.OrdinalIgnoreCase);
 
     public CartContentPathResult Convert(string configurationFolder, string selectedPath)
     {
