@@ -20,6 +20,8 @@ def mode_for(path: pathlib.Path, relative: pathlib.PurePosixPath) -> int:
         }
     ):
         return 0o100755
+    if relative.name in {"CartLaunchCompanion.Host", "CartLaunchCompanion.HostCleanup"}:
+        return 0o100755
     return 0o100644
 
 

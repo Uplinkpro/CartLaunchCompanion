@@ -8,6 +8,8 @@ $version = $Version
 $launcherProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.Desktop\CartLaunchCompanion.Desktop.csproj'
 $configuratorProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.Configurator\CartLaunchCompanion.Configurator.csproj'
 $updaterProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.Updater\CartLaunchCompanion.Updater.csproj'
+$hostProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.Host\CartLaunchCompanion.Host.csproj'
+$hostCleanupProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.HostCleanup\CartLaunchCompanion.HostCleanup.csproj'
 $staging = Join-Path $OutputRoot 'staging\CartLaunchCompanion'
 $packages = Join-Path $OutputRoot 'packages'
 
@@ -45,6 +47,20 @@ foreach ($runtime in $runtimes) {
     if ($LASTEXITCODE -ne 0) {
         throw "Updater publish failed for $($runtime.Id)."
     }
+
+    $hostDestination = Join-Path $staging (Join-Path 'Host' $runtime.Folder)
+    & dotnet publish $hostProject -c Release -r $runtime.Id --self-contained true `
+        -p:PublishSingleFile=false -p:PublishTrimmed=false `
+        -p:DebugType=None -p:DebugSymbols=false -o $hostDestination
+    if ($LASTEXITCODE -ne 0) {
+        throw "Cart Launch Host publish failed for $($runtime.Id)."
+    }
+    & dotnet publish $hostCleanupProject -c Release -r $runtime.Id --self-contained true `
+        -p:PublishSingleFile=true -p:PublishTrimmed=true `
+        -p:DebugType=None -p:DebugSymbols=false -o $hostDestination
+    if ($LASTEXITCODE -ne 0) {
+        throw "Cart Launch Host cleanup publish failed for $($runtime.Id)."
+    }
 }
 
 foreach ($folder in @('Assets', 'Schemas')) {
@@ -73,6 +89,8 @@ foreach ($folder in @('Logs', 'Cache')) {
 # Some native runtime packages carry symbols even when DebugSymbols is disabled.
 # Portable releases intentionally contain no debugging symbol files.
 Get-ChildItem -LiteralPath (Join-Path $staging 'System') -Recurse -File -Filter '*.pdb' |
+    Remove-Item -Force
+Get-ChildItem -LiteralPath (Join-Path $staging 'Host') -Recurse -File -Filter '*.pdb' |
     Remove-Item -Force
 
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'README.md') -Destination $staging
@@ -135,10 +153,12 @@ Copy-Item -LiteralPath $staging -Destination $windowsStage -Recurse
 Copy-Item -LiteralPath $staging -Destination $linuxStage -Recurse
 Remove-Item -LiteralPath (Join-Path $windowsStage 'System\Linux-x64') -Recurse -Force
 Remove-Item -LiteralPath (Join-Path $windowsStage 'Maintenance\Linux-x64') -Recurse -Force
+Remove-Item -LiteralPath (Join-Path $windowsStage 'Host\Linux-x64') -Recurse -Force
 Remove-Item -LiteralPath (Join-Path $windowsStage 'Start Cart Launch Companion.sh') -Force
 Remove-Item -LiteralPath (Join-Path $windowsStage 'Game Configurator.sh') -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'System\Windows-x64') -Recurse -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'Maintenance\Windows-x64') -Recurse -Force
+Remove-Item -LiteralPath (Join-Path $linuxStage 'Host\Windows-x64') -Recurse -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'Start Cart Launch Companion.bat') -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'Game Configurator.bat') -Force
 

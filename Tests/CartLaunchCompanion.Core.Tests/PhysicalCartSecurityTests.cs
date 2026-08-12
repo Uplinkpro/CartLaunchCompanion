@@ -72,10 +72,51 @@ public sealed class PhysicalCartSecurityTests : IDisposable
         var plan = CartHostInstallationPlan.ForCurrentUser();
         Assert.False(string.IsNullOrWhiteSpace(plan.InstallDirectory));
         Assert.StartsWith(plan.InstallDirectory, plan.ExecutablePath, StringComparison.OrdinalIgnoreCase);
-        Assert.StartsWith(plan.InstallDirectory, plan.SettingsPath, StringComparison.OrdinalIgnoreCase);
-        Assert.StartsWith(plan.InstallDirectory, plan.TrustDatabasePath, StringComparison.OrdinalIgnoreCase);
-        Assert.StartsWith(plan.InstallDirectory, plan.LogsDirectory, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith(plan.DataDirectory, plan.SettingsPath, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith(plan.DataDirectory, plan.TrustDatabasePath, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith(plan.DataDirectory, plan.LogsDirectory, StringComparison.OrdinalIgnoreCase);
         Assert.False(string.IsNullOrWhiteSpace(plan.StartupRegistration));
+    }
+
+    [Fact]
+    public async Task InstallationService_CopiesOnlyPublishedRuntimeFiles()
+    {
+        var source = Path.Combine(_root, "published");
+        var install = Path.Combine(_root, "installed");
+        Directory.CreateDirectory(source);
+        var executableName = OperatingSystem.IsWindows() ? "CartLaunchCompanion.Host.exe" : "CartLaunchCompanion.Host";
+        await File.WriteAllTextAsync(Path.Combine(source, executableName), "host");
+        await File.WriteAllTextAsync(Path.Combine(source, "dependency.dll"), "dependency");
+        await File.WriteAllTextAsync(Path.Combine(source, "symbols.pdb"), "symbols");
+        var data = Path.Combine(_root, "data");
+        var plan = new CartHostInstallationPlan(install, data, Path.Combine(install, executableName), "startup",
+            Path.Combine(data, "settings.json"), Path.Combine(data, "trusted-carts.json"), Path.Combine(data, "Logs"));
+
+        var result = await new CartHostInstallationService().InstallFilesAsync(source, plan);
+
+        Assert.Equal(2, result.FilesCopied);
+        Assert.True(File.Exists(plan.ExecutablePath));
+        Assert.True(File.Exists(Path.Combine(install, "dependency.dll")));
+        Assert.False(File.Exists(Path.Combine(install, "symbols.pdb")));
+    }
+
+    [Fact]
+    public void InstallationService_RemovesOnlyExplicitlySelectedUserData()
+    {
+        var install = Path.Combine(_root, "installed");
+        var data = Path.Combine(_root, "data");
+        Directory.CreateDirectory(Path.Combine(data, "Logs"));
+        var plan = new CartHostInstallationPlan(install, data, Path.Combine(install, "host.exe"), "startup",
+            Path.Combine(data, "settings.json"), Path.Combine(data, "trusted-carts.json"), Path.Combine(data, "Logs"));
+        File.WriteAllText(plan.SettingsPath, "settings");
+        File.WriteAllText(plan.TrustDatabasePath, "trust");
+        File.WriteAllText(Path.Combine(plan.LogsDirectory, "host.log"), "log");
+
+        new CartHostInstallationService().RemoveUserData(plan, removeTrust: true, removeSettings: false, removeLogs: true);
+
+        Assert.False(File.Exists(plan.TrustDatabasePath));
+        Assert.True(File.Exists(plan.SettingsPath));
+        Assert.False(Directory.Exists(plan.LogsDirectory));
     }
 
     public void Dispose()

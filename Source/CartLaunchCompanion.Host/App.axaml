@@ -1,0 +1,10 @@
+<Application xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="CartLaunchCompanion.Host.App" RequestedThemeVariant="Dark">
+  <Application.Styles>
+    <FluentTheme/>
+    <Style Selector="Window"><Setter Property="Background" Value="#0B0D10"/><Setter Property="FontFamily" Value="Inter"/></Style>
+    <Style Selector="Button"><Setter Property="MinHeight" Value="40"/><Setter Property="Padding" Value="18,9"/></Style>
+    <Style Selector="Border.card"><Setter Property="Background" Value="#15191F"/><Setter Property="BorderBrush" Value="#2A313B"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="12"/><Setter Property="Padding" Value="18"/></Style>
+    <Style Selector="TextBlock.help"><Setter Property="Foreground" Value="#AAB2BE"/><Setter Property="TextWrapping" Value="Wrap"/></Style>
+  </Application.Styles>
+</Application>

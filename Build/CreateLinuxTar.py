@@ -21,6 +21,8 @@ def normalized_permissions(info: tarfile.TarInfo) -> tarfile.TarInfo:
         }
     ):
         info.mode = 0o755
+    elif path.name in {"CartLaunchCompanion.Host", "CartLaunchCompanion.HostCleanup"}:
+        info.mode = 0o755
     else:
         info.mode = 0o644
     info.uid = 0

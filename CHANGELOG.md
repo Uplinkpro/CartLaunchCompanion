@@ -12,6 +12,8 @@ The project follows semantic versioning where practical.
 - Added a strict per-user trusted-cart database with separate automatic-launch approval and trust revocation
 - Added an explicit local Cart Launch Host installation plan enumerating its executable, startup entry, settings, trust database, and logs
 - New portable carts now receive a one-time friendly identity while host trust remains a separate per-computer decision
+- Added the Cart Launch Host management utility with explicit install, repair, trust, revocation, and selective uninstall screens
+- Added separate per-user Host runtime and data locations so uninstall can preserve or remove trust, settings, and logs exactly as selected
 
 ## [2.3.0] - 2026-08-11
 
