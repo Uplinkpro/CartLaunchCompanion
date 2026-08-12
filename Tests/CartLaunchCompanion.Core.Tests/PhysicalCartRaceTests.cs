@@ -90,6 +90,19 @@ public sealed class PhysicalCartRaceTests : IDisposable
         TrustedRuntimeStagingService.DeleteSession(prepared);
     }
 
+    [Fact]
+    public async Task FinalAuthorization_RejectsStagedRuntimeTamperingImmediatelyBeforeLaunch()
+    {
+        var setup = await CreateTrustedCartAsync();
+        var prepared = await new TrustedRuntimeStagingService().PrepareAsync(
+            setup.Media, setup.Identity, setup.Database, "Windows-x64", Path.Combine(_root, "sessions"));
+        await File.WriteAllTextAsync(prepared.ExecutablePath, "tampered after staging");
+
+        await Assert.ThrowsAsync<InvalidDataException>(() =>
+            new PreparedCartAuthorizationService().ValidateImmediatelyBeforeLaunchAsync(prepared, setup.Store));
+        TrustedRuntimeStagingService.DeleteSession(prepared);
+    }
+
     private async Task<Setup> CreateTrustedCartAsync(int extraFiles = 0)
     {
         var media = Path.Combine(_root, "media-" + Guid.NewGuid().ToString("N"));

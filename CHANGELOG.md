@@ -25,6 +25,9 @@ The project follows semantic versioning where practical.
 - Artwork and trailer downloads now guarantee partial `.download` cleanup and replace existing media only after a complete transfer
 - Hardened runtime inventory paths to reject control characters, repeated separators, dot segments, traversal, rooted paths, and ambiguous normalization before staging
 - Added deterministic manifest fuzzing and boundary tests for duplicate fields, nesting, malformed Unicode, randomized bytes, excessive inventories, links, and fingerprint stability
+- Added a per-user single-instance Host lock to prevent competing monitors and duplicate automatic-launch state
+- Final authorization now re-hashes the staged runtime immediately before process creation to reject local session tampering
+- Added a removable-drive hardware test checklist for Windows, SteamOS, Bazzite, ChimeraOS, and CachyOS
 
 - Added the Phase 3 physical-cart identity foundation with bounded root manifests and stable SHA-256 fingerprints
 - Added a strict per-user trusted-cart database with separate automatic-launch approval and trust revocation

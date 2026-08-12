@@ -86,6 +86,8 @@ Automatic launch is a separate per-cart approval. An insertion can launch only a
 
 After protected staging completes, the Host reloads the connected cart identity and current trust database immediately before process creation. Removal, identity substitution, trust revocation, or runtime-approval changes during staging therefore fail closed and the partial local session is deleted.
 
+The final authorization gate also re-hashes the complete local staged runtime immediately before process creation. A per-user single-instance lock prevents competing Host monitors from maintaining conflicting automatic-launch state.
+
 ### Path and parser hardening
 
 The host will reject:

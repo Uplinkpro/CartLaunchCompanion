@@ -158,5 +158,22 @@ public sealed class PreparedCartAuthorizationService(
             .RuntimeApprovals.SingleOrDefault(item => item.Platform == prepared.Platform);
         if (approval is null || !approval.RootFingerprint.Equals(prepared.RuntimeFingerprint, StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("The approved runtime changed before launch.");
+        await VerifyPreparedRuntimeAsync(prepared, approval, cancellationToken);
+    }
+
+    private static async Task VerifyPreparedRuntimeAsync(
+        PreparedCartRuntime prepared,
+        TrustedRuntimeApproval approval,
+        CancellationToken cancellationToken)
+    {
+        var manifest = new RuntimeUpdateManifest
+        {
+            Version = "locally-approved",
+            Platform = approval.Platform,
+            EntryPoint = approval.EntryPoint,
+            RootFingerprint = approval.RootFingerprint,
+            Files = approval.Files
+        };
+        await new RuntimeIntegrityVerifier().VerifyAsync(prepared.SessionRoot, manifest, cancellationToken);
     }
 }
