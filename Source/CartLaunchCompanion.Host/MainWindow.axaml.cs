@@ -117,6 +117,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             _auditLog.Write(CartHostAuditEvent.TrustRevoked, "revoked", SelectedCart.CartId);
             Status = $"Trust was revoked for {SelectedCart.DisplayName}. The physical cart was not changed.";
             await RefreshTrustAsync();
+            await ScanMountedCartsAsync();
         }
     }
 

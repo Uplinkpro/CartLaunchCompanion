@@ -16,6 +16,8 @@ The project follows semantic versioning where practical.
 - Revalidate the exact tracked cart identity immediately before safe removal and report media removed mid-eject as already removed
 - Isolated platform ejection behind a testable boundary with coverage for busy media, flush failures, identity substitution, exact target selection, and Linux mount mapping
 - Added fail-safe, structured Host audit logs with sanitized event results, pseudonymous cart tokens, 512 KiB rotation, and three-file retention
+- Added Host lifecycle coverage for immediate trust revocation, data-preserving repair, all eight uninstall retention combinations, and path-containment rejection
+- Host uninstall now always removes transient protected runtime sessions while preserving trust, settings, and logs exactly as selected
 
 - Added the Phase 3 physical-cart identity foundation with bounded root manifests and stable SHA-256 fingerprints
 - Added a strict per-user trusted-cart database with separate automatic-launch approval and trust revocation

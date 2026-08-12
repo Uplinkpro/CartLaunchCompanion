@@ -38,13 +38,13 @@ public sealed class CartHostInstallationService
 
     public void RemoveUserData(CartHostInstallationPlan plan, bool removeTrust, bool removeSettings, bool removeLogs)
     {
+        // Protected runtime sessions are transient executable copies, not user data.
+        // They must never survive Host removal regardless of retention choices.
+        DeleteContainedDirectory(plan.DataDirectory, Path.Combine(plan.DataDirectory, "Sessions"));
         if (removeTrust) DeleteContainedFile(plan.DataDirectory, plan.TrustDatabasePath);
         if (removeSettings) DeleteContainedFile(plan.DataDirectory, plan.SettingsPath);
         if (removeLogs)
-        {
             DeleteContainedDirectory(plan.DataDirectory, plan.LogsDirectory);
-            DeleteContainedDirectory(plan.DataDirectory, Path.Combine(plan.DataDirectory, "Sessions"));
-        }
     }
 
     private static void DeleteContainedFile(string root, string path)
