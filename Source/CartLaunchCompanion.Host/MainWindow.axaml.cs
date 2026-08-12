@@ -160,6 +160,40 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         }
         catch (Exception ex) { Status = "Runtime preparation was rejected safely: " + ex.Message; }
     }
+    private async void LaunchClicked(object? sender, RoutedEventArgs e)
+    {
+        if (SelectedConnectedCart is null) { Status = "Select a connected cart first."; return; }
+        PreparedCartRuntime? prepared = null;
+        try
+        {
+            Status = "Verifying and preparing the selected cart before confirmation…";
+            var identity = await new CartIdentityService().LoadAsync(SelectedConnectedCart.MediaRoot);
+            var platform = OperatingSystem.IsWindows() ? "Windows-x64" : "Linux-x64";
+            prepared = await new TrustedRuntimeStagingService().PrepareAsync(
+                SelectedConnectedCart.MediaRoot, identity, await _trustStore.LoadAsync(), platform, Path.Combine(_plan.DataDirectory, "Sessions"));
+            var approved = await new LaunchConfirmationWindow(identity.Identity.DisplayName, SelectedConnectedCart.MediaRoot, prepared.ExecutablePath).ShowDialog<bool>(this);
+            if (!approved) { TrustedRuntimeStagingService.DeleteSession(prepared); Status = "Launch cancelled. The prepared local session was removed."; return; }
+            var session = new PreparedCartLaunchService().Start(prepared);
+            prepared = null;
+            Status = "Verified CLC is running from its protected local session. The session will be removed after it exits.";
+            _ = ObserveLaunchAsync(session);
+        }
+        catch (Exception ex)
+        {
+            if (prepared is not null) TrustedRuntimeStagingService.DeleteSession(prepared);
+            Status = "Launch was rejected safely: " + ex.Message;
+        }
+    }
+    private async Task ObserveLaunchAsync(PreparedCartLaunchSession session)
+    {
+        try
+        {
+            var exitCode = await session.WaitForExitAsync();
+            Status = $"Verified CLC exited with code {exitCode}. Its protected local session was removed.";
+        }
+        catch (Exception ex) { Status = "The verified CLC session ended unexpectedly: " + ex.Message; }
+        finally { await session.DisposeAsync(); }
+    }
     public async Task ScanMountedCartsAsync()
     {
         try

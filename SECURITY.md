@@ -71,6 +71,8 @@ Process creation must:
 - reject executable paths outside the verified staging directory;
 - never accept an executable path or command directly from removable-media metadata.
 
+Manual physical-cart launch additionally requires a separate confirmation showing the cart name, connected media root, and verified local executable. The Host starts only the `PreparedCartRuntime` returned by protected staging, supplies exactly one structured `--cart-root` argument, removes runtime-injection environment variables, tracks the exact child process, and deletes the local runtime session after that process exits. This confirmation does not enable automatic launch.
+
 ### Path and parser hardening
 
 The host will reject:

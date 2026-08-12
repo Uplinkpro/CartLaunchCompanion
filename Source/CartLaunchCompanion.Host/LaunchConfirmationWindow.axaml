@@ -1,0 +1,9 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CartLaunchCompanion.Host.LaunchConfirmationWindow" Title="Confirm trusted cart launch"
+        Width="650" Height="480" CanResize="False" WindowStartupLocation="CenterOwner">
+  <Grid Margin="30" RowDefinitions="Auto,*,Auto" RowSpacing="18">
+    <StackPanel Spacing="7"><TextBlock FontSize="27" FontWeight="Bold" Text="LAUNCH VERIFIED CART?"/><TextBlock Classes="help" Text="This is a one-time manual launch confirmation. It does not enable automatic launch."/></StackPanel>
+    <Border Grid.Row="1" Classes="card"><StackPanel Spacing="10"><TextBlock FontWeight="SemiBold" Text="Cart"/><TextBlock Text="{Binding CartName}"/><TextBlock FontWeight="SemiBold" Text="Connected media"/><TextBlock Classes="help" Text="{Binding MediaRoot}"/><TextBlock FontWeight="SemiBold" Text="Verified local executable"/><TextBlock Classes="help" Text="{Binding ExecutablePath}"/><TextBlock Classes="help" Text="Only this fixed executable will run. The cart root is passed as one structured argument. The local session is removed after CLC exits."/></StackPanel></Border>
+    <Grid Grid.Row="2" ColumnDefinitions="*,12,*"><Button Grid.Column="0" Content="CANCEL" Click="CancelClicked"/><Button Grid.Column="2" Content="LAUNCH VERIFIED CART" Background="#2F80ED" Foreground="White" Click="LaunchClicked"/></Grid>
+  </Grid>
+</Window>

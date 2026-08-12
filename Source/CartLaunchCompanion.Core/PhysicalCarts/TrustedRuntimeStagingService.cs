@@ -46,6 +46,7 @@ public sealed class TrustedRuntimeStagingService
 
         var sessions = Path.GetFullPath(sessionsRoot);
         Directory.CreateDirectory(sessions);
+        RejectLink(new DirectoryInfo(sessions), "The protected sessions folder cannot be a link or junction.");
         var session = Path.Combine(sessions, $"{identity.Identity.CartId}-{platform}-{Guid.NewGuid():N}");
         Directory.CreateDirectory(session);
         try
@@ -119,6 +120,13 @@ public sealed class TrustedRuntimeStagingService
         var media = Path.TrimEndingDirectorySeparator(Path.GetFullPath(mediaRoot));
         var cart = Path.Combine(media, "Cart");
         if (!Directory.Exists(cart)) throw new DirectoryNotFoundException("The media root does not contain a Cart folder.");
+        RejectLink(new DirectoryInfo(cart), "The cart data folder cannot be a link or junction.");
         return cart;
+    }
+
+    private static void RejectLink(FileSystemInfo info, string message)
+    {
+        if ((info.Attributes & FileAttributes.ReparsePoint) != 0 || info.LinkTarget is not null)
+            throw new InvalidDataException(message);
     }
 }

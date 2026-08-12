@@ -226,6 +226,43 @@ public sealed class PhysicalCartSecurityTests : IDisposable
         Assert.False(Directory.Exists(sessions) && Directory.EnumerateFileSystemEntries(sessions).Any());
     }
 
+    [Fact]
+    public void RestrictedLaunch_UsesFixedExecutableStructuredCartRootAndSanitizedEnvironment()
+    {
+        var session = Path.Combine(_root, "session");
+        var cart = Path.Combine(_root, "media", "Cart");
+        Directory.CreateDirectory(session); Directory.CreateDirectory(Path.Combine(cart, "Games"));
+        var executable = Path.Combine(session, "CartLaunchCompanion.Desktop.exe");
+        File.WriteAllText(executable, "runtime");
+        var prepared = new PreparedCartRuntime(session, executable, cart, "Windows-x64",
+            "11111111-1111-1111-1111-111111111111", new string('a', 64));
+        Environment.SetEnvironmentVariable("DOTNET_STARTUP_HOOKS", "untrusted-hook");
+        try
+        {
+            var start = new PreparedCartLaunchService().CreateStartInfo(prepared);
+            Assert.Equal(executable, start.FileName);
+            Assert.False(start.UseShellExecute);
+            Assert.Equal(["--cart-root", cart], start.ArgumentList);
+            Assert.False(start.Environment.ContainsKey("DOTNET_STARTUP_HOOKS"));
+            Assert.Equal(prepared.CartId, start.Environment["CLC_TRUSTED_CART_ID"]);
+            Assert.Equal(prepared.RuntimeFingerprint, start.Environment["CLC_RUNTIME_FINGERPRINT"]);
+        }
+        finally { Environment.SetEnvironmentVariable("DOTNET_STARTUP_HOOKS", null); }
+    }
+
+    [Fact]
+    public void RestrictedLaunch_RejectsExecutableOutsidePreparedSession()
+    {
+        var session = Path.Combine(_root, "session");
+        var cart = Path.Combine(_root, "media", "Cart");
+        Directory.CreateDirectory(session); Directory.CreateDirectory(cart);
+        var outside = Path.Combine(_root, "CartLaunchCompanion.Desktop.exe");
+        File.WriteAllText(outside, "runtime");
+        var prepared = new PreparedCartRuntime(session, outside, cart, "Windows-x64",
+            "11111111-1111-1111-1111-111111111111", new string('a', 64));
+        Assert.Throws<InvalidDataException>(() => new PreparedCartLaunchService().CreateStartInfo(prepared));
+    }
+
     private async Task<string> CreateRuntimeCartAsync(string content)
     {
         var media = Path.Combine(_root, "media-" + Guid.NewGuid().ToString("N"));

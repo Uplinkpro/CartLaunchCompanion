@@ -20,6 +20,8 @@ The project follows semantic versioning where practical.
 - Trust enrollment now records exact Windows and Linux runtime file lengths, SHA-256 hashes, and combined fingerprints
 - Added protected per-user runtime staging with verification before copying, verification after copying, fixed launcher entry points, and automatic failed-session cleanup
 - The Host can manually verify and prepare a trusted connected cart while deliberately providing no execution action yet
+- Added a separately confirmed manual trusted-cart launch using one fixed staged executable, one structured cart-root argument, no command shell, and a sanitized environment
+- Protected launch sessions track the exact CLC child process and remove their local runtime after it exits or when launch is cancelled
 
 ## [2.3.0] - 2026-08-11
 

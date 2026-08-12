@@ -35,8 +35,10 @@ public partial class App : Application
             IClassicDesktopStyleApplicationLifetime desktop)
         {
             var portablePathService = new PortablePathService();
-            var portablePaths =
-                portablePathService.Discover(AppContext.BaseDirectory);
+            var portablePaths = Program.TrustedCartRoot is null
+                ? portablePathService.Discover(AppContext.BaseDirectory)
+                : PortablePaths.FromRoot(Program.TrustedCartRoot);
+            portablePaths.EnsureWritableFolders();
 
             var platformService = new RuntimePlatformService();
 
