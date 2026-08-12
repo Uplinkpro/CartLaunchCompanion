@@ -11,6 +11,8 @@ The project follows semantic versioning where practical.
 - Added Host-authorized safe eject for verified physical-cart sessions on Windows and supported Linux gaming distributions
 - Added current-user-only, size-bounded eject requests that cannot carry arbitrary commands or device paths
 - Unified manual and automatic trusted-cart session tracking so either launch type can be closed and cleaned safely
+- Hardened Host eject messages with an exact JSON schema, bounded endpoint names, malformed and truncated payload rejection, and isolated same-user pipe tests
+- Added automated exactly-once insertion and removal coverage for physical carts
 
 - Added the Phase 3 physical-cart identity foundation with bounded root manifests and stable SHA-256 fingerprints
 - Added a strict per-user trusted-cart database with separate automatic-launch approval and trust revocation

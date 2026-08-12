@@ -314,6 +314,33 @@ public sealed class PhysicalCartSecurityTests : IDisposable
         Assert.Equal(0, inserted);
     }
 
+    [Fact]
+    public async Task Monitor_ReportsInsertionAndRemovalExactlyOnce()
+    {
+        var media = Path.Combine(_root, "dynamic");
+        var mounts = new MutableMounts();
+        var identities = new CartIdentityService();
+        await using var monitor = new PhysicalCartMonitor(
+            new MountedCartDetector(mounts, identities), TimeSpan.FromMilliseconds(15));
+        var inserted = 0; var removed = 0;
+        monitor.CartInserted += (_, _) => Interlocked.Increment(ref inserted);
+        monitor.CartRemoved += (_, _) => Interlocked.Increment(ref removed);
+        monitor.Start();
+        await Task.Delay(60);
+
+        Directory.CreateDirectory(media);
+        await identities.SaveNewAsync(media, identities.Create("Hotplug Cart"));
+        mounts.Set(media);
+        await WaitUntilAsync(() => Volatile.Read(ref inserted) == 1);
+        await Task.Delay(60);
+        Assert.Equal(1, inserted);
+
+        mounts.Set();
+        await WaitUntilAsync(() => Volatile.Read(ref removed) == 1);
+        await Task.Delay(60);
+        Assert.Equal(1, removed);
+    }
+
     private async Task<string> CreateRuntimeCartAsync(string content)
     {
         var media = Path.Combine(_root, "media-" + Guid.NewGuid().ToString("N"));
@@ -327,6 +354,19 @@ public sealed class PhysicalCartSecurityTests : IDisposable
     private sealed class StaticMounts(params string[] roots) : IMountRootProvider
     {
         public IEnumerable<string> GetMountedRoots() => roots;
+    }
+
+    private sealed class MutableMounts : IMountRootProvider
+    {
+        private string[] _roots = [];
+        public IEnumerable<string> GetMountedRoots() => Volatile.Read(ref _roots);
+        public void Set(params string[] roots) => Volatile.Write(ref _roots, roots);
+    }
+
+    private static async Task WaitUntilAsync(Func<bool> condition)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+        while (!condition()) await Task.Delay(15, timeout.Token);
     }
 
     public void Dispose()

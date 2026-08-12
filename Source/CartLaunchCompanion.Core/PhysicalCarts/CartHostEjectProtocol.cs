@@ -1,5 +1,6 @@
 using System.IO.Pipes;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace CartLaunchCompanion.Core.PhysicalCarts;
 
@@ -11,11 +12,15 @@ public static class CartHostEjectProtocol
     public const string PipeName = "CartLaunchCompanion.Host.Eject.v1";
     public const int MaximumMessageBytes = 4096;
 
-    public static async Task<CartHostEjectResponse> RequestAsync(string cartId, CancellationToken cancellationToken = default)
+    public static Task<CartHostEjectResponse> RequestAsync(string cartId, CancellationToken cancellationToken = default) =>
+        RequestAsync(cartId, PipeName, cancellationToken);
+
+    public static async Task<CartHostEjectResponse> RequestAsync(string cartId, string pipeName, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(cartId) || cartId.Length > 128)
             return new(false, "The trusted cart identity is invalid.");
-        await using var pipe = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
+        ValidatePipeName(pipeName);
+        await using var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromSeconds(3));
         await pipe.ConnectAsync(timeout.Token);
@@ -25,7 +30,7 @@ public static class CartHostEjectProtocol
 
     internal static async Task WriteAsync<T>(Stream stream, T value, CancellationToken cancellationToken)
     {
-        var payload = JsonSerializer.SerializeToUtf8Bytes(value);
+        var payload = JsonSerializer.SerializeToUtf8Bytes(value, StrictJsonOptions);
         if (payload.Length > MaximumMessageBytes) throw new InvalidDataException("The Host message is too large.");
         await stream.WriteAsync(BitConverter.GetBytes(payload.Length), cancellationToken);
         await stream.WriteAsync(payload, cancellationToken);
@@ -40,14 +45,39 @@ public static class CartHostEjectProtocol
         if (length <= 0 || length > MaximumMessageBytes) throw new InvalidDataException("The Host message length is invalid.");
         var payload = new byte[length];
         await stream.ReadExactlyAsync(payload, cancellationToken);
-        return JsonSerializer.Deserialize<T>(payload) ?? throw new InvalidDataException("The Host message is invalid.");
+        try
+        {
+            return JsonSerializer.Deserialize<T>(payload, StrictJsonOptions) ?? throw new InvalidDataException("The Host message is invalid.");
+        }
+        catch (JsonException ex) { throw new InvalidDataException("The Host message is invalid.", ex); }
+    }
+
+    internal static JsonSerializerOptions StrictJsonOptions { get; } = new()
+    {
+        UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
+        MaxDepth = 4
+    };
+
+    internal static void ValidatePipeName(string pipeName)
+    {
+        if (string.IsNullOrWhiteSpace(pipeName) || pipeName.Length > 128 || pipeName.IndexOfAny(['/', '\\', '\0']) >= 0)
+            throw new ArgumentException("The Host pipe name is invalid.", nameof(pipeName));
     }
 }
 
-public sealed class CartHostEjectServer(Func<CartHostEjectRequest, Task<CartHostEjectResponse>> handler) : IAsyncDisposable
+public sealed class CartHostEjectServer : IAsyncDisposable
 {
+    private readonly Func<CartHostEjectRequest, Task<CartHostEjectResponse>> _handler;
+    private readonly string _pipeName;
     private readonly CancellationTokenSource _stop = new();
     private Task? _loop;
+
+    public CartHostEjectServer(Func<CartHostEjectRequest, Task<CartHostEjectResponse>> handler, string? pipeName = null)
+    {
+        _handler = handler ?? throw new ArgumentNullException(nameof(handler));
+        _pipeName = pipeName ?? CartHostEjectProtocol.PipeName;
+        CartHostEjectProtocol.ValidatePipeName(_pipeName);
+    }
 
     public void Start() => _loop ??= RunAsync(_stop.Token);
 
@@ -55,14 +85,14 @@ public sealed class CartHostEjectServer(Func<CartHostEjectRequest, Task<CartHost
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            await using var pipe = new NamedPipeServerStream(CartHostEjectProtocol.PipeName, PipeDirection.InOut, 1,
+            await using var pipe = new NamedPipeServerStream(_pipeName, PipeDirection.InOut, 1,
                 PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
             try
             {
                 await pipe.WaitForConnectionAsync(cancellationToken);
                 var request = await CartHostEjectProtocol.ReadAsync<CartHostEjectRequest>(pipe, cancellationToken);
                 var valid = request is { Version: 1, Operation: "eject" } && !string.IsNullOrWhiteSpace(request.CartId) && request.CartId.Length <= 128;
-                var response = valid ? await handler(request) : new CartHostEjectResponse(false, "The eject request was rejected.");
+                var response = valid ? await _handler(request) : new CartHostEjectResponse(false, "The eject request was rejected.");
                 await CartHostEjectProtocol.WriteAsync(pipe, response, cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }

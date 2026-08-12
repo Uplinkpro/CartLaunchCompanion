@@ -104,6 +104,7 @@ Communication between CLC and the Cart Launch Host is local and restricted to th
 - Windows uses a named pipe restricted to the current user identity.
 - Linux uses a user-owned Unix socket under the user's runtime directory.
 - Messages have a version, strict size limits, and a small allowlist of operations.
+- Unknown JSON fields, malformed or truncated payloads, unsafe endpoint names, and unsupported protocol versions are rejected.
 - The protocol has no generic `execute` operation.
 
 ### Media and presentation
