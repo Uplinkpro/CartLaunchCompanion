@@ -46,7 +46,10 @@ public partial class App : Application
             {
                 Timeout = TimeSpan.FromSeconds(8)
             };
-            var updateHttpClient = new HttpClient
+            var updateHttpClient = new HttpClient(new HttpClientHandler
+            {
+                AllowAutoRedirect = false
+            })
             {
                 Timeout = TimeSpan.FromMinutes(30)
             };

@@ -61,6 +61,8 @@ A valid signature does not authorize a downgrade. The maintenance updater indepe
 
 The launcher checks only the official GitHub repository's latest release. It requires the expected manifest and payload names for the current platform, limits downloads to 1 GiB, reserves an additional 128 MiB of free space, and stages data beneath `.cartlaunch/update-staging`.
 
+Update networking disables automatic redirects so CLC can validate every hop. The API request, advertised assets, and up to five redirects must use HTTPS on the default port, contain no embedded credentials, and target an exact approved GitHub or GitHub release-asset hostname. HTTP, lookalike domains, arbitrary subdomains, custom ports, and redirects to any other host are rejected before response content is trusted.
+
 The manifest signature is verified before archive extraction. ZIP and TAR entries are resolved through the same contained-path policy as the final manifest, and Linux links or other non-file archive entries are rejected. Extracted files must then exactly match the signed file list before the maintenance updater is started. Update checking is opt-in and a network failure never prevents normal offline use.
 
 ## Tests

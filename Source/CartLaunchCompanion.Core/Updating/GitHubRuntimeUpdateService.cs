@@ -9,6 +9,7 @@ namespace CartLaunchCompanion.Core.Updating;
 public sealed class GitHubRuntimeUpdateService(HttpClient httpClient) : IRuntimeUpdateService
 {
     private const long MaximumDownloadBytes = 1024L * 1024 * 1024;
+    private const int MaximumRedirects = 5;
 
     public async Task<RuntimeUpdateAvailability?> CheckAsync(
         Version currentVersion,
@@ -22,7 +23,7 @@ public sealed class GitHubRuntimeUpdateService(HttpClient httpClient) : IRuntime
         request.Headers.UserAgent.Add(new ProductInfoHeaderValue("CartLaunchCompanion", currentVersion.ToString()));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
 
-        using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        using var response = await SendApprovedAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
         await using var body = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var json = await JsonDocument.ParseAsync(body, cancellationToken: cancellationToken);
@@ -41,6 +42,7 @@ public sealed class GitHubRuntimeUpdateService(HttpClient httpClient) : IRuntime
         {
             var name = asset.GetProperty("name").GetString();
             var uri = new Uri(asset.GetProperty("browser_download_url").GetString()!);
+            UpdateDownloadOriginPolicy.Validate(uri);
             if (name == manifestName)
                 manifestUri = uri;
             else if (name == payloadName)
@@ -110,7 +112,7 @@ public sealed class GitHubRuntimeUpdateService(HttpClient httpClient) : IRuntime
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
         request.Headers.UserAgent.ParseAdd("CartLaunchCompanion-Updater/1.0");
-        using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        using var response = await SendApprovedAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
         var length = response.Content.Headers.ContentLength;
         if (length is > 0 && length > maximumBytes)
@@ -132,6 +134,50 @@ public sealed class GitHubRuntimeUpdateService(HttpClient httpClient) : IRuntime
         }
         await output.FlushAsync(cancellationToken);
         output.Flush(true);
+    }
+
+    private async Task<HttpResponseMessage> SendApprovedAsync(
+        HttpRequestMessage initialRequest,
+        CancellationToken cancellationToken)
+    {
+        var uri = initialRequest.RequestUri ??
+            throw new InvalidOperationException("The update request URI is missing.");
+        UpdateDownloadOriginPolicy.Validate(uri);
+
+        for (var redirect = 0; ; redirect++)
+        {
+            using var request = new HttpRequestMessage(initialRequest.Method, uri);
+            foreach (var header in initialRequest.Headers)
+            {
+                request.Headers.TryAddWithoutValidation(header.Key, header.Value);
+            }
+
+            var response = await httpClient.SendAsync(
+                request,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken);
+            if (response.StatusCode is not (System.Net.HttpStatusCode.MovedPermanently or
+                System.Net.HttpStatusCode.Redirect or
+                System.Net.HttpStatusCode.RedirectMethod or
+                System.Net.HttpStatusCode.TemporaryRedirect or
+                System.Net.HttpStatusCode.PermanentRedirect))
+            {
+                return response;
+            }
+
+            if (redirect >= MaximumRedirects || response.Headers.Location is null)
+            {
+                response.Dispose();
+                throw new InvalidDataException("The update download exceeded its approved redirect limit.");
+            }
+
+            var next = response.Headers.Location.IsAbsoluteUri
+                ? response.Headers.Location
+                : new Uri(uri, response.Headers.Location);
+            response.Dispose();
+            UpdateDownloadOriginPolicy.Validate(next);
+            uri = next;
+        }
     }
 
     private static void ExtractZip(string archivePath, string destination)
