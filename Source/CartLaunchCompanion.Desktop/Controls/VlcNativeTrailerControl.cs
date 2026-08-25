@@ -9,6 +9,9 @@ namespace CartLaunchCompanion.Desktop.Controls;
 
 public sealed class VlcNativeTrailerControl : NativeControlHost, IDisposable
 {
+    private static readonly Lazy<Task> RuntimePreparation = new(
+        () => Task.Run(() => LibVLCSharp.Shared.Core.Initialize()));
+
     private const uint WsExNoActivate = 0x08000000;
     private const int WsChild = 0x40000000;
     private const int WsVisible = 0x10000000;
@@ -30,7 +33,10 @@ public sealed class VlcNativeTrailerControl : NativeControlHost, IDisposable
     private LibVLC? _libVlc;
     private MediaPlayer? _player;
     private Media? _media;
+    private bool? _softwareDecodingMode;
     private bool _nativePlaybackAvailable;
+    private bool _playbackUpdateQueued;
+    private bool _hasUsableBounds;
 
     public VlcNativeTrailerControl()
     {
@@ -56,6 +62,9 @@ public sealed class VlcNativeTrailerControl : NativeControlHost, IDisposable
         private set => SetValue(PlaybackFailedProperty, value);
     }
 
+    public static Task PrepareRuntimeAsync(CancellationToken cancellationToken = default) =>
+        RuntimePreparation.Value.WaitAsync(cancellationToken);
+
     protected override IPlatformHandle CreateNativeControlCore(IPlatformHandle parent)
     {
         if (!OperatingSystem.IsWindows())
@@ -63,19 +72,6 @@ public sealed class VlcNativeTrailerControl : NativeControlHost, IDisposable
             var nativeControl = base.CreateNativeControlCore(parent);
             _videoWindow = nativeControl.Handle;
             _nativePlaybackAvailable = IsX11Handle(nativeControl);
-            if (_nativePlaybackAvailable)
-            {
-                try
-                {
-                    InitializePlayer();
-                    Dispatcher.UIThread.Post(() => _ = UpdatePlaybackAsync());
-                }
-                catch
-                {
-                    _nativePlaybackAvailable = false;
-                    PlaybackFailed = IsActive && !string.IsNullOrWhiteSpace(Source);
-                }
-            }
 
             return nativeControl;
         }
@@ -100,44 +96,89 @@ public sealed class VlcNativeTrailerControl : NativeControlHost, IDisposable
 
         ShowWindow(_videoWindow, SwHide);
         _nativePlaybackAvailable = true;
-        InitializePlayer();
-        Dispatcher.UIThread.Post(() => _ = UpdatePlaybackAsync());
         return new PlatformHandle(_videoWindow, "HWND");
     }
 
     protected override void DestroyNativeControlCore(IPlatformHandle control)
     {
         StopPlayback();
+        DisposePlayerInstance();
         if (OperatingSystem.IsWindows() && control.Handle != IntPtr.Zero)
             DestroyWindow(control.Handle);
         else
             base.DestroyNativeControlCore(control);
         _videoWindow = IntPtr.Zero;
         _nativePlaybackAvailable = false;
+        _hasUsableBounds = false;
     }
 
-    private void InitializePlayer()
+    protected override Size ArrangeOverride(Size finalSize)
     {
-        LibVLCSharp.Shared.Core.Initialize();
-        _libVlc ??= new LibVLC("--no-audio", "--quiet", "--no-video-title-show");
-        if (_player is not null)
-            return;
+        var arranged = base.ArrangeOverride(finalSize);
+        if (!_hasUsableBounds && finalSize.Width > 16 && finalSize.Height > 16)
+        {
+            _hasUsableBounds = true;
+            QueuePlaybackUpdate();
+        }
+        return arranged;
+    }
 
-        _player = new MediaPlayer(_libVlc) { Mute = true };
-        if (OperatingSystem.IsWindows())
-            _player.Hwnd = _videoWindow;
-        else
-            _player.XWindow = unchecked((uint)_videoWindow.ToInt64());
-        _player.EnableKeyInput = false;
-        _player.EnableMouseInput = false;
-        _player.Playing += OnPlaying;
-        _player.EncounteredError += OnEncounteredError;
+    private bool InitializePlayer(bool preferSoftwareDecoding)
+    {
+        if (_player is not null &&
+            (!OperatingSystem.IsWindows() ||
+             _softwareDecodingMode == preferSoftwareDecoding))
+            return true;
+
+        try
+        {
+            DisposePlayerInstance();
+            LibVLCSharp.Shared.Core.Initialize();
+            _libVlc = new LibVLC(
+                "--no-audio",
+                "--quiet",
+                "--no-video-title-show");
+            _player = new MediaPlayer(_libVlc)
+            {
+                Mute = true,
+                EnableKeyInput = false,
+                EnableMouseInput = false
+            };
+            _softwareDecodingMode = preferSoftwareDecoding;
+            _player.Playing += OnPlaying;
+            _player.EncounteredError += OnEncounteredError;
+            AttachPlayerToCurrentWindow();
+            return true;
+        }
+        catch
+        {
+            DisposePlayerInstance();
+            return false;
+        }
     }
 
     private void OnControlPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
         if (e.Property == SourceProperty || e.Property == IsActiveProperty)
-            Dispatcher.UIThread.Post(() => _ = UpdatePlaybackAsync());
+        {
+            if (_hasUsableBounds)
+                QueuePlaybackUpdate();
+        }
+    }
+
+    private void QueuePlaybackUpdate()
+    {
+        if (_playbackUpdateQueued)
+            return;
+
+        _playbackUpdateQueued = true;
+        Dispatcher.UIThread.Post(
+            async () =>
+            {
+                _playbackUpdateQueued = false;
+                await UpdatePlaybackAsync();
+            },
+            DispatcherPriority.Loaded);
     }
 
     private async Task UpdatePlaybackAsync()
@@ -155,8 +196,16 @@ public sealed class VlcNativeTrailerControl : NativeControlHost, IDisposable
 
         try
         {
-            InitializePlayer();
             var source = Source.Trim();
+            var preferSoftwareDecoding = RequiresSoftwareDecoding(source);
+            if (!InitializePlayer(preferSoftwareDecoding))
+            {
+                PlaybackFailed = true;
+                return;
+            }
+
+            AttachPlayerToCurrentWindow();
+
             _media = Uri.TryCreate(source, UriKind.Absolute, out var uri) && !uri.IsFile
                 ? new Media(_libVlc!, uri)
                 : new Media(_libVlc!, Path.GetFullPath(source));
@@ -164,10 +213,20 @@ public sealed class VlcNativeTrailerControl : NativeControlHost, IDisposable
             _media.AddOption(":live-caching=3000");
             _media.AddOption(":file-caching=500");
             _media.AddOption(":http-reconnect");
-            _media.AddOption(":http-user-agent=Mozilla/5.0 CartLaunchCompanion/2.0");
+            _media.AddOption(":http-user-agent=Mozilla/5.0 CartLaunchCompanion/2.3");
             _media.AddOption(":http-referrer=https://store.steampowered.com/");
             _media.AddOption(":adaptive-logic=highest");
-            _media.AddOption(":avcodec-hw=any");
+            // VLC's automatic Windows decoder selection can report successful
+            // playback while presenting a black native child surface. Legacy
+            // Steam MP4s behave best with DXVA2, while current Steam encodes are
+            // reliable in software. The downloaded filename identifies the
+            // encoding family without depending on UI binding order.
+            if (OperatingSystem.IsWindows())
+                _media.AddOption(preferSoftwareDecoding
+                    ? ":avcodec-hw=none"
+                    : ":avcodec-hw=dxva2");
+            else
+                _media.AddOption(":avcodec-hw=any");
             _media.AddOption(":input-repeat=65535");
             _media.AddOption(":no-audio");
 
@@ -181,6 +240,17 @@ public sealed class VlcNativeTrailerControl : NativeControlHost, IDisposable
             StopPlayback();
             PlaybackFailed = true;
         }
+    }
+
+    private void AttachPlayerToCurrentWindow()
+    {
+        if (_player is null || _videoWindow == IntPtr.Zero)
+            return;
+
+        if (OperatingSystem.IsWindows())
+            _player.Hwnd = _videoWindow;
+        else
+            _player.XWindow = unchecked((uint)_videoWindow.ToInt64());
     }
 
     private async Task ConfirmPlaybackAsync()
@@ -233,16 +303,48 @@ public sealed class VlcNativeTrailerControl : NativeControlHost, IDisposable
         (handle.HandleDescriptor?.Contains("X11", StringComparison.OrdinalIgnoreCase) == true ||
          handle.HandleDescriptor?.Contains("XID", StringComparison.OrdinalIgnoreCase) == true);
 
+    private static bool RequiresSoftwareDecoding(string source)
+    {
+        if (source.Contains("SteamTrailer.Software.", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (!Uri.TryCreate(source, UriKind.Absolute, out var uri) || uri.IsFile)
+            return false;
+
+        var segments = uri.AbsolutePath
+            .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        for (var index = 0; index + 2 < segments.Length; index++)
+        {
+            if (segments[index].Equals("apps", StringComparison.OrdinalIgnoreCase) &&
+                segments[index + 2].StartsWith("movie", StringComparison.OrdinalIgnoreCase) &&
+                long.TryParse(segments[index + 1], out var movieAssetId))
+            {
+                return movieAssetId >= 100_000_000;
+            }
+        }
+
+        return false;
+    }
+
     public void Dispose()
     {
         StopPlayback();
+        DisposePlayerInstance();
+    }
+
+    private void DisposePlayerInstance()
+    {
         if (_player is not null)
         {
             _player.Playing -= OnPlaying;
             _player.EncounteredError -= OnEncounteredError;
+            _player.Dispose();
         }
-        _player?.Dispose();
+
         _libVlc?.Dispose();
+        _player = null;
+        _libVlc = null;
+        _softwareDecodingMode = null;
     }
 
     [DllImport("user32.dll", EntryPoint = "CreateWindowExW", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -265,4 +367,5 @@ public sealed class VlcNativeTrailerControl : NativeControlHost, IDisposable
 
     [DllImport("user32.dll")]
     private static extern bool ShowWindow(IntPtr window, int command);
+
 }

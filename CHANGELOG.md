@@ -6,7 +6,9 @@ The project follows semantic versioning where practical.
 
 ## [Unreleased]
 
-> Preview builds from this section are for removable-drive hardware validation. Physical-cart Host support remains pre-release until the published hardware checklist passes on Windows, SteamOS, and at least one additional supported Linux gaming distribution.
+## [2.4.0] - 2026-08-25
+
+> Physical-cart Host support is opt-in. Hardware reports remain especially valuable on SteamOS, Bazzite, ChimeraOS, CachyOS, and systems with unusual removable-media policies.
 
 ### Added
 

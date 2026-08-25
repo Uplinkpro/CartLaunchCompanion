@@ -36,6 +36,26 @@
           "order": { "type": "integer" }
         }
       }
+    },
+    "placements": {
+      "type": "array",
+      "default": [],
+      "description": "Collection-owned shelf placement for each game configuration.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["configuration", "shelf", "order"],
+        "properties": {
+          "gameId": {
+            "type": "string",
+            "default": "",
+            "description": "Stable game identity. Preferred over the configuration path when matching a placement."
+          },
+          "configuration": { "type": "string", "pattern": "^Games/.+/[Gg]ame\\.json$" },
+          "shelf": { "type": "string" },
+          "order": { "type": "integer" }
+        }
+      }
     }
   }
 }

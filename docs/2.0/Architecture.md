@@ -19,6 +19,10 @@ The architecture must support:
 Source/
 ├── CartLaunchCompanion.Core/
 ├── CartLaunchCompanion.Desktop/
+├── CartLaunchCompanion.Configurator/
+├── CartLaunchCompanion.Updater/
+├── CartLaunchCompanion.Host/
+├── CartLaunchCompanion.HostCleanup/
 ├── CartLaunchCompanion.Platform.Windows/
 └── CartLaunchCompanion.Platform.Linux/
 ```
@@ -39,7 +43,6 @@ Contains platform-neutral code:
 
 - Game configuration models
 - JSON loading and serialization
-- Version 1 import models
 - Validation
 - Portable path discovery abstractions
 - Artwork and metadata contracts
@@ -101,7 +104,6 @@ Suggested interfaces:
 ```text
 IGameConfigurationService
 IGameLibraryService
-IGameConfigurationMigrator
 IArtworkService
 IMetadataService
 ILaunchService
@@ -138,7 +140,7 @@ The UI should use explicit application state rather than directly hiding and sho
 ## Testing priorities
 
 - JSON parsing and validation
-- Version 1 migration
+- Current-format JSON validation
 - Portable-root resolution
 - Windows/Linux target selection
 - Launch request generation

@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../Schemas/game.schema.json",
+  "$schema": "../../System/Schemas/game.schema.json",
   "formatVersion": 2,
   "game": {
     "name": "Example Xbox Game",

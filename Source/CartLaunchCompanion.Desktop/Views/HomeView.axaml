@@ -46,12 +46,26 @@
             <Setter Property="IsVisible" Value="True" />
         </Style>
         <Style Selector="Border.controller-indicator">
-            <Setter Property="Opacity" Value="0.22" />
-            <Setter Property="BorderBrush" Value="#AFFFFFFF" />
+            <Setter Property="Opacity" Value="0.30" />
+            <Setter Property="Background" Value="Transparent" />
         </Style>
         <Style Selector="Border.controller-indicator.connected">
             <Setter Property="Opacity" Value="1" />
-            <Setter Property="BorderBrush" Value="{Binding SelectedGame.AccentBrightColor}" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Border.controller-indicator Path">
+            <Setter Property="Stroke" Value="#A8B3BD" />
+        </Style>
+        <Style Selector="Border.controller-indicator.connected Path">
+            <Setter Property="Stroke" Value="#62EF75" />
+        </Style>
+        <Style Selector="Border.controller-indicator Ellipse">
+            <Setter Property="Fill" Value="#A8B3BD" />
+            <Setter Property="Stroke" Value="#A8B3BD" />
+        </Style>
+        <Style Selector="Border.controller-indicator.connected Ellipse">
+            <Setter Property="Fill" Value="#62EF75" />
+            <Setter Property="Stroke" Value="#62EF75" />
         </Style>
         <Style Selector="Canvas.loading-spinner">
             <Setter Property="RenderTransformOrigin" Value="50%,50%" />
@@ -137,13 +151,18 @@
               Classes="page-transition"
               Classes.active="{Binding IsHomeVisible}"
               Classes.motion="{Binding UseMotionEffects}"
-              RowDefinitions="Auto,Auto,*,Auto,Auto"
+              RowDefinitions="*,Auto"
               Margin="32">
 
             <Grid Grid.Row="0"
-                  Height="112"
-                  Margin="0,22,0,8">
-                <StackPanel HorizontalAlignment="Center"
+                  Grid.RowSpan="2"
+                  ZIndex="20"
+                  Width="190"
+                  Height="176"
+                  HorizontalAlignment="Left"
+                  VerticalAlignment="Top"
+                  Margin="6,4,0,0">
+                <StackPanel HorizontalAlignment="Left"
                             Spacing="4"
                             IsVisible="{Binding ShowCartLaunchBranding}">
                 <Border Width="74"
@@ -174,13 +193,13 @@
 
                 </StackPanel>
 
-                <StackPanel HorizontalAlignment="Center"
+                <StackPanel HorizontalAlignment="Left"
                             VerticalAlignment="Center"
                             Spacing="6"
                             IsVisible="{Binding ShowLauncherBranding}">
                     <Image Source="{Binding SelectedGame.LauncherLogoImage}"
-                           Width="300"
-                           Height="72"
+                           Width="220"
+                           Height="64"
                            Stretch="Uniform" />
 
                     <TextBlock Text="{Binding SelectedGame.Launcher, StringFormat='LAUNCH VIA {0}'}"
@@ -191,58 +210,61 @@
                                LetterSpacing="3" />
                 </StackPanel>
 
-                <StackPanel HorizontalAlignment="Center"
+                <StackPanel HorizontalAlignment="Left"
                             VerticalAlignment="Center"
                             Spacing="5"
                             IsVisible="{Binding HasCustomCollection}">
                     <Image Source="{Binding CollectionLogoImage}"
-                           Width="360"
-                           Height="112"
+                           Width="164"
+                           Height="164"
+                           HorizontalAlignment="Left"
                            Stretch="Uniform"
                            IsVisible="{Binding HasCollectionLogo}" />
                     <TextBlock Text="{Binding Collection.Name}"
                                HorizontalAlignment="Center"
                                Foreground="White"
-                               FontSize="28"
+                               FontSize="22"
                                FontWeight="Bold"
                                LetterSpacing="1.5"
                                IsVisible="{Binding HasNoCollectionLogo}" />
                 </StackPanel>
             </Grid>
 
-            <Border Grid.Row="1"
+            <Border Grid.Row="0"
+                    Grid.RowSpan="3"
+                    ZIndex="20"
                     Classes="controller-indicator"
                     Classes.connected="{Binding IsControllerConnected}"
-                    Width="48" Height="30"
-                    HorizontalAlignment="Center"
-                    Margin="0,5,0,12"
-                    CornerRadius="10"
-                    BorderThickness="2"
-                    Background="#98090B10"
+                    Width="64" Height="44"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Margin="0,4,4,0"
+                    CornerRadius="0"
+                    BorderThickness="0"
                     ToolTip.Tip="{Binding ControllerStatus}"
                     AutomationProperties.Name="Controller connection status">
-                <Canvas Width="32" Height="20"
+                <Canvas Width="58" Height="42"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center">
-                    <Path Data="M8,4 C4,4 2.5,7 2,11 L1,16 C0.6,19 3.8,21 5.8,18.8 L9,15.5 L23,15.5 L26.2,18.8 C28.2,21 31.4,19 31,16 L30,11 C29.5,7 28,4 24,4 Z"
-                          Stroke="White"
-                          StrokeThickness="2"
-                          Fill="#26000000" />
-                    <Path Data="M8,8 L8,13 M5.5,10.5 L10.5,10.5"
-                          Stroke="White"
-                          StrokeThickness="1.8" />
-                    <Ellipse Canvas.Left="23" Canvas.Top="8"
-                             Width="3" Height="3" Fill="White" />
-                    <Ellipse Canvas.Left="26" Canvas.Top="11"
-                             Width="3" Height="3" Fill="White" />
-                    <Ellipse Canvas.Left="14" Canvas.Top="10"
-                             Width="2" Height="2" Fill="White" Opacity="0.75" />
-                    <Ellipse Canvas.Left="18" Canvas.Top="10"
-                             Width="2" Height="2" Fill="White" Opacity="0.75" />
+                    <Path Data="M9,7 Q13,3 19,4 L21,6 H37 L39,4 Q45,3 49,7 Q53,12 55,21 L57,31 Q58,37 53,40 L47,42 L39,34 Q37,32 34,32 H24 Q21,32 19,34 L11,42 L5,40 Q0,37 1,31 L3,21 Q5,12 9,7 Z"
+                          StrokeThickness="2.4"
+                          Fill="Transparent" />
+                    <Path Data="M14,13 L14,21 M10,17 L18,17"
+                          StrokeThickness="2" />
+                    <Ellipse Canvas.Left="12" Canvas.Top="10" Width="4" Height="4" Fill="Transparent" StrokeThickness="1.6" />
+                    <Ellipse Canvas.Left="20" Canvas.Top="23" Width="7" Height="7" Fill="Transparent" StrokeThickness="1.8" />
+                    <Ellipse Canvas.Left="34" Canvas.Top="23" Width="7" Height="7" Fill="Transparent" StrokeThickness="1.8" />
+                    <Ellipse Canvas.Left="43" Canvas.Top="11" Width="3.5" Height="3.5" Fill="Transparent" StrokeThickness="1.4" />
+                    <Ellipse Canvas.Left="47" Canvas.Top="15" Width="3.5" Height="3.5" Fill="Transparent" StrokeThickness="1.4" />
+                    <Ellipse Canvas.Left="39" Canvas.Top="15" Width="3.5" Height="3.5" Fill="Transparent" StrokeThickness="1.4" />
+                    <Ellipse Canvas.Left="43" Canvas.Top="19" Width="3.5" Height="3.5" Fill="Transparent" StrokeThickness="1.4" />
+                    <Ellipse Canvas.Left="26" Canvas.Top="7" Width="6" Height="6" Fill="Transparent" StrokeThickness="1.6" />
+                    <Ellipse Canvas.Left="23" Canvas.Top="15" Width="2.5" Height="2.5" Fill="Transparent" StrokeThickness="1.2" />
+                    <Ellipse Canvas.Left="33" Canvas.Top="15" Width="2.5" Height="2.5" Fill="Transparent" StrokeThickness="1.2" />
                 </Canvas>
             </Border>
 
-            <Grid Grid.Row="2">
+            <Grid Grid.Row="0">
 
                 <Viewbox Stretch="Uniform"
                          StretchDirection="DownOnly"
@@ -280,15 +302,16 @@
                                                         Command="{Binding OpenCommand}"
                                                         AutomationProperties.Name="{Binding Name}"
                                                         ToolTip.Tip="{Binding Name}">
-                                                    <StackPanel Width="104" Spacing="4">
+                                                    <StackPanel Width="140" Spacing="4">
                                                         <Grid>
-                                                            <Border Classes="card-frame" Width="104" Height="180"
+                                                            <Border Classes="card-frame" Width="140" Height="229"
                                                                     CornerRadius="7" Background="#F207090D"
                                                                     BorderBrush="{Binding AccentBrightColor}"
                                                                     BorderThickness="2" Opacity="0.92">
-                                                                <Grid RowDefinitions="24,2,*">
+                                                                <Grid RowDefinitions="23,2,204">
                                                                     <Border Grid.Row="0" Background="{Binding AccentColor}"
-                                                                            CornerRadius="5,5,0,0">
+                                                                            CornerRadius="5,5,0,0"
+                                                                            IsVisible="{Binding HasNoLauncherBanner}">
                                                                         <StackPanel Orientation="Horizontal"
                                                                                     HorizontalAlignment="Center"
                                                                                     VerticalAlignment="Center" Spacing="5">
@@ -299,10 +322,18 @@
                                                                                        FontWeight="SemiBold" />
                                                                         </StackPanel>
                                                                     </Border>
+                                                                    <Border Grid.Row="0" CornerRadius="5,5,0,0"
+                                                                            ClipToBounds="True"
+                                                                            IsVisible="{Binding HasLauncherBanner}">
+                                                                        <Image Source="{Binding LauncherBannerImage}"
+                                                                               Stretch="Fill"
+                                                                               HorizontalAlignment="Stretch"
+                                                                               VerticalAlignment="Stretch" />
+                                                                    </Border>
                                                                     <Border Grid.Row="1" Background="White" />
                                                                     <Grid Grid.Row="2" Background="#0A0C10" ClipToBounds="True">
                                                                         <Image Source="{Binding CoverImage}"
-                                                                               Stretch="UniformToFill"
+                                                                               Stretch="Uniform"
                                                                                IsVisible="{Binding HasCover}" />
                                                                         <Border Width="58" Height="58" CornerRadius="29"
                                                                                 BorderBrush="{Binding AccentColor}"
@@ -329,7 +360,7 @@
                                                         <Border Height="3" CornerRadius="2"
                                                                 Background="{Binding AccentBrightColor}"
                                                                 IsVisible="{Binding IsSelected}" />
-                                                        <Grid Height="32">
+                                                        <Grid Height="40">
                                                             <Border Background="{Binding AccentMutedColor}"
                                                                     CornerRadius="6" IsVisible="{Binding IsSelected}" />
                                                             <Border Margin="-7,-5" CornerRadius="9"
@@ -343,7 +374,7 @@
                                                                        VerticalAlignment="Center"
                                                                        TextAlignment="Center" TextWrapping="Wrap"
                                                                        MaxLines="3" TextTrimming="CharacterEllipsis"
-                                                                       Foreground="#F2FFFFFF" FontSize="9"
+                                                                       Foreground="#F2FFFFFF" FontSize="11"
                                                                        FontWeight="SemiBold" LineHeight="11" />
                                                         </Grid>
                                                     </StackPanel>
@@ -429,7 +460,7 @@
 
             </Grid>
 
-            <StackPanel Grid.Row="4"
+            <StackPanel Grid.Row="1"
                         Orientation="Horizontal"
                         HorizontalAlignment="Center"
                         Spacing="14">
@@ -439,16 +470,7 @@
                         IsVisible="{Binding ShowOnScreenActionButtons}">
                     <StackPanel Orientation="Horizontal"
                                 Spacing="10">
-                        <Border Width="30"
-                                Height="30"
-                                CornerRadius="15"
-                                Background="#2E9B32">
-                            <TextBlock Text="{Binding ConfirmPrompt}"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       Foreground="White"
-                                       FontWeight="Bold" />
-                        </Border>
+                        <controls:ButtonPromptBadge Label="{Binding ConfirmPrompt}" BadgeColor="#2E9B32"/>
                         <TextBlock Text="VIEW DETAILS"
                                    VerticalAlignment="Center" />
                     </StackPanel>
@@ -459,16 +481,7 @@
                         IsVisible="{Binding ShowOnScreenActionButtons}">
                     <StackPanel Orientation="Horizontal"
                                 Spacing="10">
-                        <Border Width="30"
-                                Height="30"
-                                CornerRadius="15"
-                                Background="#C83B40">
-                            <TextBlock Text="{Binding BackPrompt}"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       Foreground="White"
-                                       FontWeight="Bold" />
-                        </Border>
+                        <controls:ButtonPromptBadge Label="{Binding BackPrompt}" BadgeColor="#C83B40"/>
                         <TextBlock Text="EXIT"
                                    VerticalAlignment="Center" />
                     </StackPanel>

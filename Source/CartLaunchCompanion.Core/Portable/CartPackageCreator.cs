@@ -48,8 +48,8 @@ public sealed class CartPackageCreator
                 progress?.Report(totalBytes == 0 ? 1 : copied / (double)totalBytes);
             }
             Directory.Move(staging, destination);
-            foreach (var name in new[] { "Games", "Emulators", "Roms" })
-                Directory.CreateDirectory(Path.Combine(media, name));
+            Directory.CreateDirectory(Path.Combine(media, "Games"));
+            EmulatorPortableLayout.Create(media);
             return new CartPackageResult(destination, files.Length, copied);
         }
         catch
@@ -64,7 +64,9 @@ public sealed class CartPackageCreator
         var segments = Path.GetRelativePath(root, path).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         if (segments.Any(ExcludedNames.Contains)) return false;
         if (!options.IncludeGameConfigurations && segments.FirstOrDefault()?.Equals("Games", StringComparison.OrdinalIgnoreCase) == true) return false;
-        if (!options.IncludeArtwork && segments.FirstOrDefault()?.Equals("Assets", StringComparison.OrdinalIgnoreCase) == true) return false;
+        if (!options.IncludeArtwork && segments.Length >= 2 &&
+            segments[0].Equals("System", StringComparison.OrdinalIgnoreCase) &&
+            segments[1].Equals("Assets", StringComparison.OrdinalIgnoreCase)) return false;
         return !path.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase) &&
                !path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) &&
                !path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase) &&

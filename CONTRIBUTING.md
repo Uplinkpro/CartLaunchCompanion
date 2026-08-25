@@ -19,10 +19,8 @@ Do not submit a contribution if you cannot grant these rights. Substantial contr
 
 ## Development setup
 
-- Windows 10 or Windows 11
-- Visual Studio with Windows application development components
+- Windows 10/11 or a supported Linux development environment
 - .NET 10 SDK
-- Windows App SDK requirements for WinUI 3
 
 Clone and build:
 
@@ -30,7 +28,7 @@ Clone and build:
 git clone https://github.com/Uplinkpro/CartLaunchCompanion.git
 cd CartLaunchCompanion
 dotnet restore
-dotnet build CartLaunchCompanion.sln -c Release -p:Platform=x64
+dotnet build CartLaunchCompanion.Avalonia.sln -c Release
 ```
 
 ## Coding guidelines
@@ -47,8 +45,8 @@ Before submitting a pull request:
 
 ```powershell
 dotnet restore
-dotnet build CartLaunchCompanion.sln -c Release -p:Platform=x64 --no-restore
-dotnet publish CartLaunchCompanion.csproj -c Release -r win-x64 --self-contained true -p:Platform=x64
+dotnet test CartLaunchCompanion.Avalonia.sln -c Release --no-restore
+.\Publish-Portable.ps1 -Version 2.3.0
 ```
 
 Also verify controller navigation, trailer playback, launcher restoration, and at least one configured game where relevant.

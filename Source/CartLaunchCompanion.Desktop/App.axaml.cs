@@ -5,7 +5,6 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using CartLaunchCompanion.Desktop.Input;
-using CartLaunchCompanion.Core.Configuration.Migration;
 using CartLaunchCompanion.Core.Configuration.Validation;
 using CartLaunchCompanion.Core.Input;
 using CartLaunchCompanion.Core.Launching;
@@ -15,6 +14,7 @@ using CartLaunchCompanion.Core.Platform;
 using CartLaunchCompanion.Core.Portable;
 using CartLaunchCompanion.Core.Updating;
 using CartLaunchCompanion.Core.PhysicalCarts;
+using CartLaunchCompanion.Desktop.Controls;
 using CartLaunchCompanion.Desktop.ViewModels;
 using CartLaunchCompanion.Desktop.Views;
 using CartLaunchCompanion.Platform.Linux;
@@ -61,7 +61,6 @@ public partial class App : Application
 
             var libraryService = new GameLibraryService(
                 new GameConfigurationValidator(),
-                new Version1GameConfigurationImporter(),
                 pathResolver,
                 new LaunchTargetSelector(),
                 metadataService);
@@ -101,7 +100,8 @@ public partial class App : Application
                     {
                         mainWindow.Hide();
                     }
-                });
+                },
+                VlcNativeTrailerControl.PrepareRuntimeAsync);
 
             mainWindow = new MainWindow
             {
@@ -110,7 +110,15 @@ public partial class App : Application
 
             var controllerService = new SdlControllerService();
             controllerService.InputReceived += async (_, input) =>
+            {
+                // SDL controller events are global. Ignore them whenever another
+                // application owns the foreground so a running game cannot also
+                // navigate CLC behind it.
+                if (!mainWindow.IsVisible || !mainWindow.IsActive)
+                    return;
+
                 await viewModel.HandleInputAsync(input);
+            };
 
             controllerService.ConnectionChanged += (_, connection) =>
                 viewModel.UpdateControllerConnection(
@@ -142,10 +150,13 @@ public partial class App : Application
             {
                 var hostFolder = platformService.Current == PlatformKind.Windows ? "Windows-x64" : "Linux-x64";
                 var hostName = platformService.Current == PlatformKind.Windows ? "CartLaunchCompanion.Host.exe" : "CartLaunchCompanion.Host";
-                if (File.Exists(Path.Combine(portablePaths.Root, "Host", hostFolder, hostName)))
-                    await new HostInstallOfferWindow(portablePaths.Root, platformService.Current).ShowDialog(mainWindow);
+                if (File.Exists(Path.Combine(portablePaths.Host, hostFolder, hostName)))
+                    await new HostInstallOfferWindow(portablePaths.Host, platformService.Current).ShowDialog(mainWindow);
             }
-            _ = viewModel.CheckForUpdatesSilentlyAsync();
+            if (Program.CheckForUpdatesRequested)
+                await viewModel.CheckForUpdatesInteractivelyAsync();
+            else
+                _ = viewModel.CheckForUpdatesSilentlyAsync();
             return;
         }
 

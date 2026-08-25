@@ -3,56 +3,56 @@
     {
       "Id": "Steam",
       "DisplayName": "Steam",
-      "Background": "Assets/Launchers/Steam/Background.png",
-      "Logo": "Assets/Launchers/Steam/Logo.png"
+      "Background": "System/Assets/Launchers/Steam/Background.png",
+      "Logo": "System/Assets/Launchers/Steam/Logo.png"
     },
     {
       "Id": "Epic",
       "DisplayName": "Epic Games",
-      "Background": "Assets/Launchers/Epic/Background.png",
-      "Logo": "Assets/Launchers/Epic/Logo.png"
+      "Background": "System/Assets/Launchers/Epic/Background.png",
+      "Logo": "System/Assets/Launchers/Epic/Logo.png"
     },
     {
       "Id": "GOG",
       "DisplayName": "GOG Galaxy",
-      "Background": "Assets/Launchers/GOG/Background.png",
-      "Logo": "Assets/Launchers/GOG/Logo.png"
+      "Background": "System/Assets/Launchers/GOG/Background.png",
+      "Logo": "System/Assets/Launchers/GOG/Logo.png"
     },
     {
       "Id": "Amazon",
       "DisplayName": "Amazon Games",
-      "Background": "Assets/Launchers/Amazon/Background.png",
-      "Logo": "Assets/Launchers/Amazon/Logo.png"
+      "Background": "System/Assets/Launchers/Amazon/Background.png",
+      "Logo": "System/Assets/Launchers/Amazon/Logo.png"
     },
     {
       "Id": "Flash",
       "DisplayName": "Flash",
-      "Background": "Assets/Launchers/Flash/Background.png",
-      "Logo": "Assets/Launchers/Flash/Logo.png"
+      "Background": "System/Assets/Launchers/Flash/Background.png",
+      "Logo": "System/Assets/Launchers/Flash/Logo.png"
     },
     {
       "Id": "Xbox",
       "DisplayName": "Xbox Game Pass",
-      "Background": "Assets/Launchers/Xbox/Background.png",
-      "Logo": "Assets/Launchers/Xbox/Logo.png"
+      "Background": "System/Assets/Launchers/Xbox/Background.png",
+      "Logo": "System/Assets/Launchers/Xbox/Logo.png"
     },
     {
       "Id": "Rockstar",
       "DisplayName": "Rockstar Games Launcher",
-      "Background": "Assets/Launchers/Rockstar/Background.png",
-      "Logo": "Assets/Launchers/Rockstar/Logo.png"
+      "Background": "System/Assets/Launchers/Rockstar/Background.png",
+      "Logo": "System/Assets/Launchers/Rockstar/Logo.png"
     },
     {
       "Id": "Ubisoft",
       "DisplayName": "Ubisoft Connect",
-      "Background": "Assets/Launchers/Ubisoft/Background.png",
-      "Logo": "Assets/Launchers/Ubisoft/Logo.png"
+      "Background": "System/Assets/Launchers/Ubisoft/Background.png",
+      "Logo": "System/Assets/Launchers/Ubisoft/Logo.png"
     },
     {
       "Id": "DirectExe",
       "DisplayName": "Direct EXE",
-      "Background": "Assets/Launchers/DirectExe/Background.png",
-      "Logo": "Assets/Launchers/DirectExe/Logo.png"
+      "Background": "System/Assets/Launchers/DirectExe/Background.png",
+      "Logo": "System/Assets/Launchers/DirectExe/Logo.png"
     }
   ]
 }

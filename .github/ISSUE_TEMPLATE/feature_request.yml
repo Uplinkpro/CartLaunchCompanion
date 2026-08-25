@@ -1,0 +1,33 @@
+name: Feature request
+description: Suggest an improvement that fits the portable game-cart scope.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: CLC is designed for games and collections stored on portable media, not as a replacement for a full desktop library manager.
+  - type: textarea
+    id: need
+    attributes:
+      label: What problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the user experience rather than only the implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This request supports the portable game-cart use case.
+          required: true

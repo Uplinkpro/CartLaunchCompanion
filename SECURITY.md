@@ -10,7 +10,7 @@ Security fixes are provided for the latest published release and the current `ma
 
 ## Current application security
 
-The following statements apply to the currently published 2.3 release:
+The following statements apply to the currently published 2.4 release:
 
 - Game launch targets and optional companion applications come from user-managed `game.json` files.
 - CLC does not treat downloaded metadata or artwork as permission to launch a program.
@@ -21,7 +21,7 @@ The following statements apply to the currently published 2.3 release:
 
 Because game configurations can intentionally name executables, arguments, launchers, emulators, and companion applications, users should run only configurations they created or reviewed. A `game.json` file from an untrusted source must be treated as security-sensitive.
 
-## Physical cart security model on `main`
+## Physical cart security model
 
 ### Safe removal implementation
 
@@ -32,7 +32,7 @@ Because game configurations can intentionally name executables, arguments, launc
 - Immediately before the operating-system operation, the Host reloads the identity from the tracked mount root and rejects media substitution or identity changes.
 - Windows uses bounded native volume operations. Supported Linux gaming distributions use fixed `udisksctl` arguments without a shell.
 
-Physical Cart support is implemented on the current `main` branch but is not part of the published 2.3 release. It remains unreleased until the removable-drive hardware checklist passes on Windows, SteamOS, and at least one additional supported Linux gaming distribution.
+Physical Cart support is included as an optional component in the 2.4 release. Users explicitly install the local Host and separately approve each cart before automatic launch is available.
 
 Each physical cart is intended to contain its own portable CLC installation, games, configuration, artwork, and media. A small optional **Cart Launch Host** installed on the computer detects carts and can start only those the user has explicitly trusted.
 

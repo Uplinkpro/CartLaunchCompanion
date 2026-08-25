@@ -21,7 +21,7 @@ function Get-ZipEntries {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $archive = [System.IO.Compression.ZipFile]::OpenRead($Path)
     try {
-        return @($archive.Entries | ForEach-Object FullName)
+        return @($archive.Entries | ForEach-Object { $_.FullName.Replace('\', '/') })
     }
     finally {
         $archive.Dispose()
@@ -57,12 +57,25 @@ function Assert-ArchiveContents {
 
     $hasWindows = @($entries | Where-Object { $_ -like '*/System/Windows-x64/*' }).Count -gt 0
     $hasLinux = @($entries | Where-Object { $_ -like '*/System/Linux-x64/*' }).Count -gt 0
-    $hasWindowsHost = @($entries | Where-Object { $_ -like '*/Host/Windows-x64/*' }).Count -gt 0
-    $hasLinuxHost = @($entries | Where-Object { $_ -like '*/Host/Linux-x64/*' }).Count -gt 0
+    $hasWindowsHost = @($entries | Where-Object { $_ -like '*/System/Host/Windows-x64/*' }).Count -gt 0
+    $hasLinuxHost = @($entries | Where-Object { $_ -like '*/System/Host/Linux-x64/*' }).Count -gt 0
     Assert-True ($hasWindows -eq $ExpectWindows) "$name has incorrect Windows runtime contents."
     Assert-True ($hasLinux -eq $ExpectLinux) "$name has incorrect Linux runtime contents."
     Assert-True ($hasWindowsHost -eq $ExpectWindows) "$name has incorrect Windows Host contents."
     Assert-True ($hasLinuxHost -eq $ExpectLinux) "$name has incorrect Linux Host contents."
+    if ($ExpectWindows) {
+        Assert-True (@($entries | Where-Object { $_ -like '*/Updater.bat' }).Count -gt 0) "$name is missing Updater.bat."
+        Assert-True (@($entries | Where-Object { $_ -like '*/System/Windows-x64/CartLaunchCompanion.Configurator.exe' }).Count -gt 0) "$name is missing the Windows configurator."
+        Assert-True (@($entries | Where-Object { $_ -like '*/System/Windows-x64/libvlc/win-x64/*' }).Count -gt 0) "$name is missing x64 LibVLC."
+        Assert-True (@($entries | Where-Object { $_ -like '*/System/Windows-x64/libvlc/win-x86/*' -or $_ -like '*/System/Windows-x64/libvlc/win-arm64/*' }).Count -eq 0) "$name contains unused Windows LibVLC architectures."
+    }
+    if ($ExpectLinux) {
+        Assert-True (@($entries | Where-Object { $_ -like '*/Updater.sh' }).Count -gt 0) "$name is missing Updater.sh."
+        Assert-True (@($entries | Where-Object { $_ -like '*/System/Linux-x64/CartLaunchCompanion.Configurator' }).Count -gt 0) "$name is missing the Linux configurator."
+        Assert-True (@($entries | Where-Object { $_ -like '*/System/Linux-x64/libvlc/*' }).Count -eq 0) "$name contains unusable Windows LibVLC files in its Linux runtime."
+    }
+
+    Assert-True (@($entries | Where-Object { $_ -like '*/System/Maintenance/Configurator/*' }).Count -eq 0) "$name contains the obsolete duplicate configurator runtime."
 
     $leaks = @($entries | Where-Object {
         $_ -match '(^|/)(bin|obj|\.git|Concepts)(/|$)' -or
@@ -114,6 +127,7 @@ $linuxExecutables = @(
     'CartLaunchCompanion.HostCleanup',
     'Start Cart Launch Companion.sh',
     'Game Configurator.sh'
+    'Updater.sh'
 )
 foreach ($executable in $linuxExecutables) {
     $line = $modeLines | Where-Object { $_ -like "*$executable" } | Select-Object -First 1

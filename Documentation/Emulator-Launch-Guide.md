@@ -2,7 +2,7 @@
 
 Cart Launch Companion can launch emulated games directly because its custom launcher accepts any executable and command-line arguments. Each game remains a normal library entry with its own artwork, metadata, trailer, screenshots, and controller navigation.
 
-This guide covers RetroArch, DuckStation, PCSX2, Dolphin, and RPCS3. Emulator command lines can change between releases, so test one game before building a complete collection and check the emulator's built-in `--help` output after major updates.
+CLC recognizes a curated catalog of major console, arcade, and classic-PC emulators. Emulator command lines can change between releases, so test one game before building a complete collection and check the emulator's built-in `--help` output after major updates.
 
 > Use only firmware, BIOS files, keys, games, and disc images that you are legally permitted to use. Cart Launch Companion does not provide emulator software or copyrighted game content.
 
@@ -11,32 +11,84 @@ This guide covers RetroArch, DuckStation, PCSX2, Dolphin, and RPCS3. Emulator co
 Keep shared emulator installations outside individual game folders:
 
 ```text
-CartLaunchCompanion/
+GameCart/
+├── CartLaunchCompanion/
+│   └── Games/
+│       └── Example Emulated Game/
+│           ├── game.json
+│           ├── Artwork/
+│           └── Media/
 ├── Emulators/
-│   ├── RetroArch/
-│   ├── DuckStation/
-│   ├── PCSX2/
-│   ├── Dolphin/
-│   └── RPCS3/
-└── Games/
-    └── Example Emulated Game/
-        ├── game.json
-        ├── Artwork/
-        ├── Media/
-        └── Game/
-            └── GameImage.iso
+│   ├── Windows/
+│   │   ├── RetroArch/
+│   │   ├── DuckStation/
+│   │   └── ...
+│   ├── Linux/
+│   │   ├── RetroArch/
+│   │   ├── DuckStation/
+│   │   └── ...
+│   └── Shared/
+│       ├── BIOS/
+│       ├── Saves/
+│       ├── States/
+│       ├── Screenshots/
+│       └── Cheats/
+└── Roms/
+    └── System/
+        └── GameImage.iso
 ```
 
 In the examples below:
 
-- `executable` starts two folders above the game folder, then enters `Emulators`;
-- `workingDirectory` is `.` so ROM paths are relative to the game's own folder;
+- `executable` starts three folders above the CLC game configuration, then enters the drive-root `Emulators` folder;
+- the configurator normally sets `workingDirectory` to the selected emulator folder;
 - `arguments` contains the emulator flags followed by the game image;
 - `processName` lets Cart Launch Companion wait for the emulator to close before restoring itself.
 
 Use forward slashes in JSON paths. Always quote game or emulator paths that may contain spaces.
 
+## Automatic emulator recipes
+
+When **Locate emulator** selects a recognized executable, Game Configurator fills a conservative fullscreen or batch recipe if the Arguments field is still empty. Existing custom arguments are always preserved.
+
+The generated portable structure supports:
+
+- Multi-system: RetroArch;
+- Nintendo: Dolphin, Cemu, Azahar, melonDS, mGBA, Mesen, Snes9x, and Rosalie's Mupen GUI;
+- Sony: DuckStation, PCSX2, RPCS3, PPSSPP, Vita3K, and shadPS4;
+- Microsoft: xemu and Xenia;
+- Sega and arcade: Flycast and MAME;
+- Classic PC: DOSBox Staging and ScummVM.
+
+Put Windows portable builds and Linux x86_64 AppImages in their matching generated folders. Configure each pair to use the real folders under `Emulators/Shared`; CLC intentionally does not create cross-platform symlinks.
+
+## Emulator Library in Game Configurator
+
+Open **Emulator Library** from the Configurator header to see every supported emulator. Each row reports its Windows and Linux/SteamOS status separately. **Add Windows** and **Add Linux** accept an executable only from that emulator's assigned portable folder; CLC deliberately does not copy a lone executable because most emulators depend on other files beside it.
+
+After a complete portable build has been placed in the indicated folder, select its executable and rescan. Installed emulators then appear under **Windows launch → Use a portable emulator**. Applying one fills its executable, working directory, process name, launcher type, and safe default arguments. When both operating-system builds are present, Windows and Linux are enabled and configured together.
+
+For RetroArch, **Locate ROM** scans the selected portable installation's `cores` folder. A file extension with one compatible installed core is selected automatically. When several installed cores support the extension, the Configurator asks which one to use. Ambiguous containers such as ISO, BIN, CUE, CHD, ZIP, and 7Z always require a core choice. The resulting portable `-L` core path and ROM path are added together.
+
 ## RetroArch
+
+### Missing cores
+
+When **Locate ROM** recognizes RetroArch but cannot find a compatible installed core, the Configurator offers **Download and use core**. It shows the official Libretro buildbot URL and the exact portable `RetroArch/cores` destination before making any change. The selected core is downloaded directly into the RetroArch copy on the cart and added to the generated launch arguments automatically.
+
+Automatic downloads currently support Windows x64 and Linux x64. Ambiguous disc/container formats such as `.iso`, `.chd`, `.cue`, and `.zip` still require the user to install or select the correct system core because the extension alone cannot identify the emulated console safely.
+
+## Multiple platform versions of one game
+
+Keep every release in its own `CartLaunchCompanion/Games/<Version Name>` configuration folder. This preserves separate cover art, metadata, ROM or executable, emulator, core, and launch behavior.
+
+In **Game details → Platform versions**, configure:
+
+- **Version group:** the exact same identifier for every release, such as `gta-vice-city-stories`.
+- **Platform label:** the name shown in the version picker, such as `PC`, `PSP`, or `PlayStation 2`.
+- **Primary shelf version:** enable this for one release whose cover should represent the group on the collection shelf.
+
+CLC collapses matching releases to one shelf card. Opening that card displays the individual cover arts and platform labels before the metadata page. Back from metadata returns to the version picker, and Back again returns to the collection shelf. Configurations without a version group retain the original one-card behavior.
 
 RetroArch needs both a libretro core and the selected content. `-f` requests fullscreen and `-L` selects the core.
 
@@ -46,9 +98,9 @@ RetroArch needs both a libretro core and the selected content. `-f` requests ful
 "windows": {
   "enabled": true,
   "launcher": "custom",
-  "executable": "../../Emulators/RetroArch/retroarch.exe",
-  "arguments": "-f -L \"../../Emulators/RetroArch/cores/snes9x_libretro.dll\" \"Game/Example Game.sfc\"",
-  "workingDirectory": ".",
+  "executable": "../../../Emulators/RetroArch/retroarch.exe",
+  "arguments": "-f -L \"cores/snes9x_libretro.dll\" \"../../Roms/Super Nintendo/Example Game.sfc\"",
+  "workingDirectory": "../../../Emulators/RetroArch",
   "processName": "retroarch"
 }
 ```
@@ -59,9 +111,9 @@ RetroArch needs both a libretro core and the selected content. `-f` requests ful
 "linux": {
   "enabled": true,
   "launcher": "custom",
-  "executable": "../../Emulators/RetroArch/retroarch",
-  "arguments": "-f -L \"../../Emulators/RetroArch/cores/snes9x_libretro.so\" \"Game/Example Game.sfc\"",
-  "workingDirectory": ".",
+  "executable": "../../../Emulators/RetroArch/retroarch",
+  "arguments": "-f -L \"cores/snes9x_libretro.so\" \"../../Roms/Super Nintendo/Example Game.sfc\"",
+  "workingDirectory": "../../../Emulators/RetroArch",
   "processName": "retroarch"
 }
 ```
@@ -78,9 +130,9 @@ DuckStation accepts a disc image after `--`. `-batch` closes the interface when 
 "windows": {
   "enabled": true,
   "launcher": "custom",
-  "executable": "../../Emulators/DuckStation/duckstation-qt-x64-ReleaseLTCG.exe",
-  "arguments": "-batch -fullscreen -- \"Game/Example Game.cue\"",
-  "workingDirectory": ".",
+  "executable": "../../../Emulators/DuckStation/duckstation-qt-x64-ReleaseLTCG.exe",
+  "arguments": "-batch -fullscreen -- \"../../Roms/PlayStation/Example Game.cue\"",
+  "workingDirectory": "../../../Emulators/DuckStation",
   "processName": "duckstation-qt-x64-ReleaseLTCG"
 }
 ```
@@ -91,9 +143,9 @@ DuckStation accepts a disc image after `--`. `-batch` closes the interface when 
 "linux": {
   "enabled": true,
   "launcher": "custom",
-  "executable": "../../Emulators/DuckStation/DuckStation-x64.AppImage",
-  "arguments": "-batch -fullscreen -- \"Game/Example Game.cue\"",
-  "workingDirectory": ".",
+  "executable": "../../../Emulators/DuckStation/DuckStation-x64.AppImage",
+  "arguments": "-batch -fullscreen -- \"../../Roms/PlayStation/Example Game.cue\"",
+  "workingDirectory": "../../../Emulators/DuckStation",
   "processName": "DuckStation-x64.AppImage"
 }
 ```
@@ -110,9 +162,9 @@ PCSX2 uses `-fullscreen` for immediate fullscreen and `-batch` to close the emul
 "windows": {
   "enabled": true,
   "launcher": "custom",
-  "executable": "../../Emulators/PCSX2/pcsx2-qt.exe",
-  "arguments": "-fullscreen -batch -- \"Game/Example Game.iso\"",
-  "workingDirectory": ".",
+  "executable": "../../../Emulators/PCSX2/pcsx2-qt.exe",
+  "arguments": "-fullscreen -batch -- \"../../Roms/PlayStation 2/Example Game.iso\"",
+  "workingDirectory": "../../../Emulators/PCSX2",
   "processName": "pcsx2-qt"
 }
 ```
@@ -123,9 +175,9 @@ PCSX2 uses `-fullscreen` for immediate fullscreen and `-batch` to close the emul
 "linux": {
   "enabled": true,
   "launcher": "custom",
-  "executable": "../../Emulators/PCSX2/pcsx2-qt.AppImage",
-  "arguments": "-fullscreen -batch -- \"Game/Example Game.iso\"",
-  "workingDirectory": ".",
+  "executable": "../../../Emulators/PCSX2/pcsx2-qt.AppImage",
+  "arguments": "-fullscreen -batch -- \"../../Roms/PlayStation 2/Example Game.iso\"",
+  "workingDirectory": "../../../Emulators/PCSX2",
   "processName": "pcsx2-qt.AppImage"
 }
 ```
@@ -142,9 +194,9 @@ Dolphin uses `-b` for batch mode and `-e` to boot a specific game. Enable **Star
 "windows": {
   "enabled": true,
   "launcher": "custom",
-  "executable": "../../Emulators/Dolphin/Dolphin.exe",
-  "arguments": "-b -e \"Game/Example Game.rvz\"",
-  "workingDirectory": ".",
+  "executable": "../../../Emulators/Dolphin/Dolphin.exe",
+  "arguments": "-b -e \"../../Roms/GameCube/Example Game.rvz\"",
+  "workingDirectory": "../../../Emulators/Dolphin",
   "processName": "Dolphin"
 }
 ```
@@ -155,9 +207,9 @@ Dolphin uses `-b` for batch mode and `-e` to boot a specific game. Enable **Star
 "linux": {
   "enabled": true,
   "launcher": "custom",
-  "executable": "../../Emulators/Dolphin/dolphin-emu",
-  "arguments": "-b -e \"Game/Example Game.rvz\"",
-  "workingDirectory": ".",
+  "executable": "../../../Emulators/Dolphin/dolphin-emu",
+  "arguments": "-b -e \"../../Roms/GameCube/Example Game.rvz\"",
+  "workingDirectory": "../../../Emulators/Dolphin",
   "processName": "dolphin-emu"
 }
 ```
@@ -174,9 +226,9 @@ RPCS3 can boot a game's `EBOOT.BIN` directly. `--no-gui` suppresses the main gam
 "windows": {
   "enabled": true,
   "launcher": "custom",
-  "executable": "../../Emulators/RPCS3/rpcs3.exe",
-  "arguments": "--no-gui --fullscreen \"Game/Example Game/PS3_GAME/USRDIR/EBOOT.BIN\"",
-  "workingDirectory": ".",
+  "executable": "../../../Emulators/RPCS3/rpcs3.exe",
+  "arguments": "--no-gui --fullscreen \"../../Roms/PlayStation 3/Example Game/PS3_GAME/USRDIR/EBOOT.BIN\"",
+  "workingDirectory": "../../../Emulators/RPCS3",
   "processName": "rpcs3"
 }
 ```
@@ -187,14 +239,46 @@ RPCS3 can boot a game's `EBOOT.BIN` directly. `--no-gui` suppresses the main gam
 "linux": {
   "enabled": true,
   "launcher": "custom",
-  "executable": "../../Emulators/RPCS3/rpcs3.AppImage",
-  "arguments": "--no-gui --fullscreen \"Game/Example Game/PS3_GAME/USRDIR/EBOOT.BIN\"",
-  "workingDirectory": ".",
+  "executable": "../../../Emulators/RPCS3/rpcs3.AppImage",
+  "arguments": "--no-gui --fullscreen \"../../Roms/PlayStation 3/Example Game/PS3_GAME/USRDIR/EBOOT.BIN\"",
+  "workingDirectory": "../../../Emulators/RPCS3",
   "processName": "rpcs3.AppImage"
 }
 ```
 
 Install the required firmware and configure the controller in RPCS3 before launching from the couch. The first boot of a game may remain visible while RPCS3 compiles modules and shaders.
+
+## PPSSPP — PlayStation Portable
+
+PPSSPP accepts an ISO, CSO, or other supported PSP game path directly. `--fullscreen` forces fullscreen mode and `--pause-menu-exit` changes the pause-menu exit action so it closes PPSSPP and returns cleanly to CLC. PPSSPP does not require a PSP BIOS.
+
+### Windows
+
+```json
+"windows": {
+  "enabled": true,
+  "launcher": "custom",
+  "executable": "../../../Emulators/PPSSPP/PPSSPPWindows64.exe",
+  "arguments": "--fullscreen --pause-menu-exit \"../../Roms/PlayStation Portable/Example Game.iso\"",
+  "workingDirectory": "../../../Emulators/PPSSPP",
+  "processName": "PPSSPPWindows64"
+}
+```
+
+### Linux or SteamOS
+
+```json
+"linux": {
+  "enabled": true,
+  "launcher": "custom",
+  "executable": "../../../Emulators/PPSSPP/PPSSPPSDL",
+  "arguments": "--fullscreen --pause-menu-exit \"../../Roms/PlayStation Portable/Example Game.iso\"",
+  "workingDirectory": "../../../Emulators/PPSSPP",
+  "processName": "PPSSPPSDL"
+}
+```
+
+The Configurator recognizes common PPSSPP executable names and fills the two launch switches automatically. Use **Locate ROM** afterward to append the portable game path.
 
 ## Behavior settings
 

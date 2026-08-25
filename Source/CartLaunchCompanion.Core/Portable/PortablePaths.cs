@@ -3,6 +3,8 @@ namespace CartLaunchCompanion.Core.Portable;
 public sealed record PortablePaths(
     string Root,
     string System,
+    string Host,
+    string Maintenance,
     string Games,
     string Assets,
     string Config,
@@ -15,16 +17,19 @@ public sealed record PortablePaths(
         ArgumentException.ThrowIfNullOrWhiteSpace(root);
 
         var fullRoot = Path.GetFullPath(root);
+        var systemRoot = Path.Combine(fullRoot, "System");
 
         return new PortablePaths(
             fullRoot,
-            Path.Combine(fullRoot, "System"),
+            systemRoot,
+            Path.Combine(systemRoot, "Host"),
+            Path.Combine(systemRoot, "Maintenance"),
             Path.Combine(fullRoot, "Games"),
-            Path.Combine(fullRoot, "Assets"),
+            Path.Combine(systemRoot, "Assets"),
             Path.Combine(fullRoot, "Config"),
-            Path.Combine(fullRoot, "Schemas"),
+            Path.Combine(systemRoot, "Schemas"),
             Path.Combine(fullRoot, "Logs"),
-            Path.Combine(fullRoot, "Cache"));
+            Path.Combine(systemRoot, "Cache"));
     }
 
     public void EnsureWritableFolders()

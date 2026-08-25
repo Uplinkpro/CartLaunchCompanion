@@ -1,6 +1,5 @@
 using System.Text.Json;
 using CartLaunchCompanion.Core.Configuration;
-using CartLaunchCompanion.Core.Configuration.Migration;
 using CartLaunchCompanion.Core.Configuration.Validation;
 using CartLaunchCompanion.Core.Launching;
 using CartLaunchCompanion.Core.Metadata;
@@ -11,7 +10,6 @@ namespace CartLaunchCompanion.Core.Library;
 
 public sealed class GameLibraryService(
     GameConfigurationValidator validator,
-    Version1GameConfigurationImporter version1Importer,
     IGamePathResolver pathResolver,
     ILaunchTargetSelector launchTargetSelector,
     IGameMetadataService? metadataService = null)
@@ -134,32 +132,9 @@ public sealed class GameLibraryService(
             configurationPath,
             cancellationToken);
 
-        var isVersion2 = IsVersion2(json);
-        GameConfiguration configuration;
-        List<string> migrationWarnings = [];
-
-        if (isVersion2)
-        {
-            configuration =
-                GameConfigurationJson.Deserialize(json);
-        }
-        else
-        {
-            var importResult = version1Importer.Import(json);
-            configuration = importResult.Configuration;
-
-            migrationWarnings.Add(
-                "This game is using the Version 1 compatibility importer.");
-
-            if (importResult.UnmappedFields.Count > 0)
-            {
-                migrationWarnings.Add(
-                    "Unmapped Version 1 fields: " +
-                    string.Join(", ", importResult.UnmappedFields));
-            }
-
-            migrationWarnings.AddRange(importResult.Warnings);
-        }
+        EnsureCurrentFormat(json);
+        var configuration = GameConfigurationJson.Deserialize(json);
+        List<string> warnings = [];
 
         if (metadataService is not null)
         {
@@ -169,7 +144,7 @@ public sealed class GameLibraryService(
                 portablePaths,
                 cancellationToken);
 
-            migrationWarnings.AddRange(metadata.Warnings);
+            warnings.AddRange(metadata.Warnings);
         }
 
         var validation = validator.Validate(configuration);
@@ -181,7 +156,6 @@ public sealed class GameLibraryService(
             FolderPath = folder,
             ConfigurationPath = configurationPath,
             Configuration = configuration,
-            ImportedFromVersion1 = !isVersion2,
             CoverPath = pathResolver.ResolveExistingWithAnyExtension(
                 folder,
                 configuration.Artwork.Cover),
@@ -206,7 +180,7 @@ public sealed class GameLibraryService(
         };
 
         entry.ValidationIssues.AddRange(validation.Issues);
-        entry.Warnings.AddRange(migrationWarnings);
+        entry.Warnings.AddRange(warnings);
 
         AddMissingAssetWarnings(entry);
         AddPlatformWarnings(entry, platform);
@@ -241,7 +215,9 @@ public sealed class GameLibraryService(
         if (configured is not null)
             return configured;
 
-        return pathResolver.ResolveExisting(folder, "Media/SteamTrailer.mp4") ??
+        return pathResolver.ResolveExisting(folder, "Media/SteamTrailer.Software.mp4") ??
+               pathResolver.ResolveExisting(folder, "Media/SteamTrailer.Software.webm") ??
+               pathResolver.ResolveExisting(folder, "Media/SteamTrailer.mp4") ??
                pathResolver.ResolveExisting(folder, "Media/SteamTrailer.webm");
     }
 
@@ -282,7 +258,7 @@ public sealed class GameLibraryService(
         };
     }
 
-    private static bool IsVersion2(string json)
+    private static void EnsureCurrentFormat(string json)
     {
         using var document = JsonDocument.Parse(
             json,
@@ -296,12 +272,17 @@ public sealed class GameLibraryService(
                 "formatVersion",
                 out var formatVersion))
         {
-            return false;
+            throw new InvalidDataException(
+                "game.json must declare formatVersion 2.");
         }
 
-        return formatVersion.ValueKind == JsonValueKind.Number &&
-               formatVersion.TryGetInt32(out var version) &&
-               version == 2;
+        if (formatVersion.ValueKind != JsonValueKind.Number ||
+            !formatVersion.TryGetInt32(out var version) ||
+            version != 2)
+        {
+            throw new InvalidDataException(
+                "Only formatVersion 2 game configurations are supported.");
+        }
     }
 
     private static string? FindConfigurationPath(string folder)

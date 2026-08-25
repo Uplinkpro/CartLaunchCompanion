@@ -20,6 +20,9 @@ public sealed class MetadataNavigationTests
         var game = Assert.Single(viewModel.Games);
         game.OpenCommand.Execute(null);
 
+        Assert.True(viewModel.IsMetadataLoading);
+        await Task.Delay(500);
+
         Assert.False(viewModel.IsHomeVisible);
         Assert.True(viewModel.IsMetadataVisible);
         Assert.Same(game, viewModel.SelectedGame);
@@ -50,6 +53,7 @@ public sealed class MetadataNavigationTests
 
         await viewModel.LoadAsync();
         viewModel.Games[0].OpenCommand.Execute(null);
+        await Task.Delay(500);
 
         await viewModel.ConfirmLaunchCommand.ExecuteAsync(null);
 
@@ -64,6 +68,7 @@ public sealed class MetadataNavigationTests
         var viewModel = CreateViewModel();
         await viewModel.LoadAsync();
         viewModel.Games[0].OpenCommand.Execute(null);
+        await Task.Delay(500);
 
         Assert.True(viewModel.ShouldPlayTrailer);
 

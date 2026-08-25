@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="CartLaunchCompanion.Desktop.Controls.ButtonPromptBadge"
+             x:Name="Badge"
+             Width="30" Height="30">
+  <Grid Width="30" Height="30">
+    <Border CornerRadius="15" Background="{Binding BadgeColor, ElementName=Badge}"/>
+    <Border CornerRadius="15" Margin="1">
+      <Border.Background>
+        <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+          <GradientStop Offset="0" Color="#62FFFFFF"/>
+          <GradientStop Offset="0.42" Color="#12FFFFFF"/>
+          <GradientStop Offset="0.58" Color="#08000000"/>
+          <GradientStop Offset="1" Color="#36000000"/>
+        </LinearGradientBrush>
+      </Border.Background>
+    </Border>
+    <Border CornerRadius="15" BorderBrush="#48FFFFFF" BorderThickness="1" Margin="0.5"/>
+    <TextBlock Text="{Binding Label, ElementName=Badge}"
+               Width="30" Height="30" LineHeight="30"
+               TextAlignment="Center" HorizontalAlignment="Center"
+               VerticalAlignment="Center" Foreground="White"
+               FontWeight="Bold" FontSize="14"/>
+  </Grid>
+</UserControl>

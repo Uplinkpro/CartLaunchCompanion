@@ -14,5 +14,12 @@ internal static class Program
         if (instance is null) return;
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
-    public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>().UsePlatformDetect().WithInterFont().LogToTrace();
+    public static AppBuilder BuildAvaloniaApp()
+        => AppBuilder.Configure<App>()
+            .UsePlatformDetect()
+            .WithInterFont()
+#if DEBUG
+            .LogToTrace()
+#endif
+            ;
 }

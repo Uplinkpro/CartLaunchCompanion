@@ -5,7 +5,7 @@ namespace CartLaunchCompanion.Core.Configuration;
 public sealed class GameConfiguration
 {
     [JsonPropertyName("$schema")]
-    public string Schema { get; set; } = "../../../Schemas/game.schema.json";
+    public string Schema { get; set; } = "../../System/Schemas/game.schema.json";
 
     public int FormatVersion { get; set; } = 2;
 
@@ -17,21 +17,17 @@ public sealed class GameConfiguration
 
     public BehaviorConfiguration Behavior { get; set; } = new();
 
-    public GameCollectionPlacement Collection { get; set; } = new();
-
     public string Notes { get; set; } = "";
-}
-
-public sealed class GameCollectionPlacement
-{
-    public string Shelf { get; set; } = "";
-    public int Order { get; set; }
 }
 
 public sealed class GameInformation
 {
+    public string Id { get; set; } = "";
     public string Name { get; set; } = "";
     public string SortName { get; set; } = "";
+    public string VersionGroup { get; set; } = "";
+    public string PlatformLabel { get; set; } = "";
+    public bool PrimaryVersion { get; set; }
     public string Description { get; set; } = "";
     public string Developer { get; set; } = "";
     public string Publisher { get; set; } = "";

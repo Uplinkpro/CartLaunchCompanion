@@ -10,12 +10,12 @@ public sealed partial class HostInstallOfferWindow : Window
     private readonly string _hostExecutable;
     public bool IsWindows { get; }
     public HostInstallOfferWindow() { _hostExecutable = ""; InitializeComponent(); DataContext = this; }
-    public HostInstallOfferWindow(string cartRoot, PlatformKind platform)
+    public HostInstallOfferWindow(string hostRoot, PlatformKind platform)
     {
         IsWindows = platform == PlatformKind.Windows;
         var folder = IsWindows ? "Windows-x64" : "Linux-x64";
         var executable = IsWindows ? "CartLaunchCompanion.Host.exe" : "CartLaunchCompanion.Host";
-        _hostExecutable = Path.Combine(cartRoot, "Host", folder, executable);
+        _hostExecutable = Path.Combine(hostRoot, folder, executable);
         InitializeComponent(); DataContext = this;
     }
     private void NotNowClicked(object? sender, RoutedEventArgs e) => Close(false);

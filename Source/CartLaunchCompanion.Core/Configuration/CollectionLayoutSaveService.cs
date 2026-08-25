@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace CartLaunchCompanion.Core.Configuration;
 
 public sealed record CollectionGamePlacementUpdate(
@@ -21,7 +19,6 @@ public sealed class CollectionLayoutSaveService
 
         var root = Path.GetFullPath(cartRoot);
         var gamesRoot = Path.GetFullPath(Path.Combine(root, "Games")) + Path.DirectorySeparatorChar;
-        var collectionPath = Path.GetFullPath(Path.Combine(root, "Config", "collection.json"));
         var normalized = placements.Select(item => item with
         {
             ConfigurationPath = Path.GetFullPath(item.ConfigurationPath),
@@ -33,54 +30,20 @@ public sealed class CollectionLayoutSaveService
         if (normalized.GroupBy(item => item.ConfigurationPath, StringComparer.OrdinalIgnoreCase).Any(group => group.Count() > 1))
             throw new InvalidOperationException("A game cannot appear more than once in the collection layout.");
 
-        var payloads = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase)
+        var resolved = new List<(CollectionGamePlacementUpdate Placement, string GameId)>();
+        foreach (var item in normalized)
         {
-            [collectionPath] = JsonSerializer.SerializeToUtf8Bytes(collection, GameConfigurationJson.Options)
-        };
-        foreach (var placement in normalized)
-        {
-            var game = await GameConfigurationJson.LoadAsync(placement.ConfigurationPath, cancellationToken);
-            game.Collection.Shelf = placement.Shelf;
-            game.Collection.Order = placement.Order;
-            payloads[placement.ConfigurationPath] = JsonSerializer.SerializeToUtf8Bytes(game, GameConfigurationJson.Options);
+            var game = await GameConfigurationJson.LoadAsync(item.ConfigurationPath, cancellationToken);
+            resolved.Add((item, GameIdentity.Resolve(game.Game)));
         }
 
-        var originals = payloads.Keys.ToDictionary(
-            path => path,
-            path => File.Exists(path) ? File.ReadAllBytes(path) : null,
-            StringComparer.OrdinalIgnoreCase);
-        var written = new List<string>();
-        try
+        collection.Placements = resolved.Select(item => new CollectionGamePlacementConfiguration
         {
-            foreach (var (path, bytes) in payloads)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                var temporaryPath = path + ".layout.tmp";
-                await File.WriteAllBytesAsync(temporaryPath, bytes, cancellationToken);
-                File.Move(temporaryPath, path, overwrite: true);
-                written.Add(path);
-            }
-        }
-        catch
-        {
-            foreach (var path in written.AsEnumerable().Reverse())
-            {
-                if (originals[path] is { } original)
-                    await File.WriteAllBytesAsync(path, original, CancellationToken.None);
-                else if (File.Exists(path))
-                    File.Delete(path);
-            }
-            throw;
-        }
-        finally
-        {
-            foreach (var path in payloads.Keys)
-            {
-                var temporaryPath = path + ".layout.tmp";
-                if (File.Exists(temporaryPath))
-                    File.Delete(temporaryPath);
-            }
-        }
+            GameId = item.GameId,
+            Configuration = Path.GetRelativePath(root, item.Placement.ConfigurationPath).Replace('\\', '/'),
+            Shelf = item.Placement.Shelf,
+            Order = item.Placement.Order
+        }).ToList();
+        await CollectionConfigurationJson.SaveAsync(Path.Combine(root, "Config"), collection, cancellationToken);
     }
 }

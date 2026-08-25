@@ -31,7 +31,7 @@ jobs:
 
       - name: Build portable packages
         shell: pwsh
-        run: ./Publish-RC1.ps1 -Version $env:CLC_VERSION -OutputRoot "artifacts/$env:CLC_VERSION"
+        run: ./Publish-Release.ps1 -Version $env:CLC_VERSION -OutputRoot "artifacts/$env:CLC_VERSION"
 
       - name: Sign runtime manifests
         shell: pwsh

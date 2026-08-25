@@ -6,6 +6,7 @@ using Avalonia.Platform.Storage;
 using CartLaunchCompanion.Core.Configuration;
 using CartLaunchCompanion.Core.Configuration.Validation;
 using CartLaunchCompanion.Core.Library;
+using CartLaunchCompanion.Core.Launching;
 using CartLaunchCompanion.Core.Metadata;
 using CartLaunchCompanion.Core.Portable;
 using System.Text;
@@ -18,6 +19,7 @@ public sealed partial class MainWindow : Window
     private readonly GameConfigurationValidator _validator = new();
     private readonly CartContentPathConverter _cartPathConverter = new();
     private readonly HostLauncherDetectionService _hostLauncherDetector = new();
+    private readonly EmulatorLibraryService _emulatorLibrary = new();
     private readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
     private readonly HttpClient _downloadHttpClient = new() { Timeout = TimeSpan.FromMinutes(30) };
     private string? _gameJsonPath;
@@ -25,6 +27,8 @@ public sealed partial class MainWindow : Window
     private PortablePaths? _portablePaths;
     private bool _loadingExistingGame;
     private CollectionGameEditor? _draggedCollectionGame;
+    private bool _usesSuggestedGameFolder;
+    private bool _isNewConfiguration = true;
 
     public MainWindow()
     {
@@ -49,7 +53,10 @@ public sealed partial class MainWindow : Window
     {
         if (_startupSetupShown) return;
         _startupSetupShown = true;
+        FitWindowToWorkingArea();
         _portablePaths = new PortablePathService().Discover(AppContext.BaseDirectory);
+        RefreshInstalledEmulators();
+        SuggestGameConfigurationFolder("New Game");
         _ = await MetadataProviderSettings.LoadAsync(_portablePaths);
         await LoadCollectionBrandingAsync();
         await LoadExistingGamesAsync();
@@ -57,6 +64,24 @@ public sealed partial class MainWindow : Window
         var settings = await ConfiguratorSettings.LoadAsync();
         if (!settings.SetupCompleted)
             await new ApiSetupDialog(settings).ShowDialog<bool>(this);
+    }
+
+    private void FitWindowToWorkingArea()
+    {
+        var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
+        if (screen is null)
+            return;
+
+        // Screen bounds are physical pixels while Avalonia window dimensions
+        // are device-independent units. Account for Windows display scaling and
+        // leave a small margin so the title bar and footer remain reachable.
+        var scaling = Math.Max(1d, screen.Scaling);
+        var availableWidth = Math.Max(MinWidth, (screen.WorkingArea.Width / scaling) - 24d);
+        var availableHeight = Math.Max(MinHeight, (screen.WorkingArea.Height / scaling) - 24d);
+        MaxWidth = availableWidth;
+        MaxHeight = availableHeight;
+        Width = Math.Min(1280d, availableWidth);
+        Height = Math.Min(820d, availableHeight);
     }
 
     private async void SettingsClicked(object? sender, RoutedEventArgs e)
@@ -83,11 +108,21 @@ public sealed partial class MainWindow : Window
         if (match.SteamGridDbGameId is not null)
             configuration.Artwork.SteamGridDbGameId = match.SteamGridDbGameId;
         _viewModel.ArtworkPreview = match.Artwork;
-        _viewModel.ArtworkPreviewTitle = $"{match.Name} · Steam App ID {match.AppId}";
+        _viewModel.ArtworkPreviewTitle = match.HasSteamAppId
+            ? $"{match.Name} · Steam App ID {match.AppId}"
+            : $"{match.Name} · SteamGridDB game {match.SteamGridDbGameId}";
         if (match.AppId > 0 && configuration.Launch.Windows.Launcher == LauncherKind.Steam)
             configuration.Launch.Windows.SteamId = match.AppId.ToString();
         if (match.AppId > 0 && configuration.Launch.Linux.Enabled && configuration.Launch.Linux.Launcher == LauncherKind.Steam)
             configuration.Launch.Linux.SteamId = match.AppId.ToString();
+
+        // Apply the selected match to the form before optional network enrichment.
+        // Otherwise a metadata timeout leaves the updated model hidden behind stale bindings.
+        _viewModel.Configuration = GameConfigurationJson.Deserialize(
+            GameConfigurationJson.Serialize(configuration));
+        configuration = _viewModel.Configuration;
+        SuggestGameConfigurationFolder(match.Name);
+        _viewModel.RefreshPreview();
 
         var downloadArtwork = configuration.Artwork.DownloadMissingArtwork;
         configuration.Artwork.DownloadMissingArtwork = false;
@@ -98,9 +133,9 @@ public sealed partial class MainWindow : Window
             var scratchFolder = Path.Combine(paths.Cache, "ConfiguratorPreview", (match.SteamGridDbGameId ?? match.AppId).ToString());
             var result = await service.EnrichAsync(scratchFolder, configuration, paths);
             var openMetadata = new OpenGameMetadataResult();
-            if (match.AppId > 0 && HasMissingTextMetadata(configuration))
+            if (HasMissingTextMetadata(configuration))
                 openMetadata = await new OpenGameMetadataService(_httpClient)
-                    .FillMissingAsync(configuration, match.AppId.ToString());
+                    .FillMissingAsync(configuration, match.HasSteamAppId ? match.AppId.ToString() : null);
             if (_viewModel.ArtworkPreview is null && !string.IsNullOrWhiteSpace(openMetadata.CoverUrl))
                 _viewModel.ArtworkPreview = await DownloadPreviewAsync(openMetadata.CoverUrl);
             configuration.Artwork.DownloadMissingArtwork = downloadArtwork;
@@ -109,7 +144,9 @@ public sealed partial class MainWindow : Window
                 GameConfigurationJson.Serialize(configuration));
             _viewModel.RefreshPreview();
             await RefreshArtworkPreviewsAsync();
-            _viewModel.Status = openMetadata.UsedAny
+            _viewModel.Status = !match.HasSteamAppId
+                ? $"Matched {match.Name}. SteamGridDB metadata ID {match.SteamGridDbGameId} was applied; this result has no linked Steam App ID."
+                : openMetadata.UsedAny
                 ? $"Matched {match.Name}. Missing details were filled from PCGamingWiki and Wikipedia."
                 : HasMissingTextMetadata(configuration)
                 ? $"Matched {match.Name}, but some descriptive metadata was unavailable."
@@ -124,6 +161,11 @@ public sealed partial class MainWindow : Window
         finally
         {
             configuration.Artwork.DownloadMissingArtwork = downloadArtwork;
+            // Preserve and display Steam data even when a later optional
+            // PCGamingWiki or Wikipedia request fails.
+            _viewModel.Configuration = GameConfigurationJson.Deserialize(
+                GameConfigurationJson.Serialize(configuration));
+            _viewModel.RefreshPreview();
         }
     }
 
@@ -139,7 +181,7 @@ public sealed partial class MainWindow : Window
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.UserAgent.ParseAdd("CartLaunchCompanion/1.0 metadata-configurator");
+            request.Headers.UserAgent.ParseAdd("CartLaunchCompanion/2.3 metadata-configurator");
             using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
             if (!response.IsSuccessStatusCode) return null;
             await using var stream = await response.Content.ReadAsStreamAsync();
@@ -150,9 +192,127 @@ public sealed partial class MainWindow : Window
 
     private void NewClicked(object? sender, RoutedEventArgs e)
     {
+        EditorTabs.SelectedIndex = 0;
         _gameJsonPath = null;
+        _usesSuggestedGameFolder = false;
+        _isNewConfiguration = true;
         _viewModel.SelectedExistingGame = null;
         _viewModel.Reset();
+        SuggestGameConfigurationFolder("New Game");
+    }
+
+    private async void EmulatorLibraryClicked(object? sender, RoutedEventArgs e)
+    {
+        var mediaRoot = GetMediaRoot();
+        if (mediaRoot is null)
+        {
+            _viewModel.Status = "CLC could not determine the cart media root. Open or choose a game configuration folder first.";
+            return;
+        }
+        await new EmulatorLibraryDialog(mediaRoot).ShowDialog<bool>(this);
+        RefreshInstalledEmulators();
+    }
+
+    private void ApplyInstalledEmulatorClicked(object? sender, RoutedEventArgs e)
+    {
+        var selected = _viewModel.SelectedInstalledEmulator;
+        if (selected is null || string.IsNullOrWhiteSpace(_gameJsonPath))
+        {
+            _viewModel.Status = "Choose this game's CLC configuration folder and an installed emulator first.";
+            return;
+        }
+        var gameFolder = Path.GetDirectoryName(_gameJsonPath)!;
+        var configured = new List<string>();
+        if (selected.WindowsExecutable is not null && ApplyInstalledEmulatorTarget(gameFolder, selected.WindowsExecutable, true))
+            configured.Add("Windows");
+        if (selected.LinuxExecutable is not null && ApplyInstalledEmulatorTarget(gameFolder, selected.LinuxExecutable, false))
+            configured.Add("Linux");
+        if (configured.Count == 0)
+        {
+            _viewModel.Status = "The emulator files were not inside this cart's expected Emulators folders.";
+            return;
+        }
+        _viewModel.Configuration = GameConfigurationJson.Deserialize(GameConfigurationJson.Serialize(_viewModel.Configuration));
+        _viewModel.RefreshPreview();
+        _viewModel.Status = $"Configured {selected.Definition.DisplayName} for {string.Join(" and ", configured)}. Locate the ROM once for each enabled platform; RetroArch may require a platform-specific core.";
+    }
+
+    private bool ApplyInstalledEmulatorTarget(string gameFolder, string executable, bool windows)
+    {
+        var result = _cartPathConverter.Convert(gameFolder, executable);
+        if (!result.IsPortable || !CartContentPathConverter.IsEmulatorCategory(result.Category)) return false;
+        var workingDirectory = Path.GetDirectoryName(result.ConfiguredPath)?.Replace('\\', '/') ?? "";
+        if (windows)
+        {
+            var launch = _viewModel.Configuration.Launch.Windows;
+            launch.Enabled = true;
+            launch.Launcher = LauncherKind.Custom;
+            launch.Executable = result.ConfiguredPath;
+            launch.WorkingDirectory = workingDirectory;
+            launch.ProcessName = Path.GetFileNameWithoutExtension(executable);
+            launch.Arguments = EmulatorLaunchPresetCatalog.ApplyDefault(executable, "");
+        }
+        else
+        {
+            var launch = _viewModel.Configuration.Launch.Linux;
+            launch.Enabled = true;
+            launch.Launcher = LauncherKind.Custom;
+            launch.Executable = result.ConfiguredPath;
+            launch.WorkingDirectory = workingDirectory;
+            launch.ProcessName = Path.GetFileNameWithoutExtension(executable);
+            launch.Arguments = EmulatorLaunchPresetCatalog.ApplyDefault(executable, "");
+        }
+        return true;
+    }
+
+    private void RefreshInstalledEmulators()
+    {
+        var selectedId = _viewModel.SelectedInstalledEmulator?.Definition.Id;
+        _viewModel.InstalledEmulators.Clear();
+        var mediaRoot = GetMediaRoot();
+        if (mediaRoot is not null)
+            foreach (var emulator in _emulatorLibrary.Scan(mediaRoot)) _viewModel.InstalledEmulators.Add(emulator);
+        _viewModel.SelectedInstalledEmulator = _viewModel.InstalledEmulators.FirstOrDefault(item => item.Definition.Id == selectedId)
+            ?? _viewModel.InstalledEmulators.FirstOrDefault();
+        _viewModel.NotifyInstalledEmulatorsChanged();
+    }
+
+    private string? GetMediaRoot()
+    {
+        var cartRoot = _portablePaths?.Root;
+        if (string.IsNullOrWhiteSpace(cartRoot) && !string.IsNullOrWhiteSpace(_gameJsonPath))
+        {
+            for (var current = new DirectoryInfo(Path.GetDirectoryName(_gameJsonPath)!); current is not null; current = current.Parent)
+                if (current.Name.Equals("Cart", StringComparison.OrdinalIgnoreCase)) { cartRoot = current.FullName; break; }
+        }
+        if (string.IsNullOrWhiteSpace(cartRoot)) return null;
+        if (Directory.Exists(Path.Combine(cartRoot, "Emulators"))) return cartRoot;
+        if (Directory.Exists(Path.Combine(cartRoot, "Source"))) return cartRoot;
+        if (Path.GetFileName(cartRoot).Equals("Cart", StringComparison.OrdinalIgnoreCase))
+            return Directory.GetParent(cartRoot)?.FullName;
+        return Directory.GetParent(cartRoot)?.FullName;
+    }
+
+    private void NewPlatformClicked(object? sender, RoutedEventArgs e)
+    {
+        EditorTabs.SelectedIndex = 0;
+
+        // Serialize through the public format to produce a deep copy without
+        // sharing mutable launch, artwork, or behavior objects with the source.
+        var clone = GameConfigurationJson.Deserialize(
+            GameConfigurationJson.Serialize(_viewModel.Configuration));
+        clone.Game.PlatformLabel = "";
+        clone.Game.PrimaryVersion = false;
+
+        _gameJsonPath = null;
+        _usesSuggestedGameFolder = false;
+        _isNewConfiguration = true;
+        _viewModel.SelectedExistingGame = null;
+        _viewModel.Configuration = clone;
+        SuggestGameConfigurationFolder(clone.Game.Name);
+        _viewModel.RefreshPreview();
+        _viewModel.Status = "New platform copied from the previous game. Enter its platform label and update any platform-specific launch settings before saving.";
+        _viewModel.PathStatus = "A separate game folder will be selected from the platform label so the existing version cannot be overwritten.";
     }
 
     private async void CreateCartClicked(object? sender, RoutedEventArgs e)
@@ -202,7 +362,7 @@ public sealed partial class MainWindow : Window
     {
         var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
         {
-            Title = "Choose the game folder",
+            Title = "Choose this game's CLC configuration folder (inside CartLaunchCompanion\\Games)",
             AllowMultiple = false
         });
 
@@ -240,7 +400,7 @@ public sealed partial class MainWindow : Window
         var result = _cartPathConverter.Convert(gameFolder, files[0].Path.LocalPath);
         _viewModel.PathStatus = result.IsPortable
             ? $"PORTABLE · {result.DisplayPath} · {result.Message}"
-            : $"NOT SAVED · {result.Message}";
+            : $"NOT SAVED · {result.Message} Configuration: {_gameJsonPath}";
         _viewModel.Status = _viewModel.PathStatus;
         if (!result.IsPortable)
             return;
@@ -270,15 +430,61 @@ public sealed partial class MainWindow : Window
         var workingDirectory = Path.GetDirectoryName(result.ConfiguredPath)?.Replace('\\', '/') ?? "";
         var processName = Path.GetFileNameWithoutExtension(result.ConfiguredPath);
         var argumentPath = result.ConfiguredPath;
+        string? retroArchCoreArgumentPath = null;
+        string? downloadedRetroArchCore = null;
         if (isRom)
         {
-            var configuredWorkingDirectory = target.StartsWith("windows-", StringComparison.Ordinal)
+            var isWindowsTarget = target.StartsWith("windows-", StringComparison.Ordinal);
+            var launch = isWindowsTarget ? configuration.Launch.Windows : null;
+            var linuxLaunch = isWindowsTarget ? null : configuration.Launch.Linux;
+            var configuredWorkingDirectory = isWindowsTarget
                 ? configuration.Launch.Windows.WorkingDirectory
                 : configuration.Launch.Linux.WorkingDirectory;
             var argumentBase = string.IsNullOrWhiteSpace(configuredWorkingDirectory)
                 ? gameFolder
                 : new GamePathResolver().Resolve(gameFolder, configuredWorkingDirectory);
             argumentPath = Path.GetRelativePath(argumentBase, files[0].Path.LocalPath).Replace('\\', '/');
+
+            var emulatorExecutable = launch?.Executable ?? linuxLaunch?.Executable ?? "";
+            if (EmulatorLaunchPresetCatalog.Detect(emulatorExecutable) == KnownEmulator.RetroArch)
+            {
+                var resolvedExecutable = new GamePathResolver().Resolve(gameFolder, emulatorExecutable);
+                var coresFolder = Path.Combine(Path.GetDirectoryName(resolvedExecutable) ?? "", "cores");
+                var corePattern = isWindowsTarget ? "*_libretro.dll" : "*_libretro.so";
+                var installedCores = Directory.Exists(coresFolder)
+                    ? Directory.EnumerateFiles(coresFolder, corePattern, SearchOption.TopDirectoryOnly).ToArray()
+                    : [];
+                var compatible = EmulatorLaunchPresetCatalog.FindCompatibleRetroArchCores(
+                    installedCores, files[0].Path.LocalPath);
+                if (compatible.Count == 0)
+                {
+                    var recommended = EmulatorLaunchPresetCatalog.GetRecommendedRetroArchCoreNames(files[0].Path.LocalPath);
+                    if (recommended.Count == 0)
+                    {
+                        _viewModel.Status = $"No installed RetroArch core was found for {Path.GetExtension(files[0].Path.LocalPath)} files. This file type is ambiguous, so add the correct core to {coresFolder}, then locate the ROM again.";
+                        return;
+                    }
+
+                    var downloadedCore = await new RetroArchCoreDownloadDialog(
+                            recommended,
+                            files[0].Path.LocalPath,
+                            coresFolder)
+                        .ShowDialog<string?>(this);
+                    if (downloadedCore is null) return;
+                    compatible = [downloadedCore];
+                    downloadedRetroArchCore = downloadedCore;
+                }
+
+                var selectedCore = compatible.Count == 1
+                    ? compatible[0]
+                    : await new RetroArchCoreDialog(
+                            compatible,
+                            files[0].Path.LocalPath,
+                            EmulatorLaunchPresetCatalog.IsAmbiguousRetroArchExtension(files[0].Path.LocalPath))
+                        .ShowDialog<string?>(this);
+                if (selectedCore is null) return;
+                retroArchCoreArgumentPath = Path.GetRelativePath(argumentBase, selectedCore).Replace('\\', '/');
+            }
         }
         switch (target)
         {
@@ -293,10 +499,16 @@ public sealed partial class MainWindow : Window
                 configuration.Launch.Windows.Executable = result.ConfiguredPath;
                 configuration.Launch.Windows.WorkingDirectory = workingDirectory;
                 configuration.Launch.Windows.ProcessName = processName;
+                configuration.Launch.Windows.Arguments = EmulatorLaunchPresetCatalog.ApplyDefault(
+                    result.ConfiguredPath, configuration.Launch.Windows.Arguments);
                 break;
             case "windows-rom":
-                configuration.Launch.Windows.Arguments = AppendQuotedArgument(
-                    configuration.Launch.Windows.Arguments, argumentPath);
+                configuration.Launch.Windows.Arguments = EmulatorLaunchPresetCatalog.AddRom(
+                    configuration.Launch.Windows.Executable,
+                    configuration.Launch.Windows.Arguments,
+                    argumentPath,
+                    CartLaunchCompanion.Core.Platform.PlatformKind.Windows,
+                    retroArchCoreArgumentPath);
                 break;
             case "windows-companion":
                 configuration.Launch.Windows.CompanionApplication.Enabled = true;
@@ -316,10 +528,16 @@ public sealed partial class MainWindow : Window
                 configuration.Launch.Linux.Executable = result.ConfiguredPath;
                 configuration.Launch.Linux.WorkingDirectory = workingDirectory;
                 configuration.Launch.Linux.ProcessName = processName;
+                configuration.Launch.Linux.Arguments = EmulatorLaunchPresetCatalog.ApplyDefault(
+                    result.ConfiguredPath, configuration.Launch.Linux.Arguments);
                 break;
             case "linux-rom":
-                configuration.Launch.Linux.Arguments = AppendQuotedArgument(
-                    configuration.Launch.Linux.Arguments, argumentPath);
+                configuration.Launch.Linux.Arguments = EmulatorLaunchPresetCatalog.AddRom(
+                    configuration.Launch.Linux.Executable,
+                    configuration.Launch.Linux.Arguments,
+                    argumentPath,
+                    CartLaunchCompanion.Core.Platform.PlatformKind.Linux,
+                    retroArchCoreArgumentPath);
                 break;
             case "linux-companion":
                 configuration.Launch.Linux.Enabled = true;
@@ -332,6 +550,26 @@ public sealed partial class MainWindow : Window
         _viewModel.Configuration = GameConfigurationJson.Deserialize(
             GameConfigurationJson.Serialize(configuration));
         _viewModel.RefreshPreview();
+        if (downloadedRetroArchCore is not null)
+        {
+            var validation = _validator.Validate(_viewModel.Configuration);
+            if (validation.IsValid)
+            {
+                await GameConfigurationJson.SaveAsync(_gameJsonPath, _viewModel.Configuration);
+                _viewModel.Status = $"Downloaded {Path.GetFileName(downloadedRetroArchCore)}, applied its RetroArch launch recipe, and saved game.json.";
+            }
+            else
+            {
+                _viewModel.Status = $"Downloaded {Path.GetFileName(downloadedRetroArchCore)} and applied its RetroArch launch recipe. Complete the required fields, then save game.json.";
+            }
+        }
+        if (target.EndsWith("-emulator", StringComparison.Ordinal))
+        {
+            var emulator = EmulatorLaunchPresetCatalog.Detect(result.ConfiguredPath);
+            _viewModel.Status = emulator == KnownEmulator.Unknown
+                ? _viewModel.PathStatus + " Enter this emulator's launch arguments manually."
+                : $"{_viewModel.PathStatus} Detected {EmulatorLaunchPresetCatalog.DisplayName(emulator)} and applied its default launch arguments where the field was empty.";
+        }
     }
 
     private void VerifySelectedLauncherClicked(object? sender, RoutedEventArgs e)
@@ -409,7 +647,7 @@ public sealed partial class MainWindow : Window
             _viewModel.Collection.Logo = Path.GetRelativePath(_portablePaths.Root, destination).Replace('\\', '/');
             await CollectionConfigurationJson.SaveAsync(_portablePaths.Config, _viewModel.Collection);
             LoadCollectionLogoPreview(destination);
-            _viewModel.Status = "Collection logo copied into Cart/Assets and saved to Config/collection.json.";
+            _viewModel.Status = "Collection logo copied into Cart/System/Assets and saved to Config/collection.json.";
         }
         catch (Exception ex)
         {
@@ -502,7 +740,7 @@ public sealed partial class MainWindow : Window
         {
             var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
             {
-                Title = "Choose where to create this game folder",
+                Title = "Choose this game's CLC configuration folder (normally CartLaunchCompanion\\Games\\Game Name)",
                 AllowMultiple = false
             });
 
@@ -517,10 +755,14 @@ public sealed partial class MainWindow : Window
 
         try
         {
+            if (_isNewConfiguration && _usesSuggestedGameFolder)
+                SuggestGameConfigurationFolder(_viewModel.Configuration.Game.Name);
+            EnsureNewConfigurationDoesNotOverwriteExistingFile();
             var gameFolder = Path.GetDirectoryName(_gameJsonPath!)!;
             Directory.CreateDirectory(Path.Combine(gameFolder, "Artwork"));
             Directory.CreateDirectory(Path.Combine(gameFolder, "Media"));
             await GameConfigurationJson.SaveAsync(_gameJsonPath!, _viewModel.Configuration);
+            _isNewConfiguration = false;
             await RefreshExistingGamesAsync(_gameJsonPath);
             await RunArtworkAuditAsync();
             _viewModel.RefreshPreview();
@@ -574,9 +816,14 @@ public sealed partial class MainWindow : Window
                 try
                 {
                     var configuration = await GameConfigurationJson.LoadAsync(path);
+                    var name = string.IsNullOrWhiteSpace(configuration.Game.Name)
+                        ? Path.GetFileName(folder)
+                        : configuration.Game.Name;
                     options.Add(new ExistingGameOption(
-                        string.IsNullOrWhiteSpace(configuration.Game.Name) ? Path.GetFileName(folder) : configuration.Game.Name,
-                        path));
+                        name,
+                        path,
+                        configuration.Game.SortName,
+                        configuration.Game.PlatformLabel));
                 }
                 catch
                 {
@@ -589,9 +836,11 @@ public sealed partial class MainWindow : Window
         try
         {
             _viewModel.ExistingGames.Clear();
-            foreach (var option in options)
+            foreach (var option in options
+                         .OrderBy(item => item.EffectiveSortName, StringComparer.OrdinalIgnoreCase)
+                         .ThenBy(item => item.Name, StringComparer.OrdinalIgnoreCase))
                 _viewModel.ExistingGames.Add(option);
-            _viewModel.SelectedExistingGame = options.FirstOrDefault(option =>
+            _viewModel.SelectedExistingGame = _viewModel.ExistingGames.FirstOrDefault(option =>
                 selectPath is not null && string.Equals(Path.GetFullPath(option.ConfigurationPath), Path.GetFullPath(selectPath), StringComparison.OrdinalIgnoreCase));
             _viewModel.NotifyExistingGamesChanged();
         }
@@ -603,22 +852,50 @@ public sealed partial class MainWindow : Window
 
     private async Task LoadCollectionOrganizerAsync()
     {
-        foreach (var game in _viewModel.UnassignedCollectionGames.Concat(_viewModel.CollectionShelves.SelectMany(shelf => shelf.Games)))
-            game.Dispose();
+        foreach (var game in _viewModel.CollectionGames) game.Dispose();
+        _viewModel.CollectionGames.Clear();
         _viewModel.UnassignedCollectionGames.Clear();
         _viewModel.CollectionShelves.Clear();
+        _viewModel.CollectionShelfChoices.Clear();
+        _viewModel.CollectionShelfChoices.Add("(Unassigned)");
 
         foreach (var shelf in _viewModel.Collection.Shelves
                      .Where(item => !string.IsNullOrWhiteSpace(item.Name))
                      .OrderBy(item => item.Order))
+        {
             _viewModel.CollectionShelves.Add(new CollectionShelfEditor { Name = shelf.Name.Trim() });
+            _viewModel.CollectionShelfChoices.Add(shelf.Name.Trim());
+        }
 
+        var centralPlacements = _viewModel.Collection.Placements
+            .Where(item => !string.IsNullOrWhiteSpace(item.Configuration))
+            .GroupBy(item => NormalizeCollectionConfigurationPath(item.Configuration), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+        var loaded = new List<(ExistingGameOption Option, GameConfiguration Configuration)>();
         foreach (var option in _viewModel.ExistingGames)
+        {
+            try { loaded.Add((option, await GameConfigurationJson.LoadAsync(option.ConfigurationPath))); }
+            catch { }
+        }
+        var primaryPaths = loaded
+            .Where(item => string.IsNullOrWhiteSpace(item.Configuration.Game.VersionGroup))
+            .Select(item => item.Option.ConfigurationPath)
+            .Concat(loaded.Where(item => !string.IsNullOrWhiteSpace(item.Configuration.Game.VersionGroup))
+                .GroupBy(item => item.Configuration.Game.VersionGroup.Trim(), StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.FirstOrDefault(item => item.Configuration.Game.PrimaryVersion).Option?.ConfigurationPath
+                                 ?? group.OrderBy(item => item.Option.EffectiveSortName, StringComparer.OrdinalIgnoreCase).First().Option.ConfigurationPath))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (option, configuration) in loaded.Where(item => primaryPaths.Contains(item.Option.ConfigurationPath)))
         {
             try
             {
-                var configuration = await GameConfigurationJson.LoadAsync(option.ConfigurationPath);
-                var editor = new CollectionGameEditor { Name = option.Name, ConfigurationPath = option.ConfigurationPath };
+                var editor = new CollectionGameEditor
+                {
+                    Name = option.Name,
+                    PlatformLabel = option.PlatformLabel,
+                    ConfigurationPath = option.ConfigurationPath
+                };
                 var folder = Path.GetDirectoryName(option.ConfigurationPath)!;
                 var cover = new GamePathResolver().ResolveExistingWithAnyExtension(folder, configuration.Artwork.Cover);
                 if (cover is not null)
@@ -626,35 +903,35 @@ public sealed partial class MainWindow : Window
                     try { editor.CoverPreview = new Bitmap(cover); } catch { }
                 }
 
-                var shelfName = configuration.Collection.Shelf.Trim();
-                var shelf = _viewModel.CollectionShelves.FirstOrDefault(item =>
-                    string.Equals(item.Name, shelfName, StringComparison.OrdinalIgnoreCase));
-                if (!string.IsNullOrWhiteSpace(shelfName) && shelf is null)
+                var relativeConfiguration = NormalizeCollectionConfigurationPath(
+                    Path.GetRelativePath(_portablePaths!.Root, option.ConfigurationPath));
+                centralPlacements.TryGetValue(relativeConfiguration, out var centralPlacement);
+                var shelfName = centralPlacement?.Shelf.Trim() ?? "";
+                if (!string.IsNullOrWhiteSpace(shelfName) && !_viewModel.CollectionShelfChoices.Contains(shelfName, StringComparer.OrdinalIgnoreCase))
                 {
-                    shelf = new CollectionShelfEditor { Name = shelfName };
-                    _viewModel.CollectionShelves.Add(shelf);
+                    _viewModel.CollectionShelves.Add(new CollectionShelfEditor { Name = shelfName });
+                    _viewModel.CollectionShelfChoices.Add(shelfName);
                 }
-                if (shelf is null)
-                    _viewModel.UnassignedCollectionGames.Add(editor);
-                else
-                    shelf.Games.Add(editor);
+                editor.Shelf = string.IsNullOrWhiteSpace(shelfName) ? "(Unassigned)" : shelfName;
+                _viewModel.CollectionGames.Add(editor);
             }
             catch { }
         }
 
-        foreach (var shelf in _viewModel.CollectionShelves)
+        var shelfOrder = _viewModel.CollectionShelves.Select((shelf, index) => (shelf.Name, index))
+            .ToDictionary(item => item.Name, item => item.index, StringComparer.OrdinalIgnoreCase);
+        var orderedGames = _viewModel.CollectionGames.Select(editor =>
         {
-            var ordered = new List<(CollectionGameEditor Editor, int Order)>();
-            foreach (var editor in shelf.Games)
-            {
-                var configuration = await GameConfigurationJson.LoadAsync(editor.ConfigurationPath);
-                ordered.Add((editor, configuration.Collection.Order));
-            }
-            shelf.Games.Clear();
-            foreach (var item in ordered.OrderBy(item => item.Order).ThenBy(item => item.Editor.Name, StringComparer.OrdinalIgnoreCase))
-                shelf.Games.Add(item.Editor);
-        }
+            var relative = NormalizeCollectionConfigurationPath(Path.GetRelativePath(_portablePaths!.Root, editor.ConfigurationPath));
+            return (Editor: editor, Order: centralPlacements.TryGetValue(relative, out var placement) ? placement.Order : 0);
+        }).OrderBy(item => shelfOrder.GetValueOrDefault(item.Editor.Shelf, int.MaxValue))
+          .ThenBy(item => item.Order).ThenBy(item => item.Editor.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+        _viewModel.CollectionGames.Clear();
+        foreach (var item in orderedGames) _viewModel.CollectionGames.Add(item.Editor);
     }
+
+    private static string NormalizeCollectionConfigurationPath(string path) =>
+        path.Replace('\\', '/').TrimStart('/');
 
     private async void CollectionGamePointerPressed(object? sender, PointerPressedEventArgs e)
     {
@@ -722,8 +999,9 @@ public sealed partial class MainWindow : Window
         if (_viewModel.CollectionShelves.Any(shelf => string.Equals(shelf.Name, name, StringComparison.OrdinalIgnoreCase)))
         { _viewModel.CollectionLayoutStatus = "That shelf already exists."; return; }
         _viewModel.CollectionShelves.Add(new CollectionShelfEditor { Name = name });
+        _viewModel.CollectionShelfChoices.Add(name);
         _viewModel.NewShelfName = "";
-        _viewModel.CollectionLayoutStatus = $"Added {name}. Drag games onto it, then save.";
+        _viewModel.CollectionLayoutStatus = $"Added {name}. Choose it from a game's shelf dropdown, then save.";
     }
 
     private void MoveCollectionShelfClicked(object? sender, RoutedEventArgs e)
@@ -738,9 +1016,24 @@ public sealed partial class MainWindow : Window
     private void RemoveCollectionShelfClicked(object? sender, RoutedEventArgs e)
     {
         if (sender is not Button { DataContext: CollectionShelfEditor shelf }) return;
-        foreach (var game in shelf.Games.ToArray()) MoveCollectionGame(game, _viewModel.UnassignedCollectionGames);
+        foreach (var game in _viewModel.CollectionGames.Where(game => string.Equals(game.Shelf, shelf.Name, StringComparison.OrdinalIgnoreCase)))
+            game.Shelf = "(Unassigned)";
         _viewModel.CollectionShelves.Remove(shelf);
+        _viewModel.CollectionShelfChoices.Remove(shelf.Name);
         _viewModel.CollectionLayoutStatus = $"Removed {shelf.Name}; its games are now unassigned. Save to confirm.";
+    }
+
+    private void MoveCollectionGameClicked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { DataContext: CollectionGameEditor game, Tag: string direction }) return;
+        var peers = _viewModel.CollectionGames.Where(item => string.Equals(item.Shelf, game.Shelf, StringComparison.OrdinalIgnoreCase)).ToList();
+        var peerIndex = peers.IndexOf(game);
+        var targetPeer = direction == "up" ? peerIndex - 1 : peerIndex + 1;
+        if (targetPeer < 0 || targetPeer >= peers.Count) return;
+        var currentIndex = _viewModel.CollectionGames.IndexOf(game);
+        var targetIndex = _viewModel.CollectionGames.IndexOf(peers[targetPeer]);
+        _viewModel.CollectionGames.Move(currentIndex, targetIndex);
+        _viewModel.CollectionLayoutStatus = $"Moved {game.Name} {direction}. Save the layout to confirm.";
     }
 
     private async void SaveCollectionLayoutClicked(object? sender, RoutedEventArgs e)
@@ -753,12 +1046,15 @@ public sealed partial class MainWindow : Window
         {
             _viewModel.Collection.Shelves = _viewModel.CollectionShelves.Select((shelf, index) =>
                 new CollectionShelfConfiguration { Name = shelf.Name.Trim(), Order = (index + 1) * 10 }).ToList();
-            var placements = _viewModel.CollectionShelves.SelectMany(shelf => shelf.Games.Select((game, index) =>
-                    new CollectionGamePlacementUpdate(game.ConfigurationPath, shelf.Name.Trim(), (index + 1) * 10)))
-                .Concat(_viewModel.UnassignedCollectionGames.Select((game, index) =>
-                    new CollectionGamePlacementUpdate(game.ConfigurationPath, "", (index + 1) * 10))).ToArray();
+            var placements = _viewModel.CollectionGames
+                .GroupBy(game => game.Shelf, StringComparer.OrdinalIgnoreCase)
+                .SelectMany(group => group.Select((game, index) => new CollectionGamePlacementUpdate(
+                    game.ConfigurationPath,
+                    game.Shelf == "(Unassigned)" ? "" : game.Shelf.Trim(),
+                    (index + 1) * 10))).ToArray();
             await new CollectionLayoutSaveService().SaveAsync(_portablePaths.Root, _viewModel.Collection, placements);
             if (_gameJsonPath is not null) await LoadGameConfigurationAsync(_gameJsonPath);
+            await LoadCollectionOrganizerAsync();
             _viewModel.CollectionLayoutStatus = $"Saved {placements.Length} games across {_viewModel.CollectionShelves.Count} shelves.";
         }
         catch (Exception ex) { _viewModel.CollectionLayoutStatus = $"Nothing was changed: {ex.Message}"; }
@@ -768,6 +1064,8 @@ public sealed partial class MainWindow : Window
     {
         _viewModel.Configuration = await GameConfigurationJson.LoadAsync(path);
         _gameJsonPath = path;
+        _usesSuggestedGameFolder = false;
+        _isNewConfiguration = false;
         _viewModel.FilePath = path;
         _viewModel.RefreshPreview();
         await RefreshArtworkPreviewsAsync();
@@ -832,9 +1130,11 @@ public sealed partial class MainWindow : Window
             return;
         }
         var steamId = _viewModel.Configuration.Artwork.SteamMetadataId.Trim();
-        if (string.IsNullOrWhiteSpace(steamId))
+        if (string.IsNullOrWhiteSpace(steamId) &&
+            _viewModel.Configuration.Artwork.SteamGridDbGameId is null &&
+            string.IsNullOrWhiteSpace(_viewModel.Configuration.Game.Name))
         {
-            _viewModel.Status = "A Steam metadata ID is needed to refresh downloaded artwork.";
+            _viewModel.Status = "Enter a game name, Steam metadata ID, or SteamGridDB game ID before refreshing metadata and artwork.";
             return;
         }
 
@@ -855,7 +1155,7 @@ public sealed partial class MainWindow : Window
 
         try
         {
-            _viewModel.Status = $"Refreshing downloaded artwork for {_viewModel.Configuration.Game.Name}…";
+            _viewModel.Status = $"Refreshing metadata and downloaded artwork for {_viewModel.Configuration.Game.Name}…";
             foreach (var path in managedPaths.Where(File.Exists))
             {
                 var backup = Path.Combine(backupFolder, Guid.NewGuid().ToString("N") + Path.GetExtension(path));
@@ -874,6 +1174,21 @@ public sealed partial class MainWindow : Window
 
             var result = await new SteamMetadataService(_httpClient, new GamePathResolver())
                 .EnrichAsync(gameFolder, working, _portablePaths);
+            string? openMetadataWarning = null;
+            try
+            {
+                await new OpenGameMetadataService(_httpClient)
+                    .FillMissingAsync(working, string.IsNullOrWhiteSpace(steamId) ? null : steamId);
+            }
+            catch (Exception ex)
+            {
+                // Keep any fields filled before a later fallback provider failed.
+                openMetadataWarning = ex.Message;
+            }
+
+            _viewModel.Configuration = GameConfigurationJson.Deserialize(
+                GameConfigurationJson.Serialize(working));
+            _viewModel.RefreshPreview();
             var refreshed = 0;
             foreach (var path in managedPaths.Concat(Directory.Exists(screenshotFolder)
                          ? Directory.EnumerateFiles(screenshotFolder)
@@ -890,9 +1205,12 @@ public sealed partial class MainWindow : Window
 
             await RefreshArtworkPreviewsAsync();
             await RunArtworkAuditAsync();
-            _viewModel.Status = result.Warnings.Count == 0
-                ? $"Updated {refreshed} API artwork files. Custom background and trailer were preserved."
-                : $"Updated {refreshed} Steam artwork files. {string.Join(" ", result.Warnings)} Existing artwork was preserved.";
+            var warnings = result.Warnings
+                .Concat(string.IsNullOrWhiteSpace(openMetadataWarning) ? [] : [openMetadataWarning])
+                .ToArray();
+            _viewModel.Status = warnings.Length == 0
+                ? $"Updated metadata and {refreshed} API artwork files. Custom background and trailer were preserved."
+                : $"Updated available metadata and {refreshed} artwork files. {string.Join(" ", warnings)} Existing artwork was preserved.";
         }
         catch (Exception ex)
         {
@@ -915,31 +1233,35 @@ public sealed partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(settings.SteamGridDbApiKey)) { _viewModel.Status = "Add a SteamGridDB API key in Settings first."; return; }
         var gameId = _viewModel.Configuration.Artwork.SteamGridDbGameId;
         if (gameId is null) { _viewModel.Status = "Match this game by title first so its SteamGridDB game ID can be saved."; return; }
-        var choice = await new SteamGridDbArtworkDialog(new SteamGridDbArtworkService(_httpClient), gameId.Value, settings.SteamGridDbApiKey)
-            .ShowDialog<(SteamGridDbAssetKind Kind, SteamGridDbAsset Asset)?>(this);
-        if (choice is null) return;
+        var choices = await new SteamGridDbArtworkDialog(new SteamGridDbArtworkService(_httpClient), gameId.Value, settings.SteamGridDbApiKey)
+            .ShowDialog<IReadOnlyList<SteamGridDbArtworkChoice>?>(this);
+        if (choices is null || choices.Count == 0) return;
         var folder = Path.GetDirectoryName(_gameJsonPath)!;
         var artwork = _viewModel.Configuration.Artwork;
-        var configured = choice.Value.Kind switch
-        {
-            SteamGridDbAssetKind.Cover => artwork.Cover,
-            SteamGridDbAssetKind.Hero => artwork.Hero,
-            SteamGridDbAssetKind.Logo => artwork.Logo,
-            _ => artwork.Icon
-        };
         try
         {
-            var destination = new GamePathResolver().Resolve(folder, configured);
-            await new SteamGridDbArtworkService(_httpClient).DownloadAsync(choice.Value.Asset, destination);
-            var credit = $"SteamGridDB {choice.Value.Kind}: {choice.Value.Asset.Credit} (asset {choice.Value.Asset.Id})";
-            if (!_viewModel.Configuration.Notes.Contains(credit, StringComparison.OrdinalIgnoreCase))
-                _viewModel.Configuration.Notes = string.IsNullOrWhiteSpace(_viewModel.Configuration.Notes) ? credit : _viewModel.Configuration.Notes.TrimEnd() + Environment.NewLine + credit;
+            var service = new SteamGridDbArtworkService(_httpClient);
+            foreach (var choice in choices)
+            {
+                var configured = choice.Kind switch
+                {
+                    SteamGridDbAssetKind.Cover => artwork.Cover,
+                    SteamGridDbAssetKind.Hero => artwork.Hero,
+                    SteamGridDbAssetKind.Logo => artwork.Logo,
+                    _ => artwork.Icon
+                };
+                var destination = new GamePathResolver().Resolve(folder, configured);
+                await service.DownloadAsync(choice.Asset, destination);
+                var credit = $"SteamGridDB {choice.Kind}: {choice.Asset.Credit} (asset {choice.Asset.Id})";
+                if (!_viewModel.Configuration.Notes.Contains(credit, StringComparison.OrdinalIgnoreCase))
+                    _viewModel.Configuration.Notes = string.IsNullOrWhiteSpace(_viewModel.Configuration.Notes) ? credit : _viewModel.Configuration.Notes.TrimEnd() + Environment.NewLine + credit;
+            }
             await GameConfigurationJson.SaveAsync(_gameJsonPath, _viewModel.Configuration);
             await RefreshArtworkPreviewsAsync();
-            _viewModel.Status = $"Saved the selected {choice.Value.Kind.ToString().ToLowerInvariant()} and recorded its attribution.";
+            _viewModel.Status = $"Saved {choices.Count} selected artwork file{(choices.Count == 1 ? "" : "s")} and recorded attribution.";
         }
         catch (Exception ex) { _viewModel.Status = "Could not save selected artwork: " + ex.Message; }
-        finally { choice.Value.Asset.Dispose(); }
+        finally { foreach (var choice in choices) choice.Asset.Dispose(); }
     }
 
     private static bool IsReadableImage(string path)
@@ -1253,11 +1575,84 @@ public sealed partial class MainWindow : Window
     private void SetGameFolder(string folderPath)
     {
         _gameJsonPath = Path.Combine(folderPath, "game.json");
+        _usesSuggestedGameFolder = false;
         _viewModel.FilePath = _gameJsonPath;
-        _viewModel.PathStatus = "Configuration folder selected. Locator buttons will save portable cart-relative paths.";
+        _viewModel.PathStatus = "CLC configuration folder selected. This is not the Steam or Rockstar installation folder.";
         _viewModel.Status = File.Exists(_gameJsonPath)
             ? "This folder already has a game.json. Use Open if you want to edit it first."
-            : "Game folder selected. Complete the required fields, then save.";
+            : "CLC game folder selected. Complete the required fields, then save.";
+    }
+
+    private void SuggestGameConfigurationFolder(string gameName)
+    {
+        if (!string.IsNullOrWhiteSpace(_gameJsonPath) && !_usesSuggestedGameFolder)
+            return;
+
+        _portablePaths ??= new PortablePathService().Discover(AppContext.BaseDirectory);
+        var folder = FindAvailableGameConfigurationFolder(gameName, _viewModel.Configuration.Game.PlatformLabel);
+        _gameJsonPath = Path.Combine(folder, "game.json");
+        _usesSuggestedGameFolder = true;
+        _viewModel.FilePath = _gameJsonPath;
+        _viewModel.PathStatus = "CLC will store game.json and artwork here. Your Steam or Rockstar game files stay in their launcher library.";
+        _viewModel.Status = $"Matched {gameName}. A CLC configuration folder was selected automatically; optional metadata is still loading.";
+    }
+
+    private string FindAvailableGameConfigurationFolder(string gameName, string? platformLabel)
+    {
+        _portablePaths ??= new PortablePathService().Discover(AppContext.BaseDirectory);
+        var safeName = MakeSafeGameFolderName(gameName);
+        var safePlatform = MakeSafeGameFolderName(platformLabel ?? "");
+        var candidates = new List<string>();
+        if (!string.IsNullOrWhiteSpace(platformLabel) && !string.Equals(safePlatform, "New Game", StringComparison.OrdinalIgnoreCase))
+            candidates.Add($"{safeName} - {safePlatform}");
+        candidates.Add(safeName);
+
+        foreach (var candidate in candidates)
+        {
+            var folder = Path.Combine(_portablePaths.Games, candidate);
+            if (!File.Exists(Path.Combine(folder, "game.json")) && !File.Exists(Path.Combine(folder, "Game.json")))
+                return folder;
+        }
+
+        for (var version = 2; ; version++)
+        {
+            var folder = Path.Combine(_portablePaths.Games, $"{candidates[0]} - Version {version}");
+            if (!File.Exists(Path.Combine(folder, "game.json")) && !File.Exists(Path.Combine(folder, "Game.json")))
+                return folder;
+        }
+    }
+
+    private void EnsureNewConfigurationDoesNotOverwriteExistingFile()
+    {
+        if (!_isNewConfiguration || string.IsNullOrWhiteSpace(_gameJsonPath) || !File.Exists(_gameJsonPath))
+            return;
+
+        var requestedFolder = Path.GetDirectoryName(_gameJsonPath)!;
+        var parent = Directory.GetParent(requestedFolder)?.FullName
+                     ?? throw new InvalidOperationException("The selected game folder has no parent folder.");
+        var safeName = MakeSafeGameFolderName(_viewModel.Configuration.Game.Name);
+        var safePlatform = MakeSafeGameFolderName(_viewModel.Configuration.Game.PlatformLabel);
+        var stem = string.IsNullOrWhiteSpace(_viewModel.Configuration.Game.PlatformLabel)
+            ? safeName
+            : $"{safeName} - {safePlatform}";
+        var candidate = Path.Combine(parent, stem);
+        var version = 2;
+        while (File.Exists(Path.Combine(candidate, "game.json")) || File.Exists(Path.Combine(candidate, "Game.json")))
+            candidate = Path.Combine(parent, $"{stem} - Version {version++}");
+
+        _gameJsonPath = Path.Combine(candidate, "game.json");
+        _viewModel.FilePath = _gameJsonPath;
+        _viewModel.PathStatus = "The selected folder already contained another game. A unique configuration folder was created instead.";
+    }
+
+    private static string MakeSafeGameFolderName(string gameName)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var cleaned = new string(gameName
+            .Select(character => invalid.Contains(character) ? ' ' : character)
+            .ToArray());
+        cleaned = string.Join(' ', cleaned.Split(' ', StringSplitOptions.RemoveEmptyEntries)).TrimEnd('.', ' ');
+        return string.IsNullOrWhiteSpace(cleaned) ? "New Game" : cleaned;
     }
 
     private void SetValidationStatus(string? successPrefix = null)

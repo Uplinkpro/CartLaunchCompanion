@@ -14,7 +14,7 @@ public sealed class CollectionConfigurationJsonTests
             {
                 Enabled = true,
                 Name = "Test Series",
-                Logo = "Assets/Collections/TestSeries/Logo.png"
+                Logo = "System/Assets/Collections/TestSeries/Logo.png"
             };
 
             await CollectionConfigurationJson.SaveAsync(folder, expected);

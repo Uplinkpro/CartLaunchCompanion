@@ -8,8 +8,9 @@ using CartLaunchCompanion.Desktop.ViewModels;
 
 namespace CartLaunchCompanion.Desktop.Tests;
 
-public sealed class ControllerNavigationTests
+public sealed class ControllerNavigationTests : IDisposable
 {
+    private readonly List<string> _temporaryRoots = [];
     [Fact]
     public async Task Home_RightAndConfirm_SelectsAndOpensMetadata()
     {
@@ -30,6 +31,9 @@ public sealed class ControllerNavigationTests
                 InputDeviceKind.Controller,
                 timestamp.AddMilliseconds(300)));
 
+        Assert.True(viewModel.IsMetadataLoading);
+        await Task.Delay(500);
+
         Assert.Equal("Game 2", viewModel.SelectedGame?.Name);
         Assert.True(viewModel.IsMetadataVisible);
         Assert.False(viewModel.IsHomeVisible);
@@ -49,6 +53,8 @@ public sealed class ControllerNavigationTests
                 LauncherAction.Confirm,
                 InputDeviceKind.Controller,
                 timestamp));
+
+        await Task.Delay(500);
 
         await viewModel.HandleInputAsync(
             new LauncherInputEvent(
@@ -157,6 +163,20 @@ public sealed class ControllerNavigationTests
     }
 
     [Fact]
+    public async Task Home_Down_InSingleWrappingShelf_MovesOneVisualRow()
+    {
+        var viewModel = CreateViewModel(gameCount: 10);
+        await viewModel.LoadAsync();
+
+        await viewModel.HandleInputAsync(new LauncherInputEvent(
+            LauncherAction.NavigateDown,
+            InputDeviceKind.Controller,
+            DateTimeOffset.UtcNow));
+
+        Assert.Equal("Game 9", viewModel.SelectedGame?.Name);
+    }
+
+    [Fact]
     public async Task Home_DefaultShelf_HasNoVisibleName()
     {
         var viewModel = CreateViewModel(gameCount: 2);
@@ -167,17 +187,110 @@ public sealed class ControllerNavigationTests
         Assert.False(shelf.HasName);
     }
 
-    private static MainViewModel CreateViewModel(
+    [Fact]
+    public async Task StableGameId_PreservesShelfWhenConfigurationPathChanges()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "clc-stable-placement-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(root, "Config"));
+        try
+        {
+            const string gameId = "game-stable-test";
+            await CollectionConfigurationJson.SaveAsync(Path.Combine(root, "Config"), new CollectionConfiguration
+            {
+                Enabled = true,
+                Name = "Collection",
+                Placements =
+                [
+                    new CollectionGamePlacementConfiguration
+                    {
+                        GameId = gameId,
+                        Configuration = "Games/Old Folder/game.json",
+                        Shelf = "Stable Era",
+                        Order = 10
+                    }
+                ]
+            });
+
+            var viewModel = CreateViewModel(
+                portableRoot: root,
+                gameIds: [gameId]);
+            await viewModel.LoadAsync();
+
+            Assert.Equal("Stable Era", Assert.Single(viewModel.Shelves).Name);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task GroupedPlatformVersions_UseOneShelfCardAndOpenPicker()
+    {
+        var viewModel = CreateViewModel(
+            gameCount: 3,
+            versionGroups: ["same-game", "same-game", ""]);
+        await viewModel.LoadAsync();
+
+        Assert.Equal(2, viewModel.Games.Count);
+        Assert.Equal(2, viewModel.Games[0].Versions.Count);
+
+        await viewModel.HandleInputAsync(new LauncherInputEvent(
+            LauncherAction.Confirm,
+            InputDeviceKind.Controller,
+            DateTimeOffset.UtcNow));
+
+        Assert.True(viewModel.IsVersionPickerVisible);
+        Assert.False(viewModel.IsMetadataVisible);
+        Assert.Equal(2, viewModel.VersionChoices.Count);
+    }
+
+    private MainViewModel CreateViewModel(
         int gameCount = 1,
         Action? exitApplication = null,
-        string[]? shelves = null)
-        => new(
-            new StubLibraryService(gameCount, shelves),
+        string[]? shelves = null,
+        string[]? versionGroups = null,
+        string? portableRoot = null,
+        string[]? gameIds = null)
+    {
+        var root = portableRoot ?? Path.Combine(
+            Path.GetTempPath(),
+            "CLC-ControllerTests-" + Guid.NewGuid().ToString("N"));
+        if (portableRoot is null)
+            _temporaryRoots.Add(root);
+
+        if (shelves is not null)
+        {
+            var collection = new CollectionConfiguration
+            {
+                Enabled = true,
+                Shelves = shelves.Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Select((name, index) => new CollectionShelfConfiguration
+                    {
+                        Name = name,
+                        Order = index
+                    }).ToList(),
+                Placements = shelves.Select((shelf, index) =>
+                    new CollectionGamePlacementConfiguration
+                    {
+                        Configuration = $"Games/Renamed Game {index + 1}/game.json",
+                        Shelf = shelf,
+                        Order = index + 1
+                    }).ToList()
+            };
+            CollectionConfigurationJson.SaveAsync(
+                Path.Combine(root, "Config"),
+                collection).GetAwaiter().GetResult();
+        }
+
+        return new(
+            new StubLibraryService(gameCount, versionGroups, root, gameIds),
             new StubLaunchService(),
-            PortablePaths.FromRoot(Path.GetTempPath()),
+            PortablePaths.FromRoot(root),
             PlatformKind.Windows,
             exitApplication ?? (() => { }),
             _ => { });
+    }
 
     private sealed class StubLaunchService
         : IGameLaunchService
@@ -193,7 +306,9 @@ public sealed class ControllerNavigationTests
 
     private sealed class StubLibraryService(
         int gameCount,
-        string[]? shelves = null)
+        string[]? versionGroups = null,
+        string? portableRoot = null,
+        string[]? gameIds = null)
         : IGameLibraryService
     {
         public Task<GameLibraryLoadResult> LoadAsync(
@@ -207,13 +322,17 @@ public sealed class ControllerNavigationTests
             {
                 var configuration = new GameConfiguration
                 {
-                    Game = { Name = $"Game {index}" },
-                    Collection =
+                    Game =
                     {
-                        Shelf = shelves is not null && index <= shelves.Length
-                            ? shelves[index - 1]
+                        Id = gameIds is not null && index <= gameIds.Length
+                            ? gameIds[index - 1]
                             : "",
-                        Order = index
+                        Name = $"Game {index}",
+                        SortName = $"Game {index:D2}",
+                        VersionGroup = versionGroups is not null && index <= versionGroups.Length
+                            ? versionGroups[index - 1]
+                            : "",
+                        PlatformLabel = $"Platform {index}"
                     },
                     Launch =
                     {
@@ -236,8 +355,10 @@ public sealed class ControllerNavigationTests
                         FolderPath = Path.GetTempPath(),
                         ConfigurationPath =
                             Path.Combine(
-                                Path.GetTempPath(),
-                                $"game-{index}.json"),
+                                portableRoot ?? Path.GetTempPath(),
+                                "Games",
+                                $"Renamed Game {index}",
+                                "game.json"),
                         Configuration = configuration,
                         LaunchTarget = new LaunchTargetSelection(
                             PlatformKind.Windows,
@@ -256,6 +377,15 @@ public sealed class ControllerNavigationTests
             }
 
             return Task.FromResult(result);
+        }
+    }
+
+    public void Dispose()
+    {
+        foreach (var root in _temporaryRoots)
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
         }
     }
 }

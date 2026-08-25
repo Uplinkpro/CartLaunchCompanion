@@ -6,7 +6,7 @@
   <Grid Margin="24" RowDefinitions="Auto,Auto,*,Auto" RowSpacing="14">
     <StackPanel>
       <TextBlock FontSize="24" FontWeight="Bold" Text="Find the right Steam game"/>
-      <TextBlock Classes="help" Text="Search by game title or enter an exact Steam App ID. Nothing is changed until you select a result."/>
+      <TextBlock Classes="help" Text="Search by title or Steam App ID. Selecting a result applies it immediately; each result identifies whether its ID comes from Steam or SteamGridDB."/>
     </StackPanel>
     <Grid Grid.Row="1" ColumnDefinitions="*,12,Auto">
       <TextBox x:Name="SearchBox" PlaceholderText="Game name or Steam App ID" KeyDown="SearchKeyDown"/>
@@ -32,10 +32,9 @@
         </ListBox>
       </Grid>
     </Border>
-    <Grid Grid.Row="3" ColumnDefinitions="*,Auto,10,Auto">
+    <Grid Grid.Row="3" ColumnDefinitions="*,Auto">
       <TextBlock VerticalAlignment="Center" Foreground="#AAB2BE" Text="The first search can take a little longer while Steam’s catalog is cached."/>
       <Button Grid.Column="1" Content="Cancel" Click="CancelClicked"/>
-      <Button x:Name="UseButton" Grid.Column="3" Content="Use selected game" IsEnabled="False" Background="#2F80ED" Foreground="White" Click="UseClicked"/>
     </Grid>
   </Grid>
 </Window>

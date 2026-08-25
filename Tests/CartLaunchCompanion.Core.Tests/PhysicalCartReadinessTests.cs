@@ -14,6 +14,10 @@ public sealed class PhysicalCartReadinessTests : IDisposable
         Assert.True(report.IsReady);
         Assert.Equal("Prepared Cart", report.Identity!.Identity.DisplayName);
         Assert.All(new[] { "Cart", "Games", "Emulators", "Roms" }, folder => Assert.True(Directory.Exists(Path.Combine(_root, folder))));
+        Assert.True(Directory.Exists(Path.Combine(_root, "Emulators", "Windows", "RetroArch")));
+        Assert.True(Directory.Exists(Path.Combine(_root, "Emulators", "Linux", "Dolphin")));
+        Assert.True(Directory.Exists(Path.Combine(_root, "Emulators", "Shared", "Saves")));
+        Assert.True(Directory.Exists(Path.Combine(_root, "Roms", "GameCube")));
         Assert.Single(report.RuntimeApprovals);
     }
 

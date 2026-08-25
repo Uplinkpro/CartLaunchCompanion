@@ -3,14 +3,20 @@
         xmlns:local="using:CartLaunchCompanion.Configurator"
         x:Class="CartLaunchCompanion.Configurator.MainWindow"
         Title="Cart Launch Companion — Game Configurator"
-        Width="1280" Height="820" MinWidth="980" MinHeight="680"
+        Width="1280" Height="820" MinWidth="860" MinHeight="540"
         WindowStartupLocation="CenterScreen">
+  <Window.Resources>
+    <local:LauncherKindDisplayConverter x:Key="LauncherKindDisplayConverter"/>
+    <DataTemplate x:Key="LauncherKindTemplate">
+      <TextBlock Text="{Binding Converter={StaticResource LauncherKindDisplayConverter}}"/>
+    </DataTemplate>
+  </Window.Resources>
   <Grid RowDefinitions="Auto,*,Auto">
     <Border Background="#10141A" BorderBrush="#2A313B" BorderThickness="0,0,0,1" Padding="24,18">
       <Grid ColumnDefinitions="*,Auto">
         <StackPanel>
           <TextBlock FontSize="26" FontWeight="Bold" Text="Game Configurator"/>
-          <TextBlock Foreground="#AAB2BE" Margin="0,4,0,0" Text="Create a complete game folder without editing JSON by hand."/>
+          <TextBlock Foreground="#AAB2BE" Margin="0,4,0,0" Text="Create each game's CLC configuration inside CartLaunchCompanion/Games—without editing JSON by hand."/>
           <TextBlock Foreground="#77818E" FontSize="12" Margin="0,7,0,0" Text="{Binding FilePath}" TextTrimming="CharacterEllipsis"/>
         </StackPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
@@ -20,21 +26,33 @@
                     IsVisible="{Binding HasExistingGames}"
                     SelectionChanged="ExistingGameChanged"/>
           <Button Content="Settings" Click="SettingsClicked"/>
+          <Button Content="Emulator Library" Click="EmulatorLibraryClicked"/>
           <Button Content="Prepare physical cart" Click="CreateCartClicked"/>
           <Button Content="New" Click="NewClicked"/>
+          <Button Content="New Platform" Click="NewPlatformClicked"
+                  ToolTip.Tip="Copy the current game into a new platform configuration."/>
           <Button Content="Open game.json" Click="OpenClicked"/>
-          <Button Content="Choose game folder" Click="ChooseFolderClicked"/>
+          <Button Content="Change CLC folder" Click="ChooseFolderClicked"/>
         </StackPanel>
       </Grid>
     </Border>
 
-    <TabControl Grid.Row="1" Margin="20" SelectionChanged="EditorTabsChanged">
+    <TabControl x:Name="EditorTabs" Grid.Row="1" Margin="20" SelectionChanged="EditorTabsChanged">
       <TabItem Header="1  Game details">
         <ScrollViewer><StackPanel Margin="12" MaxWidth="900">
           <Border Classes="card"><StackPanel>
             <TextBlock Classes="section" Text="Game details"/><TextBlock Classes="help" Margin="0,4,0,20" Text="The information people see on the home and details screens."/>
             <local:LabeledField Label="Game name" Requirement="Required" Description="The title shown in Cart Launch Companion. Find on Steam can fill the remaining metadata after you choose the exact edition."><local:LabeledField.FieldContent><Grid ColumnDefinitions="*,12,Auto"><TextBox Text="{Binding Configuration.Game.Name}" PlaceholderText="Example: Grand Theft Auto V"/><Button Grid.Column="2" Content="Find on Steam" Click="FindOnSteamClicked"/></Grid></local:LabeledField.FieldContent></local:LabeledField>
-            <local:LabeledField Label="Sort name" Description="Optional. Use this when the game should be alphabetized differently, such as ignoring “The”."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Game.SortName}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Sort name" Description="Optional. Use this when the game should be alphabetized differently, such as ignoring “The”."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Game.SortName}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <Border Background="#101923" BorderBrush="#31506E" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,8,0,14">
+            <StackPanel Spacing="8">
+              <TextBlock FontSize="16" FontWeight="SemiBold" Text="Platform versions"/>
+              <TextBlock Classes="help" Text="Optional. Give PC, PSP, PS2, or other releases the same Version group. CLC will show one shelf card, then let the player choose a version by cover art before opening metadata." TextWrapping="Wrap"/>
+            </StackPanel>
+          </Border>
+          <local:LabeledField Label="Version group" Description="Optional. Use the exact same short identifier for every version, such as gta-vice-city-stories."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Game.VersionGroup}" PlaceholderText="Example: gta-vice-city-stories"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Platform label" Description="Recommended for grouped games. This appears below the version cover, such as PC, PSP, or PlayStation 2."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Game.PlatformLabel}" PlaceholderText="Example: PSP"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Primary shelf version" Description="Optional. Choose one version to provide the cover shown on the main shelf. If none is selected, CLC uses the first sorted version."><local:LabeledField.FieldContent><ToggleSwitch IsChecked="{Binding Configuration.Game.PrimaryVersion}" OnContent="Primary version" OffContent="Alternate version"/></local:LabeledField.FieldContent></local:LabeledField>
             <local:LabeledField Label="Description" Description="Optional. A short summary shown on the metadata page."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Game.Description}" AcceptsReturn="True" MinHeight="100" TextWrapping="Wrap"/></local:LabeledField.FieldContent></local:LabeledField>
             <Grid ColumnDefinitions="*,20,*">
               <local:LabeledField Label="Developer" Description="Optional. The studio that made the game."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Game.Developer}"/></local:LabeledField.FieldContent></local:LabeledField>
@@ -94,8 +112,8 @@
             <local:LabeledField Label="Download missing artwork" Description="Optional. When enabled, the launcher tries online sources if local artwork is missing."><local:LabeledField.FieldContent><ToggleSwitch IsChecked="{Binding Configuration.Artwork.DownloadMissingArtwork}" OnContent="Enabled" OffContent="Disabled"/></local:LabeledField.FieldContent></local:LabeledField>
             <Border Background="#101923" BorderBrush="#31506E" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,8,0,0">
               <Grid ColumnDefinitions="*,Auto">
-                <StackPanel><TextBlock FontWeight="SemiBold" Text="Refresh downloaded artwork"/><TextBlock Classes="help" Text="Redownloads API-managed cover, hero, logo, icon, and screenshots. Your custom 16:9 background and local trailer are preserved."/></StackPanel>
-                <Button Grid.Column="1" Content="Update all API artwork" Click="RefreshApiArtworkClicked" Margin="14,0,0,0"/>
+                <StackPanel><TextBlock FontWeight="SemiBold" Text="Refresh metadata and downloaded artwork"/><TextBlock Classes="help" Text="Fills missing game details and redownloads API-managed cover, hero, logo, icon, and screenshots. Your custom 16:9 background and local trailer are preserved."/></StackPanel>
+                <Button Grid.Column="1" Content="Update metadata and artwork" Click="RefreshApiArtworkClicked" Margin="14,0,0,0"/>
               </Grid>
             </Border>
             <Button Content="Browse SteamGridDB artwork" Click="BrowseSteamGridDbArtworkClicked" HorizontalAlignment="Left"/>
@@ -130,8 +148,19 @@
       <TabItem Header="3  Windows launch">
         <ScrollViewer><StackPanel Margin="12" MaxWidth="900"><Border Classes="card"><StackPanel>
           <TextBlock Classes="section" Text="Windows launch"/><TextBlock Classes="help" Margin="0,4,0,20" Text="Choose how this game starts on Windows. Only the target matching the selected launcher is normally needed."/>
+          <Border Background="#101923" BorderBrush="#31506E" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,18">
+            <StackPanel Spacing="10">
+              <TextBlock FontSize="17" FontWeight="SemiBold" Text="Use a portable emulator"/>
+              <TextBlock Classes="help" Text="Choose an emulator registered in the Emulator Library. If Windows and Linux builds are both installed, CLC configures both launch targets together."/>
+              <Grid ColumnDefinitions="*,10,Auto,10,Auto">
+                <ComboBox ItemsSource="{Binding InstalledEmulators}" SelectedItem="{Binding SelectedInstalledEmulator}" PlaceholderText="No installed emulators found"/>
+                <Button Grid.Column="2" Content="Apply to this game" Click="ApplyInstalledEmulatorClicked" IsEnabled="{Binding HasInstalledEmulators}"/>
+                <Button Grid.Column="4" Content="Manage library" Click="EmulatorLibraryClicked"/>
+              </Grid>
+            </StackPanel>
+          </Border>
           <local:LabeledField Label="Enable Windows" Requirement="Required" Description="At least Windows or Linux must be enabled."><local:LabeledField.FieldContent><ToggleSwitch IsChecked="{Binding Configuration.Launch.Windows.Enabled}" OnContent="Enabled" OffContent="Disabled"/></local:LabeledField.FieldContent></local:LabeledField>
-          <local:LabeledField Label="Launcher" Requirement="Required" Description="The store, launcher, or direct executable used to start the game."><local:LabeledField.FieldContent><ComboBox ItemsSource="{Binding LauncherKinds}" SelectedItem="{Binding Configuration.Launch.Windows.Launcher}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Launcher" Requirement="Required" Description="The store, launcher, direct executable, or emulator used to start the game."><local:LabeledField.FieldContent><ComboBox ItemsSource="{Binding LauncherKinds}" SelectedItem="{Binding Configuration.Launch.Windows.Launcher}" ItemTemplate="{StaticResource LauncherKindTemplate}"/></local:LabeledField.FieldContent></local:LabeledField>
           <Border Background="#101923" BorderBrush="#31506E" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,0,14"><Grid ColumnDefinitions="*,Auto,8,Auto"><TextBlock Text="{Binding WindowsLauncherStatus}" TextWrapping="Wrap" VerticalAlignment="Center"/><Button Grid.Column="1" Content="Verify selected launcher" Tag="windows" Click="VerifySelectedLauncherClicked"/><Button Grid.Column="3" Content="Locate launcher folder" Tag="windows" Click="LocateLauncherFolderClicked"/></Grid></Border>
           <TextBlock FontWeight="SemiBold" FontSize="16" Margin="0,8,0,14" Text="Launcher IDs"/>
           <local:LabeledField Label="Steam App ID" Description="Needed for Steam. The numeric ID from the Steam store page."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.SteamId}"/></local:LabeledField.FieldContent></local:LabeledField>
@@ -143,18 +172,19 @@
           <local:LabeledField Label="Amazon game ID" Description="Needed for Amazon Games unless a custom URI is supplied."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.AmazonGameId}"/></local:LabeledField.FieldContent></local:LabeledField>
           <TextBlock FontWeight="SemiBold" FontSize="16" Margin="0,8,0,14" Text="Executable options"/>
           <Border Background="#102419" BorderBrush="#347A4D" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,0,14"><TextBlock Text="{Binding PathStatus}" Foreground="#AEEBC3" TextWrapping="Wrap"/></Border>
-          <local:LabeledField Label="Executable" Description="Required for a Local game or emulator. Locate saves a portable path without a drive letter."><local:LabeledField.FieldContent><Grid ColumnDefinitions="*,8,Auto,8,Auto"><TextBox Text="{Binding Configuration.Launch.Windows.Executable}"/><Button Grid.Column="2" Content="Locate game" Tag="windows-game" Click="LocatePortableFileClicked"/><Button Grid.Column="4" Content="Locate emulator" Tag="windows-emulator" Click="LocatePortableFileClicked"/></Grid></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Executable" Description="Required for an EXE game or emulator. Locate saves a portable path without a drive letter."><local:LabeledField.FieldContent><Grid ColumnDefinitions="*,8,Auto,8,Auto"><TextBox Text="{Binding Configuration.Launch.Windows.Executable}"/><Button Grid.Column="2" Content="Locate game" Tag="windows-game" Click="LocatePortableFileClicked"/><Button Grid.Column="4" Content="Locate emulator" Tag="windows-emulator" Click="LocatePortableFileClicked"/></Grid></local:LabeledField.FieldContent></local:LabeledField>
           <local:LabeledField Label="Arguments" Description="Optional. Extra command-line options. Locate ROM appends a safely quoted portable game-image path."><local:LabeledField.FieldContent><Grid ColumnDefinitions="*,8,Auto"><TextBox Text="{Binding Configuration.Launch.Windows.Arguments}"/><Button Grid.Column="2" Content="Locate ROM" Tag="windows-rom" Click="LocatePortableFileClicked"/></Grid></local:LabeledField.FieldContent></local:LabeledField>
           <local:LabeledField Label="Working directory" Description="Optional. Folder the game should treat as its starting location."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Windows.WorkingDirectory}"/></local:LabeledField.FieldContent></local:LabeledField>
           <Border Background="#101923" BorderBrush="#31506E" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,8,0,12">
             <StackPanel Spacing="7">
               <TextBlock FontSize="16" FontWeight="SemiBold" Text="Emulator command-line quick reference"/>
-              <TextBlock Classes="help" Text="Choose Custom as the launcher. Put the emulator in the Executable field, use . as the working directory, and place the fullscreen recipe plus the game image in Arguments."/>
+              <TextBlock Classes="help" Text="Choose Emulator as the launcher. Put the emulator in the Executable field, use . as the working directory, and place the fullscreen recipe plus the game image in Arguments."/>
               <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="RetroArch    -f -L &quot;../../Emulators/RetroArch/cores/core_libretro.dll&quot; &quot;Game/Game.rom&quot;" TextWrapping="Wrap"/>
               <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="DuckStation  -batch -fullscreen -- &quot;Game/Game.cue&quot;" TextWrapping="Wrap"/>
               <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="PCSX2        -fullscreen -batch -- &quot;Game/Game.iso&quot;" TextWrapping="Wrap"/>
               <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="Dolphin      -b -e &quot;Game/Game.rvz&quot;  (enable Start in Fullscreen in Dolphin)" TextWrapping="Wrap"/>
               <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="RPCS3        --no-gui --fullscreen &quot;Game/Game/PS3_GAME/USRDIR/EBOOT.BIN&quot;" TextWrapping="Wrap"/>
+              <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="PPSSPP       --fullscreen --pause-menu-exit &quot;Game/Game.iso&quot;" TextWrapping="Wrap"/>
               <TextBlock Classes="help" Text="Keep quotes around paths with spaces. Set Process name to the emulator process so Cart Launch Companion returns when emulation ends."/>
             </StackPanel>
           </Border>
@@ -174,24 +204,25 @@
         <ScrollViewer><StackPanel Margin="12" MaxWidth="900"><Border Classes="card"><StackPanel>
           <TextBlock Classes="section" Text="Linux and Steam Deck launch"/><TextBlock Classes="help" Margin="0,4,0,20" Text="Leave this disabled for a Windows-only game. Steam, Heroic, Flatpak, Wine, Proton, local files, and custom URIs are supported."/>
           <local:LabeledField Label="Enable Linux" Requirement="Required" Description="At least Windows or Linux must be enabled."><local:LabeledField.FieldContent><ToggleSwitch IsChecked="{Binding Configuration.Launch.Linux.Enabled}" OnContent="Enabled" OffContent="Disabled"/></local:LabeledField.FieldContent></local:LabeledField>
-          <local:LabeledField Label="Launcher" Requirement="Required" Description="The launcher or compatibility method used on Linux."><local:LabeledField.FieldContent><ComboBox ItemsSource="{Binding LauncherKinds}" SelectedItem="{Binding Configuration.Launch.Linux.Launcher}"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Launcher" Requirement="Required" Description="The launcher, emulator, or compatibility method used on Linux."><local:LabeledField.FieldContent><ComboBox ItemsSource="{Binding LauncherKinds}" SelectedItem="{Binding Configuration.Launch.Linux.Launcher}" ItemTemplate="{StaticResource LauncherKindTemplate}"/></local:LabeledField.FieldContent></local:LabeledField>
           <Border Background="#101923" BorderBrush="#31506E" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,0,14"><Grid ColumnDefinitions="*,Auto,8,Auto"><TextBlock Text="{Binding LinuxLauncherStatus}" TextWrapping="Wrap" VerticalAlignment="Center"/><Button Grid.Column="1" Content="Verify selected launcher" Tag="linux" Click="VerifySelectedLauncherClicked"/><Button Grid.Column="3" Content="Locate launcher folder" Tag="linux" Click="LocateLauncherFolderClicked"/></Grid></Border>
           <local:LabeledField Label="Steam App ID" Description="Needed for Steam, or for Proton when launching through Steam."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Linux.SteamId}"/></local:LabeledField.FieldContent></local:LabeledField>
           <local:LabeledField Label="Heroic game ID" Description="Needed for Heroic Games Launcher unless a custom URI is supplied."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Linux.HeroicGameId}"/></local:LabeledField.FieldContent></local:LabeledField>
           <local:LabeledField Label="Flatpak app ID" Description="Needed for a Flatpak app unless an executable command is supplied."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Linux.FlatpakAppId}"/></local:LabeledField.FieldContent></local:LabeledField>
           <Border Background="#102419" BorderBrush="#347A4D" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,8,0,14"><TextBlock Text="{Binding PathStatus}" Foreground="#AEEBC3" TextWrapping="Wrap"/></Border>
-          <local:LabeledField Label="Executable" Description="Required for Local or Wine. Locate saves a portable path without a mount location."><local:LabeledField.FieldContent><Grid ColumnDefinitions="*,8,Auto,8,Auto"><TextBox Text="{Binding Configuration.Launch.Linux.Executable}"/><Button Grid.Column="2" Content="Locate game" Tag="linux-game" Click="LocatePortableFileClicked"/><Button Grid.Column="4" Content="Locate emulator" Tag="linux-emulator" Click="LocatePortableFileClicked"/></Grid></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Executable" Description="Required for EXE, Emulator, or Wine. Locate saves a portable path without a mount location."><local:LabeledField.FieldContent><Grid ColumnDefinitions="*,8,Auto,8,Auto"><TextBox Text="{Binding Configuration.Launch.Linux.Executable}"/><Button Grid.Column="2" Content="Locate game" Tag="linux-game" Click="LocatePortableFileClicked"/><Button Grid.Column="4" Content="Locate emulator" Tag="linux-emulator" Click="LocatePortableFileClicked"/></Grid></local:LabeledField.FieldContent></local:LabeledField>
           <local:LabeledField Label="Arguments" Description="Optional. Extra command-line options. Locate ROM appends a safely quoted portable game-image path."><local:LabeledField.FieldContent><Grid ColumnDefinitions="*,8,Auto"><TextBox Text="{Binding Configuration.Launch.Linux.Arguments}"/><Button Grid.Column="2" Content="Locate ROM" Tag="linux-rom" Click="LocatePortableFileClicked"/></Grid></local:LabeledField.FieldContent></local:LabeledField>
           <local:LabeledField Label="Working directory" Description="Optional. Folder the game should treat as its starting location."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Launch.Linux.WorkingDirectory}"/></local:LabeledField.FieldContent></local:LabeledField>
           <Border Background="#101923" BorderBrush="#31506E" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,8,0,12">
             <StackPanel Spacing="7">
               <TextBlock FontSize="16" FontWeight="SemiBold" Text="Linux emulator command-line quick reference"/>
-              <TextBlock Classes="help" Text="Choose Custom as the launcher. Native executables and AppImages can use the same game arguments as Windows; RetroArch cores normally end in .so."/>
+              <TextBlock Classes="help" Text="Choose Emulator as the launcher. Native executables and AppImages can use the same game arguments as Windows; RetroArch cores normally end in .so."/>
               <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="RetroArch    -f -L &quot;../../Emulators/RetroArch/cores/core_libretro.so&quot; &quot;Game/Game.rom&quot;" TextWrapping="Wrap"/>
               <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="DuckStation  -batch -fullscreen -- &quot;Game/Game.cue&quot;" TextWrapping="Wrap"/>
               <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="PCSX2        -fullscreen -batch -- &quot;Game/Game.iso&quot;" TextWrapping="Wrap"/>
               <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="Dolphin      -b -e &quot;Game/Game.rvz&quot;  (enable Start in Fullscreen in Dolphin)" TextWrapping="Wrap"/>
               <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="RPCS3        --no-gui --fullscreen &quot;Game/Game/PS3_GAME/USRDIR/EBOOT.BIN&quot;" TextWrapping="Wrap"/>
+              <TextBlock FontFamily="Cascadia Mono,Consolas" FontSize="12" Text="PPSSPP       --fullscreen --pause-menu-exit &quot;Game/Game.iso&quot;" TextWrapping="Wrap"/>
               <TextBlock Classes="help" Text="Make native binaries and AppImages executable before launching. AppImage process names can vary, so verify the running process once."/>
             </StackPanel>
           </Border>
@@ -232,47 +263,46 @@
           </Grid></Border>
           <Border Classes="card"><StackPanel Spacing="14">
             <Grid ColumnDefinitions="*,Auto">
-              <StackPanel><TextBlock Classes="section" Text="Collection shelf organizer"/><TextBlock Classes="help" Text="Drag cover cards between shelves or onto another card to change their order. Nothing is written until you save."/></StackPanel>
+              <StackPanel><TextBlock Classes="section" Text="Collection shelf organizer"/><TextBlock Classes="help" Text="Choose a shelf for each primary game and use the arrows to set its position. Alternate platform versions remain grouped behind the primary shelf card."/></StackPanel>
               <Button Grid.Column="1" Content="Save collection layout" Click="SaveCollectionLayoutClicked"/>
             </Grid>
             <Grid ColumnDefinitions="*,10,Auto"><TextBox Text="{Binding NewShelfName}" PlaceholderText="New shelf name, such as The 3D Era"/><Button Grid.Column="2" Content="Add shelf" Click="AddCollectionShelfClicked"/></Grid>
             <TextBlock Text="{Binding CollectionLayoutStatus}" Foreground="#AAB2BE" TextWrapping="Wrap"/>
+            <ItemsControl ItemsSource="{Binding CollectionShelves}">
+              <ItemsControl.ItemTemplate><DataTemplate>
+                <Border Background="#11171E" BorderBrush="#37414D" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                  <Grid ColumnDefinitions="*,44,6,44,10,Auto">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <Button Grid.Column="1" Content="↑" Tag="up" Click="MoveCollectionShelfClicked"/>
+                    <Button Grid.Column="3" Content="↓" Tag="down" Click="MoveCollectionShelfClicked"/>
+                    <Button Grid.Column="5" Content="Remove shelf" Click="RemoveCollectionShelfClicked"/>
+                  </Grid>
+                </Border>
+              </DataTemplate></ItemsControl.ItemTemplate>
+            </ItemsControl>
 
-            <Border Background="#151B23" BorderBrush="#485361" BorderThickness="1" CornerRadius="9" Padding="14"
-                    DragDrop.AllowDrop="True" DragDrop.DragOver="CollectionDragOver" DragDrop.Drop="CollectionUnassignedDrop">
+            <Border Background="#151B23" BorderBrush="#485361" BorderThickness="1" CornerRadius="9" Padding="14">
               <StackPanel Spacing="10">
-                <TextBlock FontSize="16" FontWeight="SemiBold" Text="Unassigned games"/>
-                <ItemsControl ItemsSource="{Binding UnassignedCollectionGames}">
-                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <Grid ColumnDefinitions="64,*,240,100" Margin="4,0,4,2">
+                  <TextBlock Grid.Column="1" Text="Primary shelf game" FontWeight="SemiBold"/>
+                  <TextBlock Grid.Column="2" Text="Shelf" FontWeight="SemiBold"/>
+                  <TextBlock Grid.Column="3" Text="Order" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                </Grid>
+                <ItemsControl ItemsSource="{Binding CollectionGames}">
                   <ItemsControl.ItemTemplate><DataTemplate>
-                    <Border Width="126" Height="178" Margin="0,0,10,10" Background="#090C10" BorderBrush="#5B6878" BorderThickness="1" CornerRadius="7" ClipToBounds="True"
-                            PointerPressed="CollectionGamePointerPressed" DragDrop.AllowDrop="True" DragDrop.DragOver="CollectionDragOver" DragDrop.Drop="CollectionGameDrop">
-                      <Grid RowDefinitions="*,Auto"><Grid><Image Source="{Binding CoverPreview}" Stretch="UniformToFill" IsVisible="{Binding HasCoverPreview}"/><TextBlock Text="NO COVER" Foreground="#6E7783" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasCoverPreview}"/></Grid><Border Grid.Row="1" Background="#E5151A21" Padding="7"><TextBlock Text="{Binding Name}" FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap" MaxHeight="34"/></Border></Grid>
+                    <Border Background="#0D1117" BorderBrush="#313A46" BorderThickness="1" CornerRadius="7" Padding="10" Margin="0,0,0,7">
+                      <Grid ColumnDefinitions="52,12,*,16,240,16,44,6,44">
+                        <Border Width="52" Height="72" Background="#080A0D" CornerRadius="4" ClipToBounds="True"><Grid><Image Source="{Binding CoverPreview}" Stretch="UniformToFill" IsVisible="{Binding HasCoverPreview}"/><TextBlock Text="?" Foreground="#6E7783" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasCoverPreview}"/></Grid></Border>
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center"><TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="{Binding PlatformLabel}" Foreground="#8E98A6" FontSize="12"/></StackPanel>
+                        <ComboBox Grid.Column="4" ItemsSource="{Binding $parent[Window].DataContext.CollectionShelfChoices}" SelectedItem="{Binding Shelf}"/>
+                        <Button Grid.Column="6" Content="↑" Tag="up" Click="MoveCollectionGameClicked"/>
+                        <Button Grid.Column="8" Content="↓" Tag="down" Click="MoveCollectionGameClicked"/>
+                      </Grid>
                     </Border>
                   </DataTemplate></ItemsControl.ItemTemplate>
                 </ItemsControl>
               </StackPanel>
             </Border>
-
-            <ItemsControl ItemsSource="{Binding CollectionShelves}">
-              <ItemsControl.ItemTemplate><DataTemplate>
-                <Border Background="#151B23" BorderBrush="#485361" BorderThickness="1" CornerRadius="9" Padding="14" Margin="0,0,0,12"
-                        DragDrop.AllowDrop="True" DragDrop.DragOver="CollectionDragOver" DragDrop.Drop="CollectionShelfDrop">
-                  <StackPanel Spacing="10">
-                    <Grid ColumnDefinitions="*,Auto,6,Auto,6,Auto"><TextBox Text="{Binding Name}" FontSize="16" FontWeight="SemiBold"/><Button Grid.Column="1" Content="↑" Tag="up" Click="MoveCollectionShelfClicked"/><Button Grid.Column="3" Content="↓" Tag="down" Click="MoveCollectionShelfClicked"/><Button Grid.Column="5" Content="Remove" Click="RemoveCollectionShelfClicked"/></Grid>
-                    <ItemsControl ItemsSource="{Binding Games}">
-                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                      <ItemsControl.ItemTemplate><DataTemplate>
-                        <Border Width="126" Height="178" Margin="0,0,10,10" Background="#090C10" BorderBrush="#6B7B8F" BorderThickness="1" CornerRadius="7" ClipToBounds="True"
-                                PointerPressed="CollectionGamePointerPressed" DragDrop.AllowDrop="True" DragDrop.DragOver="CollectionDragOver" DragDrop.Drop="CollectionGameDrop">
-                          <Grid RowDefinitions="*,Auto"><Grid><Image Source="{Binding CoverPreview}" Stretch="UniformToFill" IsVisible="{Binding HasCoverPreview}"/><TextBlock Text="NO COVER" Foreground="#6E7783" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasCoverPreview}"/></Grid><Border Grid.Row="1" Background="#E5151A21" Padding="7"><TextBlock Text="{Binding Name}" FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap" MaxHeight="34"/></Border></Grid>
-                        </Border>
-                      </DataTemplate></ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                  </StackPanel>
-                </Border>
-              </DataTemplate></ItemsControl.ItemTemplate>
-            </ItemsControl>
           </StackPanel></Border>
           <Border Classes="card"><StackPanel Spacing="9">
             <TextBlock Classes="section" Text="How the collection launcher works"/>

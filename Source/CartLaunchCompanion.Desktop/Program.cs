@@ -9,26 +9,40 @@ namespace CartLaunchCompanion.Desktop;
 sealed class Program
 {
     public static string? TrustedCartRoot { get; private set; }
+    public static bool CheckForUpdatesRequested { get; private set; }
     // Initialization code. Don't use any Avalonia, third-party APIs or any
     // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
     // yet and stuff might break.
     [STAThread]
     public static void Main(string[] args)
     {
-        TrustedCartRoot = ParseTrustedCartRoot(args);
+        ParseOptions(args);
         ConfigurePortableDiagnostics();
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 
-    private static string? ParseTrustedCartRoot(string[] args)
+    private static void ParseOptions(string[] args)
     {
-        if (args.Length == 0) return null;
-        if (args.Length != 2 || args[0] != "--cart-root") throw new ArgumentException("Unsupported launcher arguments.");
-        if (!Path.IsPathFullyQualified(args[1])) throw new ArgumentException("The cart root must be absolute.");
-        var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(args[1]));
-        if (!Directory.Exists(root) || Path.GetFileName(root) != "Cart" || !Directory.Exists(Path.Combine(root, "Games")))
-            throw new ArgumentException("The trusted cart root is invalid.");
-        return root;
+        for (var index = 0; index < args.Length; index++)
+        {
+            switch (args[index])
+            {
+                case "--check-for-updates":
+                    CheckForUpdatesRequested = true;
+                    break;
+                case "--cart-root" when index + 1 < args.Length:
+                    var value = args[++index];
+                    if (!Path.IsPathFullyQualified(value))
+                        throw new ArgumentException("The cart root must be absolute.");
+                    var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(value));
+                    if (!Directory.Exists(root) || Path.GetFileName(root) != "Cart" || !Directory.Exists(Path.Combine(root, "Games")))
+                        throw new ArgumentException("The trusted cart root is invalid.");
+                    TrustedCartRoot = root;
+                    break;
+                default:
+                    throw new ArgumentException($"Unsupported launcher argument: {args[index]}");
+            }
+        }
     }
 
     private static void ConfigurePortableDiagnostics()

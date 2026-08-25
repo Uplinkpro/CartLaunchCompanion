@@ -300,6 +300,8 @@ public sealed class SteamMetadataService(
         var mediaFolder = Path.Combine(gameFolder, "Media");
         if (File.Exists(Path.Combine(mediaFolder, "Snap.mp4")) ||
             File.Exists(Path.Combine(mediaFolder, "Trailer.mp4")) ||
+            File.Exists(Path.Combine(mediaFolder, "SteamTrailer.Software.mp4")) ||
+            File.Exists(Path.Combine(mediaFolder, "SteamTrailer.Software.webm")) ||
             File.Exists(Path.Combine(mediaFolder, "SteamTrailer.mp4")) ||
             File.Exists(Path.Combine(mediaFolder, "SteamTrailer.webm")))
         {
@@ -318,21 +320,20 @@ public sealed class SteamMetadataService(
 
         var candidates = new List<string>();
         CollectMovieUrls(movies, candidates);
+        var directCandidates = CollectSteamDirectMovieUrls(movies)
+            .Concat(candidates.Where(value =>
+                !value.Contains(".mpd", StringComparison.OrdinalIgnoreCase) &&
+                !value.Contains(".m3u8", StringComparison.OrdinalIgnoreCase)))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
         if (string.IsNullOrWhiteSpace(configuration.Artwork.TrailerUrl))
         {
-            configuration.Artwork.TrailerUrl = candidates.FirstOrDefault(value =>
-                value.Contains("hls_264", StringComparison.OrdinalIgnoreCase)) ??
-                candidates.FirstOrDefault(value =>
-                    value.Contains("dash_h264", StringComparison.OrdinalIgnoreCase)) ??
-                candidates.FirstOrDefault() ?? "";
+            configuration.Artwork.TrailerUrl = directCandidates.FirstOrDefault() ?? "";
         }
 
-        foreach (var url in candidates
-                     .Where(value => !value.Contains(".mpd", StringComparison.OrdinalIgnoreCase) &&
-                                     !value.Contains(".m3u8", StringComparison.OrdinalIgnoreCase))
-                     .Distinct(StringComparer.OrdinalIgnoreCase)
-                     .OrderByDescending(value => value.Contains("max", StringComparison.OrdinalIgnoreCase))
+        foreach (var url in directCandidates
+                     .OrderByDescending(value => value.Contains("movie480", StringComparison.OrdinalIgnoreCase))
                      .ThenBy(value => value.Contains("microtrailer", StringComparison.OrdinalIgnoreCase)))
         {
             try
@@ -340,9 +341,15 @@ public sealed class SteamMetadataService(
                 var extension = new Uri(url).AbsolutePath.EndsWith(".webm", StringComparison.OrdinalIgnoreCase)
                     ? ".webm"
                     : ".mp4";
-                var destination = Path.Combine(mediaFolder, "SteamTrailer" + extension);
+                var softwareMarker = UsesCurrentSteamMovieEncoding(url)
+                    ? ".Software"
+                    : "";
+                var destination = Path.Combine(mediaFolder, "SteamTrailer" + softwareMarker + extension);
                 if (await DownloadMediaAsync(url, destination, steamId, cancellationToken))
+                {
+                    configuration.Artwork.TrailerUrl = url;
                     return;
+                }
             }
             catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
             {
@@ -377,6 +384,51 @@ public sealed class SteamMetadataService(
         }
     }
 
+    private static bool UsesCurrentSteamMovieEncoding(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            return false;
+
+        var segments = uri.AbsolutePath
+            .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        for (var index = 0; index + 2 < segments.Length; index++)
+        {
+            if (segments[index].Equals("apps", StringComparison.OrdinalIgnoreCase) &&
+                segments[index + 2].StartsWith("movie", StringComparison.OrdinalIgnoreCase) &&
+                long.TryParse(segments[index + 1], out var movieAssetId))
+            {
+                return movieAssetId >= 100_000_000;
+            }
+        }
+
+        return false;
+    }
+
+    private static IReadOnlyList<string> CollectSteamDirectMovieUrls(JsonElement movies)
+    {
+        var results = new List<string>();
+        foreach (var movie in movies.EnumerateArray())
+        {
+            if (!movie.TryGetProperty("thumbnail", out var thumbnailElement) ||
+                !Uri.TryCreate(thumbnailElement.GetString(), UriKind.Absolute, out var thumbnail) ||
+                thumbnail.Scheme != Uri.UriSchemeHttps ||
+                !thumbnail.Host.EndsWith(".steamstatic.com", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var path = thumbnail.GetLeftPart(UriPartial.Path);
+            var slash = path.LastIndexOf('/');
+            if (slash < 0)
+                continue;
+            var directory = path[..(slash + 1)];
+            results.Add(directory + "movie480.mp4" + thumbnail.Query);
+            results.Add(directory + "movie_max.mp4" + thumbnail.Query);
+        }
+
+        return results;
+    }
+
     private async Task<bool> DownloadMediaAsync(
         string url,
         string destination,
@@ -385,7 +437,7 @@ public sealed class SteamMetadataService(
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Referrer = new Uri($"https://store.steampowered.com/app/{steamId}/");
-        request.Headers.UserAgent.ParseAdd("Mozilla/5.0 CartLaunchCompanion/2.0");
+        request.Headers.UserAgent.ParseAdd("Mozilla/5.0 CartLaunchCompanion/2.3");
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("video/mp4"));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("video/webm"));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*", 0.8));
@@ -414,6 +466,7 @@ public sealed class SteamMetadataService(
         }
         finally { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); }
     }
+
 
     private async Task DownloadSteamGridDbArtworkAsync(
         string gameFolder,

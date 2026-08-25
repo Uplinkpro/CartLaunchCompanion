@@ -8,8 +8,12 @@ namespace CartLaunchCompanion.Configurator;
 public sealed class CollectionGameEditor : INotifyPropertyChanged, IDisposable
 {
     private Bitmap? _coverPreview;
+    private string _shelf = "(Unassigned)";
     public required string Name { get; init; }
+    public string PlatformLabel { get; init; } = "";
     public required string ConfigurationPath { get; init; }
+    public string DisplayName => string.IsNullOrWhiteSpace(PlatformLabel) ? Name : $"{Name} — {PlatformLabel.Trim()}";
+    public string Shelf { get => _shelf; set { _shelf = value; Changed(); } }
     public Bitmap? CoverPreview { get => _coverPreview; set { _coverPreview?.Dispose(); _coverPreview = value; Changed(); Changed(nameof(HasCoverPreview)); } }
     public bool HasCoverPreview => CoverPreview is not null;
     public event PropertyChangedEventHandler? PropertyChanged;

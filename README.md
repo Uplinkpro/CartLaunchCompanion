@@ -45,7 +45,7 @@ CLC is **not intended to replace Steam or organize every game installed across a
 
 > **The cart is the product.** CLC and its game definitions live in `Cart/`; installed game files live in the root-level `Games/` folder; shared emulators and game images can live in `Emulators/` and `Roms/`. Relative paths keep the cart usable when its drive letter or mount point changes.
 
-> **Current release:** [Version 2.3](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.3.0) is available for Windows, Linux, and SteamOS. Physical-cart Host support is implemented on `main` and awaiting hardware validation for a future release.
+> **Current release:** [Version 2.4](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.4.0) is available for Windows, Linux, and SteamOS. The optional Cart Launch Host adds trusted removable-media detection, verified local staging, automatic launch, and safe ejection.
 
 ## Preview
 
@@ -158,15 +158,15 @@ CLC is **not intended to replace Steam or organize every game installed across a
 
 ## Download
 
-Download [Cart Launch Companion 2.3](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.3.0), or browse [all GitHub releases](https://github.com/Uplinkpro/CartLaunchCompanion/releases).
+Download [Cart Launch Companion 2.4](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.4.0), or browse [all GitHub releases](https://github.com/Uplinkpro/CartLaunchCompanion/releases).
 
-Version 2.3 provides three packages:
+Version 2.4 provides three packages:
 
 | Package | Intended use |
 |---|---|
-| `CartLaunchCompanion-2.3.0-win-x64.zip` | Windows-only cart runtime |
-| `CartLaunchCompanion-2.3.0-linux-x64.tar.gz` | Linux or SteamOS cart runtime |
-| `CartLaunchCompanion-2.3.0-portable.zip` | Combined Windows and Linux cart runtime |
+| `CartLaunchCompanion-2.4.0-win-x64.zip` | Windows-only cart runtime |
+| `CartLaunchCompanion-2.4.0-linux-x64.tar.gz` | Linux or SteamOS cart runtime |
+| `CartLaunchCompanion-2.4.0-portable.zip` | Combined Windows and Linux cart runtime |
 
 Every package is self-contained. The correct .NET runtime is included, so end users do not need to install the .NET SDK or runtime. Published archives contain no source, test, or build folders. Verify downloads with the included `SHA256SUMS.txt`.
 
@@ -463,13 +463,17 @@ The helper has independent executable, argument, and working-directory fields. I
 
 The custom command backend can launch games directly through popular emulators without a separate integration layer. Cart Launch Companion supplies the emulator executable, fullscreen or batch flags, and the selected ROM or disc image, then restores the launcher when the emulator closes.
 
-The [Emulator launch guide](Documentation/Emulator-Launch-Guide.md) includes portable Windows and Linux examples for:
+The [Emulator launch guide](Documentation/Emulator-Launch-Guide.md) documents the generated Windows, Linux/AppImage, shared-data, and platform-ROM structure. Automatic executable recognition includes:
 
 - RetroArch;
 - DuckStation;
 - PCSX2;
 - Dolphin;
 - RPCS3.
+- PPSSPP, Vita3K, and shadPS4;
+- Cemu, Azahar, melonDS, mGBA, Mesen, Snes9x, and Rosalie's Mupen GUI;
+- xemu and Xenia;
+- Flycast, MAME, DOSBox Staging, and ScummVM.
 
 The guide also covers shared emulator folders, quoted game paths, process monitoring, controller exit hotkeys, AppImages, and troubleshooting. Users must provide their own legally obtained firmware, BIOS files, keys, and game content.
 
@@ -527,8 +531,6 @@ Create self-contained release packages:
 - [Folder structure](docs/2.0/FolderStructure.md)
 - [JSON specification](docs/2.0/JsonSpecification.md)
 - [Theme guide](docs/2.0/ThemeGuide.md)
-- [Version 1 upgrade guide](docs/2.0/UpgradeGuide.md)
-- [Roadmap](docs/2.0/Roadmap.md)
 
 ## Reporting issues
 
@@ -561,7 +563,7 @@ Cart Launch Companion is built with:
 
 ## Project status
 
-Version 2.3 is the current stable release. Reports are especially useful for:
+Version 2.4 is the current stable release. Reports are especially useful for:
 
 - physical Steam Deck and SteamOS hardware;
 - different controller models and hot-plug behavior;
@@ -570,7 +572,7 @@ Version 2.3 is the current stable release. Reports are especially useful for:
 - Wine and Proton configurations outside Steam;
 - storefront updates that change launch behavior.
 
-See the [roadmap](docs/2.0/Roadmap.md) for planned work. Roadmap items are goals rather than release commitments.
+Development priorities are tracked through [GitHub issues](https://github.com/Uplinkpro/CartLaunchCompanion/issues) and release notes rather than a fixed roadmap.
 
 ## Acknowledgements
 
@@ -620,7 +622,7 @@ The project is not affiliated with or endorsed by Valve, Microsoft, Rockstar Gam
 
 ### Recycle a drive. Build a collection. Plug in and play.
 
-[Download 2.3](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.3.0)
+[Download 2.4](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.4.0)
 &nbsp;&nbsp;•&nbsp;&nbsp;
 [Documentation](#documentation)
 &nbsp;&nbsp;•&nbsp;&nbsp;

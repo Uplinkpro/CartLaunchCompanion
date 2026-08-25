@@ -1,0 +1,47 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CartLaunchCompanion.Configurator.EmulatorLibraryDialog"
+        Title="Portable Emulator Library" Width="1040" Height="760" MinWidth="780" MinHeight="520"
+        WindowStartupLocation="CenterOwner">
+  <Grid RowDefinitions="Auto,*,Auto" Margin="28">
+    <StackPanel Spacing="7">
+      <TextBlock FontSize="28" FontWeight="Bold" Text="Portable Emulator Library"/>
+      <TextBlock Foreground="#B8C0CB" TextWrapping="Wrap"
+                 Text="Add each portable Windows build or Linux AppImage to its assigned cart folder. CLC validates the executable and makes installed emulators available to every game configuration."/>
+      <TextBlock x:Name="RootText" Foreground="#77818E" FontSize="12" TextWrapping="Wrap"/>
+    </StackPanel>
+    <ScrollViewer Grid.Row="1" Margin="0,22,0,18">
+      <ItemsControl x:Name="EmulatorItems">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Border Background="#171C23" BorderBrush="#333B46" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,10">
+              <Grid ColumnDefinitions="220,*,12,*,12,Auto">
+                <StackPanel VerticalAlignment="Center">
+                  <TextBlock FontWeight="SemiBold" FontSize="16" Text="{Binding Definition.DisplayName}"/>
+                  <TextBlock Foreground="#7F8997" FontSize="11" Text="{Binding Definition.FolderName}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                  <TextBlock FontWeight="SemiBold" Text="Windows"/>
+                  <TextBlock Text="{Binding WindowsStatus}" Foreground="{Binding WindowsColor}" TextWrapping="Wrap" FontSize="12"/>
+                </StackPanel>
+                <StackPanel Grid.Column="3" VerticalAlignment="Center">
+                  <TextBlock FontWeight="SemiBold" Text="Linux / SteamOS"/>
+                  <TextBlock Text="{Binding LinuxStatus}" Foreground="{Binding LinuxColor}" TextWrapping="Wrap" FontSize="12"/>
+                </StackPanel>
+                <StackPanel Grid.Column="5" Spacing="7">
+                  <Button Content="Add Windows" Tag="windows" Click="AddExecutableClicked"/>
+                  <Button Content="Add Linux" Tag="linux" Click="AddExecutableClicked"/>
+                </StackPanel>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+    <Grid Grid.Row="2" ColumnDefinitions="*,Auto,12,Auto">
+      <TextBlock x:Name="StatusText" VerticalAlignment="Center" Foreground="#AEEBC3" TextWrapping="Wrap"/>
+      <Button Grid.Column="1" Content="Rescan" Click="RescanClicked"/>
+      <Button Grid.Column="3" Content="Done" Click="DoneClicked" MinWidth="110"/>
+    </Grid>
+  </Grid>
+</Window>

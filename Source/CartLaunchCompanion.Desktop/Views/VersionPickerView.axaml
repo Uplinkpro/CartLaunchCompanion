@@ -1,0 +1,79 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:CartLaunchCompanion.Desktop.ViewModels"
+             xmlns:controls="using:CartLaunchCompanion.Desktop.Controls"
+             x:Class="CartLaunchCompanion.Desktop.Views.VersionPickerView"
+             x:Name="VersionPickerRoot"
+             x:DataType="vm:MainViewModel">
+  <UserControl.Styles>
+    <Style Selector="Button.version-choice">
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Opacity" Value="0.72"/>
+    </Style>
+    <Style Selector="Button.version-choice.selected">
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Opacity" Value="1"/>
+    </Style>
+    <Style Selector="Button.version-choice.selected Border.version-frame">
+      <Setter Property="BorderBrush" Value="White"/>
+      <Setter Property="BorderThickness" Value="4"/>
+    </Style>
+  </UserControl.Styles>
+  <Grid Background="#030406">
+    <Image Source="{Binding SelectedGame.BackgroundImage}" Stretch="UniformToFill" Opacity="0.22">
+      <Image.Effect><BlurEffect Radius="5"/></Image.Effect>
+    </Image>
+    <Border Background="#C5030406"/>
+    <Grid RowDefinitions="*,Auto" Margin="42">
+    <StackPanel Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="24">
+      <StackPanel Spacing="7" HorizontalAlignment="Center">
+        <TextBlock Text="CHOOSE A PLATFORM" Foreground="White" FontSize="30" FontWeight="Bold" LetterSpacing="3" HorizontalAlignment="Center"/>
+      </StackPanel>
+      <ItemsControl ItemsSource="{Binding VersionChoices}">
+        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="22" HorizontalAlignment="Center"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:GameCardViewModel">
+            <Button Classes="version-choice" Classes.selected="{Binding IsVersionSelected}" Width="190" Padding="10" Command="{Binding #VersionPickerRoot.DataContext.SelectVersionCommand}" CommandParameter="{Binding}">
+              <Border Classes="version-frame" Width="158" CornerRadius="0" Background="#0A0C10"
+                      BorderBrush="Transparent" BorderThickness="4"
+                      ClipToBounds="True">
+                <Grid RowDefinitions="25,225">
+                  <Border Grid.Row="0" Background="{Binding AccentColor}"
+                          IsVisible="{Binding HasNoLauncherBanner}">
+                    <TextBlock Text="{Binding Launcher}" Foreground="White" FontSize="11"
+                               FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                  </Border>
+                  <Image Grid.Row="0" Source="{Binding LauncherBannerImage}"
+                         Stretch="Fill" IsVisible="{Binding HasLauncherBanner}"/>
+                  <Grid Grid.Row="1" Background="#0A0C10">
+                    <Image Source="{Binding CoverImage}" Stretch="Uniform" IsVisible="{Binding HasCover}"/>
+                    <TextBlock Text="{Binding Initials}" Foreground="White" FontSize="28" FontWeight="Bold"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding HasNoCover}"/>
+                  </Grid>
+                </Grid>
+              </Border>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+      <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="14"
+                  IsVisible="{Binding ShowOnScreenActionButtons}">
+        <Button Classes="action" Command="{Binding ConfirmSelectedVersionCommand}">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <controls:ButtonPromptBadge Label="{Binding ConfirmPrompt}" BadgeColor="#2E9B32"/>
+            <TextBlock Text="SELECT" VerticalAlignment="Center"/>
+          </StackPanel>
+        </Button>
+        <Button Classes="action" Command="{Binding CloseVersionPickerCommand}">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <controls:ButtonPromptBadge Label="{Binding BackPrompt}" BadgeColor="#C83B40"/>
+            <TextBlock Text="BACK" VerticalAlignment="Center"/>
+          </StackPanel>
+        </Button>
+      </StackPanel>
+    </Grid>
+  </Grid>
+</UserControl>

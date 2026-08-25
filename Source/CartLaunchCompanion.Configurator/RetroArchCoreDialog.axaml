@@ -1,0 +1,18 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CartLaunchCompanion.Configurator.RetroArchCoreDialog"
+        Title="Choose RetroArch core" Width="620" Height="300"
+        CanResize="False" WindowStartupLocation="CenterOwner">
+  <Grid RowDefinitions="*,Auto" Margin="28">
+    <StackPanel Spacing="12">
+      <TextBlock FontSize="25" FontWeight="Bold" Text="Choose the RetroArch core"/>
+      <TextBlock x:Name="ExplanationText" Classes="help" TextWrapping="Wrap"/>
+      <ComboBox x:Name="CoreBox" Margin="0,8,0,0" MinHeight="44"/>
+      <TextBlock Classes="help" Text="Only cores found inside this portable RetroArch installation are shown."/>
+    </StackPanel>
+    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+      <Button Content="Cancel" Click="CancelClicked"/>
+      <Button Content="Use selected core" Click="UseClicked"/>
+    </StackPanel>
+  </Grid>
+</Window>

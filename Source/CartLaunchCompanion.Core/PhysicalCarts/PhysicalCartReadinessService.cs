@@ -1,3 +1,5 @@
+using CartLaunchCompanion.Core.Portable;
+
 namespace CartLaunchCompanion.Core.PhysicalCarts;
 
 public sealed record PhysicalCartReadinessCheck(string Name, bool Passed, string Detail);
@@ -64,7 +66,8 @@ public sealed class PhysicalCartReadinessService
     {
         var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(mediaRoot));
         Directory.CreateDirectory(root);
-        foreach (var folder in new[] { "Cart", "Games", "Emulators", "Roms" }) Directory.CreateDirectory(Path.Combine(root, folder));
+        foreach (var folder in new[] { "Cart", "Games" }) Directory.CreateDirectory(Path.Combine(root, folder));
+        EmulatorPortableLayout.Create(root);
         var identityPath = Path.Combine(root, CartIdentityService.FileName);
         if (!File.Exists(identityPath))
         {

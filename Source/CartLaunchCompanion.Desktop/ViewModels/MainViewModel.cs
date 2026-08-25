@@ -23,6 +23,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly IRuntimeUpdateService _updateService;
     private readonly Action _exitApplication;
     private readonly Action<bool> _setWindowVisible;
+    private readonly Func<CancellationToken, Task> _prepareTrailerRuntime;
     private readonly string? _trustedCartId;
 
     private DateTimeOffset _lastInputAt = DateTimeOffset.MinValue;
@@ -30,6 +31,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private bool _isLoadInProgress;
     private RuntimeUpdateAvailability? _availableUpdate;
     private CancellationTokenSource? _updateCancellation;
+    private CancellationTokenSource? _metadataLoadingCancellation;
+    private readonly List<GameCardViewModel> _allGameCards = [];
+    private bool _metadataOpenedFromVersionPicker;
+    private GameCardViewModel? _versionGroupRepresentative;
 
     public MainViewModel(
         IGameLibraryService libraryService,
@@ -56,7 +61,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         PlatformKind platform,
         IRuntimeUpdateService updateService,
         Action exitApplication,
-        Action<bool> setWindowVisible)
+        Action<bool> setWindowVisible,
+        Func<CancellationToken, Task>? prepareTrailerRuntime = null)
     {
         _libraryService = libraryService;
         _launchService = launchService;
@@ -65,6 +71,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _updateService = updateService;
         _exitApplication = exitApplication;
         _setWindowVisible = setWindowVisible;
+        _prepareTrailerRuntime = prepareTrailerRuntime ?? (_ => Task.CompletedTask);
         _trustedCartId = Environment.GetEnvironmentVariable("CLC_TRUSTED_CART_ID");
 
         ReloadCommand = new AsyncRelayCommand(LoadAsync);
@@ -91,6 +98,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             () => SelectedGame is not null &&
                   !IsLaunching);
 
+        SelectVersionCommand = new RelayCommand<GameCardViewModel>(game =>
+        {
+            if (game is not null) OpenVersionMetadata(game);
+        });
+        ConfirmSelectedVersionCommand = new RelayCommand(
+            () =>
+            {
+                if (SelectedVersion is not null) OpenVersionMetadata(SelectedVersion);
+            },
+            () => SelectedVersion is not null);
+        CloseVersionPickerCommand = new RelayCommand(CloseVersionPicker);
+
         CheckForUpdatesCommand = new AsyncRelayCommand(CheckForUpdatesAsync, () => !IsUpdateBusy);
         OpenAvailableUpdateCommand = new RelayCommand(OpenAvailableUpdate, () => _availableUpdate is not null && !IsUpdateBusy);
         InstallUpdateCommand = new AsyncRelayCommand(InstallUpdateAsync, () => _availableUpdate is not null && !IsUpdateBusy);
@@ -99,6 +118,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public ObservableCollection<GameCardViewModel> Games { get; } = [];
     public ObservableCollection<GameShelfViewModel> Shelves { get; } = [];
+    public ObservableCollection<GameCardViewModel> VersionChoices { get; } = [];
 
     [ObservableProperty]
     public partial CollectionConfiguration Collection { get; set; } = new();
@@ -108,6 +128,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     public partial GameCardViewModel? SelectedGame { get; set; }
+
+    [ObservableProperty]
+    public partial GameCardViewModel? SelectedVersion { get; set; }
 
     [ObservableProperty]
     public partial string StatusMessage { get; set; } =
@@ -130,6 +153,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     public partial bool IsMetadataVisible { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsMetadataLoading { get; set; }
+
+    [ObservableProperty]
+    public partial GameCardViewModel? LoadingGame { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsVersionPickerVisible { get; set; }
 
     [ObservableProperty]
     public partial bool IsExitVisible { get; set; }
@@ -238,6 +270,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public IAsyncRelayCommand ConfirmLaunchCommand { get; }
     public IRelayCommand TrailerCommand { get; }
     public IRelayCommand OpenSelectedGameCommand { get; }
+    public IRelayCommand<GameCardViewModel> SelectVersionCommand { get; }
+    public IRelayCommand ConfirmSelectedVersionCommand { get; }
+    public IRelayCommand CloseVersionPickerCommand { get; }
     public IAsyncRelayCommand CheckForUpdatesCommand { get; }
     public IRelayCommand OpenAvailableUpdateCommand { get; }
     public IAsyncRelayCommand InstallUpdateCommand { get; }
@@ -306,8 +341,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         try
         {
             DisposeCards();
+            _allGameCards.Clear();
             Games.Clear();
             Shelves.Clear();
+            VersionChoices.Clear();
             SelectedGame = null;
 
             Collection = await CollectionConfigurationJson.LoadAsync(
@@ -326,23 +363,30 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     group => group.Key,
                     group => group.First().Order,
                     StringComparer.OrdinalIgnoreCase);
+            var centralPlacements = Collection.Placements
+                .SelectMany(item => GetPlacementKeys(item).Select(key => (Key: key, Placement: item)))
+                .GroupBy(item => item.Key, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.First().Placement, StringComparer.OrdinalIgnoreCase);
 
             var orderedEntries = result.Games
-                .OrderBy(entry => GetShelfOrder(entry, shelfOrder))
-                .ThenBy(entry => GetShelfName(entry), StringComparer.OrdinalIgnoreCase)
-                .ThenBy(entry => entry.Configuration.Collection.Order)
+                .OrderBy(entry => GetShelfOrder(entry, shelfOrder, centralPlacements))
+                .ThenBy(entry => GetShelfName(entry, centralPlacements), StringComparer.OrdinalIgnoreCase)
+                .ThenBy(entry => GetGamePlacement(entry, centralPlacements).Order)
                 .ThenBy(entry => GetGameSortName(entry), StringComparer.OrdinalIgnoreCase);
 
             foreach (var entry in orderedEntries)
+                _allGameCards.Add(new GameCardViewModel(entry, OpenGame));
+
+            foreach (var group in _allGameCards.GroupBy(GetVersionGroupKey, StringComparer.OrdinalIgnoreCase))
             {
-                Games.Add(
-                    new GameCardViewModel(
-                        entry,
-                        OpenMetadata));
+                var versions = group.ToArray();
+                var representative = versions.FirstOrDefault(game => game.IsPrimaryVersion) ?? versions[0];
+                representative.SetVersions(versions);
+                Games.Add(representative);
             }
 
             foreach (var group in Games.GroupBy(
-                         game => GetShelfName(game.Entry),
+                         game => GetShelfName(game.Entry, centralPlacements),
                          StringComparer.OrdinalIgnoreCase))
             {
                 Shelves.Add(new GameShelfViewModel(group.Key, group));
@@ -415,7 +459,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _lastInputAction = input.Action;
         _lastInputAt = input.Timestamp;
 
-        if (IsLaunching)
+        if (IsLaunching || IsMetadataLoading)
             return;
 
         if (IsUpdateVisible)
@@ -435,6 +479,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (IsExitVisible)
         {
             HandleExitInput(input.Action);
+            return;
+        }
+
+        if (IsVersionPickerVisible)
+        {
+            HandleVersionPickerInput(input.Action);
             return;
         }
 
@@ -579,6 +629,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             currentShelfIndex + direction,
             0,
             Shelves.Count - 1);
+
+        // A library without named shelves is still displayed as a wrapping grid.
+        // Preserve useful vertical navigation by moving one visual row when there
+        // is no neighboring shelf to target.
+        if (targetShelfIndex == currentShelfIndex)
+        {
+            MoveSelection(direction * (HasCustomCollection ? 6 : 8));
+            return;
+        }
+
         var targetShelf = Shelves[targetShelfIndex];
 
         if (targetShelf.Games.Count > 0)
@@ -588,9 +648,42 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private string GetShelfName(GameLibraryEntry entry)
+    partial void OnSelectedVersionChanged(GameCardViewModel? value)
     {
-        var configured = entry.Configuration.Collection.Shelf?.Trim();
+        foreach (var version in VersionChoices)
+            version.IsVersionSelected = ReferenceEquals(version, value);
+        ConfirmSelectedVersionCommand.NotifyCanExecuteChanged();
+    }
+
+    private void HandleVersionPickerInput(LauncherAction action)
+    {
+        switch (action)
+        {
+            case LauncherAction.NavigateLeft:
+                MoveVersionSelection(-1);
+                break;
+            case LauncherAction.NavigateRight:
+                MoveVersionSelection(1);
+                break;
+            case LauncherAction.Confirm when SelectedVersion is not null:
+                OpenVersionMetadata(SelectedVersion);
+                break;
+            case LauncherAction.Back:
+                CloseVersionPicker();
+                break;
+        }
+    }
+
+    private void MoveVersionSelection(int delta)
+    {
+        if (VersionChoices.Count == 0) return;
+        var index = SelectedVersion is null ? 0 : VersionChoices.IndexOf(SelectedVersion);
+        SelectedVersion = VersionChoices[Math.Clamp(index + delta, 0, VersionChoices.Count - 1)];
+    }
+
+    private string GetShelfName(GameLibraryEntry entry, IReadOnlyDictionary<string, CollectionGamePlacementConfiguration> placements)
+    {
+        var configured = GetGamePlacement(entry, placements).Shelf?.Trim();
         if (!string.IsNullOrWhiteSpace(configured))
             return configured;
 
@@ -600,12 +693,40 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private int GetShelfOrder(
         GameLibraryEntry entry,
-        IReadOnlyDictionary<string, int> shelfOrder)
+        IReadOnlyDictionary<string, int> shelfOrder,
+        IReadOnlyDictionary<string, CollectionGamePlacementConfiguration> placements)
     {
-        var name = GetShelfName(entry);
+        var name = GetShelfName(entry, placements);
         return shelfOrder.TryGetValue(name, out var order)
             ? order
             : int.MaxValue;
+    }
+
+    private CollectionGamePlacementConfiguration GetGamePlacement(
+        GameLibraryEntry entry,
+        IReadOnlyDictionary<string, CollectionGamePlacementConfiguration> placements)
+    {
+        var gameId = GameIdentity.Resolve(entry.Configuration.Game);
+        if (placements.TryGetValue("id:" + gameId, out var stablePlacement))
+            return stablePlacement;
+
+        var relative = NormalizeCollectionConfigurationPath(
+            Path.GetRelativePath(_portablePaths.Root, entry.ConfigurationPath));
+        return placements.TryGetValue("path:" + relative, out var placement)
+            ? placement
+            : new CollectionGamePlacementConfiguration();
+    }
+
+    private static string NormalizeCollectionConfigurationPath(string path) =>
+        path.Replace('\\', '/').TrimStart('/');
+
+    private static IEnumerable<string> GetPlacementKeys(
+        CollectionGamePlacementConfiguration placement)
+    {
+        if (!string.IsNullOrWhiteSpace(placement.GameId))
+            yield return "id:" + placement.GameId.Trim();
+        if (!string.IsNullOrWhiteSpace(placement.Configuration))
+            yield return "path:" + NormalizeCollectionConfigurationPath(placement.Configuration);
     }
 
     private static string GetGameSortName(GameLibraryEntry entry)
@@ -619,24 +740,116 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private void OpenSelectedMetadata()
     {
         if (SelectedGame is not null)
-            OpenMetadata(SelectedGame);
+            OpenGame(SelectedGame);
+    }
+
+    private void OpenGame(GameCardViewModel game)
+    {
+        if (!game.HasMultipleVersions)
+        {
+            _metadataOpenedFromVersionPicker = false;
+            OpenMetadata(game);
+            return;
+        }
+
+        VersionChoices.Clear();
+        _versionGroupRepresentative = game;
+        foreach (var version in game.Versions)
+            VersionChoices.Add(version);
+        SelectedVersion = VersionChoices.FirstOrDefault(version => version.IsPrimaryVersion) ?? VersionChoices.FirstOrDefault();
+        IsHomeVisible = false;
+        IsMetadataVisible = false;
+        IsVersionPickerVisible = true;
+    }
+
+    private void OpenVersionMetadata(GameCardViewModel game)
+    {
+        _metadataOpenedFromVersionPicker = true;
+        OpenMetadata(game);
     }
 
     private void OpenMetadata(GameCardViewModel game)
     {
-        if (IsLaunching)
+        if (IsLaunching || IsMetadataLoading)
             return;
 
-        SelectedGame = game;
-        IsTrailerPlaybackEnabled = true;
+        _metadataLoadingCancellation?.Cancel();
+        _metadataLoadingCancellation?.Dispose();
+        var transition = new CancellationTokenSource();
+        _metadataLoadingCancellation = transition;
+
+        LoadingGame = game;
+        IsMetadataLoading = true;
         IsExitVisible = false;
-
-        MetadataStatus = game.IsLaunchable
-            ? string.Empty
-            : "This game is not launchable on the current platform.";
-
         IsHomeVisible = false;
-        IsMetadataVisible = true;
+        IsVersionPickerVisible = false;
+        IsMetadataVisible = false;
+
+        _ = CompleteMetadataTransitionAsync(game, transition);
+    }
+
+    private async Task CompleteMetadataTransitionAsync(
+        GameCardViewModel game,
+        CancellationTokenSource transition)
+    {
+        try
+        {
+            var minimumDisplay = Task.Delay(
+                UseMotionEffects ? 180 : 30,
+                transition.Token);
+            if (game.HasTrailerSource)
+            {
+                await Task.WhenAll(
+                    minimumDisplay,
+                    _prepareTrailerRuntime(transition.Token));
+            }
+            else
+            {
+                await minimumDisplay;
+            }
+
+            SelectedGame = game;
+            IsTrailerPlaybackEnabled = false;
+            MetadataStatus = game.IsLaunchable
+                ? string.Empty
+                : "This game is not launchable on the current platform.";
+
+            IsMetadataVisible = true;
+            // Keep the loading layer above the page through its 240 ms entrance
+            // animation. The native trailer remains hidden until the overlay is
+            // gone and its surface has completed a real layout pass.
+            await Task.Delay(UseMotionEffects ? 260 : 30, transition.Token);
+            IsMetadataLoading = false;
+            LoadingGame = null;
+            await Task.Delay(16, transition.Token);
+            IsTrailerPlaybackEnabled = true;
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        finally
+        {
+            if (ReferenceEquals(_metadataLoadingCancellation, transition))
+            {
+                IsMetadataLoading = false;
+                LoadingGame = null;
+                _metadataLoadingCancellation = null;
+                transition.Dispose();
+            }
+        }
+    }
+
+    private void CloseVersionPicker()
+    {
+        _metadataOpenedFromVersionPicker = false;
+        IsVersionPickerVisible = false;
+        VersionChoices.Clear();
+        SelectedVersion = null;
+        if (_versionGroupRepresentative is not null)
+            SelectedGame = _versionGroupRepresentative;
+        _versionGroupRepresentative = null;
+        IsHomeVisible = true;
     }
 
     private void ReturnHome()
@@ -644,9 +857,23 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (IsLaunching)
             return;
 
+        _metadataLoadingCancellation?.Cancel();
+
         IsTrailerPlaybackEnabled = false;
         IsExitVisible = false;
         IsMetadataVisible = false;
+        if (_metadataOpenedFromVersionPicker && VersionChoices.Count > 1)
+        {
+            _metadataOpenedFromVersionPicker = false;
+            IsVersionPickerVisible = true;
+            IsHomeVisible = false;
+            return;
+        }
+
+        IsVersionPickerVisible = false;
+        VersionChoices.Clear();
+        SelectedVersion = null;
+        _versionGroupRepresentative = null;
         IsHomeVisible = true;
 
         StatusMessage = HasGames
@@ -703,6 +930,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             IsUpdateBusy = false;
         }
     }
+
+    public Task CheckForUpdatesInteractivelyAsync() => CheckForUpdatesAsync();
 
     public async Task CheckForUpdatesSilentlyAsync()
     {
@@ -774,8 +1003,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private void StartMaintenanceUpdater(PreparedRuntimeUpdate prepared)
     {
         var executable = Path.Combine(
-            _portablePaths.Root,
-            "Maintenance",
+            _portablePaths.Maintenance,
             prepared.Platform,
             prepared.Platform == "Windows-x64" ? "CartLaunchCompanion.Updater.exe" : "CartLaunchCompanion.Updater");
         if (!File.Exists(executable))
@@ -963,9 +1191,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private void DisposeCards()
     {
-        foreach (var game in Games)
+        foreach (var game in _allGameCards)
             game.Dispose();
     }
+
+    private static string GetVersionGroupKey(GameCardViewModel game) =>
+        string.IsNullOrWhiteSpace(game.VersionGroup)
+            ? "config:" + game.Entry.ConfigurationPath
+            : "group:" + game.VersionGroup.Trim();
 
     private Bitmap? TryLoadCollectionLogo(string? configuredPath)
     {
@@ -992,6 +1225,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         DisposeCards();
         CollectionLogoImage?.Dispose();
+        _metadataLoadingCancellation?.Cancel();
+        _metadataLoadingCancellation?.Dispose();
         _updateCancellation?.Cancel();
         _updateCancellation?.Dispose();
     }

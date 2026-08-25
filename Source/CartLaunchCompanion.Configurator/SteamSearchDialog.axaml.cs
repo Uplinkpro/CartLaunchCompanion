@@ -61,12 +61,12 @@ public sealed partial class SteamSearchDialog : Window
 
         StatusText.Text = "Searching Steam…";
         ResultsList.ItemsSource = null;
-        UseButton.IsEnabled = false;
         try
         {
-            var matches = await _catalogService.SearchAsync(query, key, _settings.SteamGridDbApiKey);
+            var matches = (await _catalogService.SearchAsync(query, key, _settings.SteamGridDbApiKey))
+                .ToArray();
             ResultsList.ItemsSource = matches;
-            StatusText.Text = matches.Count == 0 ? "No close matches found." : $"Found {matches.Count} likely matches. Choose the correct edition.";
+            StatusText.Text = matches.Length == 0 ? "No close matches were found." : $"Found {matches.Length} likely matches. Select the correct edition.";
         }
         catch (Exception ex)
         {
@@ -76,19 +76,7 @@ public sealed partial class SteamSearchDialog : Window
 
     private void ResultSelected(object? sender, SelectionChangedEventArgs e)
     {
-        var match = SelectedMatch;
-        RefreshUseButton();
-    }
-
-    private void RefreshUseButton()
-    {
-        UseButton.IsEnabled = SelectedMatch is not null;
-    }
-
-    private void UseClicked(object? sender, RoutedEventArgs e)
-    {
-        if (SelectedMatch is not { } match) return;
-        Close(match);
+        if (SelectedMatch is { } match) Close(match);
     }
     private void CancelClicked(object? sender, RoutedEventArgs e) => Close(null);
 }

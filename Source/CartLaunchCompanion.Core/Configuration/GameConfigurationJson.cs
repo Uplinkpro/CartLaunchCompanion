@@ -35,6 +35,9 @@ public static class GameConfigurationJson
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         ArgumentNullException.ThrowIfNull(configuration);
 
+        if (string.IsNullOrWhiteSpace(configuration.Game.Id))
+            configuration.Game.Id = GameIdentity.Create();
+
         var directory = Path.GetDirectoryName(filePath);
         if (!string.IsNullOrWhiteSpace(directory))
             Directory.CreateDirectory(directory);

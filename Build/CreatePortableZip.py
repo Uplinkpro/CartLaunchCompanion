@@ -8,7 +8,7 @@ import zipfile
 def mode_for(path: pathlib.Path, relative: pathlib.PurePosixPath) -> int:
     if path.is_dir():
         return 0o40755
-    if relative.name in {"Start Cart Launch Companion.sh", "Game Configurator.sh"}:
+    if relative.name in {"Start Cart Launch Companion.sh", "Game Configurator.sh", "Updater.sh"}:
         return 0o100755
     if relative.name == "CartLaunchCompanion.Updater" or (
         "System/Linux-x64" in relative.as_posix()
@@ -20,7 +20,7 @@ def mode_for(path: pathlib.Path, relative: pathlib.PurePosixPath) -> int:
         }
     ):
         return 0o100755
-    if relative.name in {"CartLaunchCompanion.Host", "CartLaunchCompanion.HostCleanup"}:
+    if "System/Host" in relative.as_posix() and relative.name in {"CartLaunchCompanion.Host", "CartLaunchCompanion.HostCleanup"}:
         return 0o100755
     return 0o100644
 

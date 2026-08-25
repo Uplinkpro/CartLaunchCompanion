@@ -1,5 +1,5 @@
 param(
-    [string]$Version = '2.3.0',
+    [string]$Version = '2.4.0',
     [string]$OutputRoot = (Join-Path $PSScriptRoot "artifacts\$Version")
 )
 
@@ -33,6 +33,8 @@ foreach ($runtime in $runtimes) {
     if ($LASTEXITCODE -ne 0) {
         throw "Publish failed for $($runtime.Id)."
     }
+    # The launcher and configurator share Avalonia and the .NET runtime. Keep
+    # them together so those identical files are stored once per platform.
     & dotnet publish $configuratorProject -c Release -r $runtime.Id --self-contained true `
         -p:PublishSingleFile=false -p:PublishTrimmed=false `
         -p:DebugType=None -p:DebugSymbols=false -o $destination
@@ -40,7 +42,7 @@ foreach ($runtime in $runtimes) {
         throw "Configurator publish failed for $($runtime.Id)."
     }
 
-    $maintenanceDestination = Join-Path $staging (Join-Path 'Maintenance' $runtime.Folder)
+    $maintenanceDestination = Join-Path $staging (Join-Path 'System\Maintenance' $runtime.Folder)
     & dotnet publish $updaterProject -c Release -r $runtime.Id --self-contained true `
         -p:PublishSingleFile=true -p:PublishTrimmed=false `
         -p:DebugType=None -p:DebugSymbols=false -o $maintenanceDestination
@@ -48,7 +50,7 @@ foreach ($runtime in $runtimes) {
         throw "Updater publish failed for $($runtime.Id)."
     }
 
-    $hostDestination = Join-Path $staging (Join-Path 'Host' $runtime.Folder)
+    $hostDestination = Join-Path $staging (Join-Path 'System\Host' $runtime.Folder)
     & dotnet publish $hostProject -c Release -r $runtime.Id --self-contained true `
         -p:PublishSingleFile=false -p:PublishTrimmed=false `
         -p:DebugType=None -p:DebugSymbols=false -o $hostDestination
@@ -63,9 +65,19 @@ foreach ($runtime in $runtimes) {
     }
 }
 
+# VideoLAN's Windows package carries x64, x86, and ARM64 native trees. The
+# Windows release is x64-only; Windows native VLC files are unusable on Linux.
+$windowsVlc = Join-Path $staging 'System\Windows-x64\libvlc'
+foreach ($architecture in @('win-x86', 'win-arm64')) {
+    $path = Join-Path $windowsVlc $architecture
+    if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Recurse -Force }
+}
+$linuxVlc = Join-Path $staging 'System\Linux-x64\libvlc'
+if (Test-Path -LiteralPath $linuxVlc) { Remove-Item -LiteralPath $linuxVlc -Recurse -Force }
+
 foreach ($folder in @('Assets', 'Schemas')) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot $folder) `
-        -Destination (Join-Path $staging $folder) -Recurse -Force
+        -Destination (Join-Path $staging 'System') -Recurse -Force
 }
 
 $configDestination = Join-Path $staging 'Config'
@@ -82,32 +94,31 @@ New-Item -ItemType Directory -Path $gamesDestination -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Games\Examples') `
     -Destination (Join-Path $gamesDestination 'Examples') -Recurse -Force
 
-foreach ($folder in @('Logs', 'Cache')) {
-    New-Item -ItemType Directory -Path (Join-Path $staging $folder) -Force | Out-Null
-}
+New-Item -ItemType Directory -Path (Join-Path $staging 'Logs') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $staging 'System\Cache') -Force | Out-Null
 
 # Some native runtime packages carry symbols even when DebugSymbols is disabled.
 # Portable releases intentionally contain no debugging symbol files.
 Get-ChildItem -LiteralPath (Join-Path $staging 'System') -Recurse -File -Filter '*.pdb' |
     Remove-Item -Force
-Get-ChildItem -LiteralPath (Join-Path $staging 'Host') -Recurse -File -Filter '*.pdb' |
+Get-ChildItem -LiteralPath (Join-Path $staging 'System\Host') -Recurse -File -Filter '*.pdb' |
     Remove-Item -Force
 
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'README.md') -Destination $staging
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'LICENSE') -Destination $staging
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'NOTICE') -Destination $staging
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'COMMERCIAL-LICENSE.md') -Destination $staging
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'CHANGELOG.md') -Destination $staging
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'SECURITY.md') -Destination $staging
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Docs\2.0\ReleaseCandidate1.md') -Destination $staging
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Docs\2.0\UpgradeGuide.md') -Destination $staging
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Game-Configurator.md') -Destination $staging
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Emulator-Launch-Guide.md') -Destination $staging
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Updater-Security.md') -Destination $staging
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Physical-Cart-Hardware-Test-Checklist.md') -Destination $staging
+$documentationDestination = Join-Path $staging 'System\Documentation'
+New-Item -ItemType Directory -Path $documentationDestination -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'README.md') -Destination $documentationDestination
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'LICENSE') -Destination $documentationDestination
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'NOTICE') -Destination $documentationDestination
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'COMMERCIAL-LICENSE.md') -Destination $documentationDestination
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'CHANGELOG.md') -Destination $documentationDestination
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'SECURITY.md') -Destination $documentationDestination
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Game-Configurator.md') -Destination $documentationDestination
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Emulator-Launch-Guide.md') -Destination $documentationDestination
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Updater-Security.md') -Destination $documentationDestination
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Physical-Cart-Hardware-Test-Checklist.md') -Destination $documentationDestination
 
 # Generated concept drafts are development assets; portable releases include only final collection artwork.
-Get-ChildItem -LiteralPath (Join-Path $staging 'Assets\Collections') -Directory -Recurse -ErrorAction SilentlyContinue |
+Get-ChildItem -LiteralPath (Join-Path $staging 'System\Assets\Collections') -Directory -Recurse -ErrorAction SilentlyContinue |
     Where-Object { $_.Name -eq 'Concepts' } |
     Remove-Item -Recurse -Force
 
@@ -128,7 +139,7 @@ cd "$SCRIPT_DIR/System/Linux-x64" || exit 1
 exec ./CartLaunchCompanion.Desktop "$@"
 '@
 $linuxLauncherPath = Join-Path $staging 'Start Cart Launch Companion.sh'
-Set-Content -LiteralPath $linuxLauncherPath -Value $linuxLauncher -Encoding utf8NoBOM
+[IO.File]::WriteAllText($linuxLauncherPath, $linuxLauncher, [Text.UTF8Encoding]::new($false))
 
 $windowsConfigurator = @'
 @echo off
@@ -146,23 +157,44 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 cd "$SCRIPT_DIR/System/Linux-x64" || exit 1
 exec ./CartLaunchCompanion.Configurator "$@"
 '@
-Set-Content -LiteralPath (Join-Path $staging 'Game Configurator.sh') `
-    -Value $linuxConfigurator -Encoding utf8NoBOM
+$linuxConfiguratorPath = Join-Path $staging 'Game Configurator.sh'
+[IO.File]::WriteAllText($linuxConfiguratorPath, $linuxConfigurator, [Text.UTF8Encoding]::new($false))
+
+$windowsUpdater = @'
+@echo off
+setlocal
+cd /d "%~dp0System\Windows-x64"
+CartLaunchCompanion.Desktop.exe --check-for-updates
+exit /b %ERRORLEVEL%
+'@
+Set-Content -LiteralPath (Join-Path $staging 'Updater.bat') `
+    -Value $windowsUpdater -Encoding ASCII
+
+$linuxUpdater = @'
+#!/usr/bin/env sh
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+cd "$SCRIPT_DIR/System/Linux-x64" || exit 1
+exec ./CartLaunchCompanion.Desktop --check-for-updates "$@"
+'@
+$linuxUpdaterPath = Join-Path $staging 'Updater.sh'
+[IO.File]::WriteAllText($linuxUpdaterPath, $linuxUpdater, [Text.UTF8Encoding]::new($false))
 
 $windowsStage = Join-Path $OutputRoot 'windows\CartLaunchCompanion'
 $linuxStage = Join-Path $OutputRoot 'linux\CartLaunchCompanion'
 Copy-Item -LiteralPath $staging -Destination $windowsStage -Recurse
 Copy-Item -LiteralPath $staging -Destination $linuxStage -Recurse
 Remove-Item -LiteralPath (Join-Path $windowsStage 'System\Linux-x64') -Recurse -Force
-Remove-Item -LiteralPath (Join-Path $windowsStage 'Maintenance\Linux-x64') -Recurse -Force
-Remove-Item -LiteralPath (Join-Path $windowsStage 'Host\Linux-x64') -Recurse -Force
+Remove-Item -LiteralPath (Join-Path $windowsStage 'System\Maintenance\Linux-x64') -Recurse -Force
+Remove-Item -LiteralPath (Join-Path $windowsStage 'System\Host\Linux-x64') -Recurse -Force
 Remove-Item -LiteralPath (Join-Path $windowsStage 'Start Cart Launch Companion.sh') -Force
 Remove-Item -LiteralPath (Join-Path $windowsStage 'Game Configurator.sh') -Force
+Remove-Item -LiteralPath (Join-Path $windowsStage 'Updater.sh') -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'System\Windows-x64') -Recurse -Force
-Remove-Item -LiteralPath (Join-Path $linuxStage 'Maintenance\Windows-x64') -Recurse -Force
-Remove-Item -LiteralPath (Join-Path $linuxStage 'Host\Windows-x64') -Recurse -Force
+Remove-Item -LiteralPath (Join-Path $linuxStage 'System\Maintenance\Windows-x64') -Recurse -Force
+Remove-Item -LiteralPath (Join-Path $linuxStage 'System\Host\Windows-x64') -Recurse -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'Start Cart Launch Companion.bat') -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'Game Configurator.bat') -Force
+Remove-Item -LiteralPath (Join-Path $linuxStage 'Updater.bat') -Force
 
 $windowsZip = Join-Path $packages "CartLaunchCompanion-$version-win-x64.zip"
 $portableZip = Join-Path $packages "CartLaunchCompanion-$version-portable.zip"

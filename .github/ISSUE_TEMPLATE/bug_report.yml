@@ -1,0 +1,62 @@
+name: Bug report
+description: Report a reproducible problem with Cart Launch Companion.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve Cart Launch Companion. Do not include API keys, credentials, or private paths.
+  - type: input
+    id: version
+    attributes:
+      label: CLC version
+      description: The version shown by the app or the downloaded package name.
+      placeholder: 2.4.0
+    validations:
+      required: true
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: Operating system
+      options:
+        - Windows 11
+        - Windows 10
+        - SteamOS
+        - Bazzite
+        - ChimeraOS
+        - CachyOS
+        - Other Linux distribution
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Explain what you expected and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open...
+        2. Select...
+        3. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or screenshots
+      description: Remove credentials and private information before attaching anything.
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I tested with the latest published release.
+          required: true
+        - label: I removed API keys, credentials, and private information.
+          required: true

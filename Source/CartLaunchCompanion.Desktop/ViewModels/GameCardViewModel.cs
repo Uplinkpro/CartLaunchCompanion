@@ -13,6 +13,7 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
     private readonly List<Bitmap> _screenshotImages = [];
     private readonly DispatcherTimer _screenshotTimer;
     private bool _isSelected;
+    private bool _isVersionSelected;
     private int _screenshotIndex;
     private Bitmap? _currentScreenshotImage;
 
@@ -44,6 +45,11 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
         LogoImage = TryLoadBitmap(entry.LogoPath);
         LauncherLogoImage = TryLoadBitmap(
             ResolveLauncherAssetPath(entry, "Logo.png"));
+        LauncherBannerImage = TryLoadBitmap(
+            entry.LaunchTarget?.Launcher == LauncherKind.Custom
+                ? ResolvePlatformBannerPath(entry)
+                : null)
+            ?? TryLoadBitmap(ResolveLauncherAssetPath(entry, "Banner.png"));
 
         foreach (var path in entry.ScreenshotPaths)
         {
@@ -65,9 +71,15 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
     }
 
     public GameLibraryEntry Entry { get; }
+    public ObservableCollection<GameCardViewModel> Versions { get; } = [];
     public ObservableCollection<ScreenshotIndicatorViewModel> ScreenshotIndicators { get; } = [];
 
     public string Name => Entry.Configuration.Game.Name;
+    public string VersionGroup => Entry.Configuration.Game.VersionGroup;
+    public string PlatformLabel => Entry.Configuration.Game.PlatformLabel;
+    public string PlatformDisplay => string.IsNullOrWhiteSpace(PlatformLabel) ? Launcher : PlatformLabel;
+    public bool IsPrimaryVersion => Entry.Configuration.Game.PrimaryVersion;
+    public bool HasMultipleVersions => Versions.Count > 1;
     public string Description => Entry.Configuration.Game.Description;
     public string Developer => Entry.Configuration.Game.Developer;
     public string Publisher => Entry.Configuration.Game.Publisher;
@@ -117,8 +129,13 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
     };
 
     public string Launcher =>
-        Entry.LaunchTarget?.Launcher.ToString()
-        ?? "Unavailable";
+        Entry.LaunchTarget?.Launcher switch
+        {
+            LauncherKind.Local => "EXE",
+            LauncherKind.Custom => "Emulator",
+            { } launcher => launcher.ToString(),
+            null => "Unavailable"
+        };
 
     public LauncherKind LauncherKind =>
         Entry.LaunchTarget?.Launcher
@@ -144,6 +161,7 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
     public Bitmap? BackgroundImage { get; }
     public Bitmap? LogoImage { get; }
     public Bitmap? LauncherLogoImage { get; }
+    public Bitmap? LauncherBannerImage { get; }
     public Bitmap? CurrentScreenshotImage
     {
         get => _currentScreenshotImage;
@@ -152,6 +170,8 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
 
     public bool HasCover => CoverImage is not null;
     public bool HasNoCover => CoverImage is null;
+    public bool HasLauncherBanner => LauncherBannerImage is not null;
+    public bool HasNoLauncherBanner => LauncherBannerImage is null;
     public bool HasBackground => BackgroundImage is not null;
     public bool HasHero => HeroImage is not null;
     public bool HasHeroOnly => BackgroundImage is null && HeroImage is not null;
@@ -163,6 +183,7 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
     public bool HasNoTrailerSource => !HasTrailerSource;
     public bool HasScreenshots => CurrentScreenshotImage is not null;
     public bool IsLaunchable => Entry.IsLaunchable;
+
 
     public bool IsSelected
     {
@@ -223,6 +244,20 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
 
     public IRelayCommand OpenCommand { get; }
 
+    public void SetVersions(IEnumerable<GameCardViewModel> versions)
+    {
+        Versions.Clear();
+        foreach (var version in versions)
+            Versions.Add(version);
+        OnPropertyChanged(nameof(HasMultipleVersions));
+    }
+
+    public bool IsVersionSelected
+    {
+        get => _isVersionSelected;
+        set => SetProperty(ref _isVersionSelected, value);
+    }
+
     public void Dispose()
     {
         _screenshotTimer.Stop();
@@ -232,6 +267,7 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
         if (!ReferenceEquals(HeroImage, BackgroundImage)) HeroImage?.Dispose();
         LogoImage?.Dispose();
         LauncherLogoImage?.Dispose();
+        LauncherBannerImage?.Dispose();
         foreach (var screenshot in _screenshotImages)
             screenshot.Dispose();
     }
@@ -284,14 +320,50 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
             LauncherKind.Ubisoft => "Ubisoft",
             LauncherKind.Rockstar => "Rockstar",
             LauncherKind.Amazon => "Amazon",
+            LauncherKind.Heroic => "Heroic",
+            LauncherKind.Flatpak => "Flatpak",
+            LauncherKind.Wine => "Wine",
+            LauncherKind.Proton => "Proton",
+            LauncherKind.Custom => "Emulator",
             _ => "DirectExe"
         };
 
         return Path.Combine(
             portableRoot.FullName,
+            "System",
             "Assets",
             "Launchers",
             launcherFolder,
             fileName);
+    }
+
+    private static string? ResolvePlatformBannerPath(GameLibraryEntry entry)
+    {
+        if (string.IsNullOrWhiteSpace(entry.Configuration.Game.PlatformLabel))
+            return null;
+
+        var gamesFolder = Directory.GetParent(entry.FolderPath);
+        var portableRoot = gamesFolder?.Parent;
+        if (portableRoot is null)
+            return null;
+
+        var normalized = new string(entry.Configuration.Game.PlatformLabel
+            .Where(char.IsLetterOrDigit)
+            .Select(char.ToLowerInvariant)
+            .ToArray());
+        var platformFolder = normalized switch
+        {
+            "playstation" or "sonyplaystation" or "ps1" or "psx" => "PlayStation",
+            "playstation2" or "ps2" => "PlayStation2",
+            "playstation3" or "ps3" => "PlayStation3",
+            "playstationportable" or "psp" => "PSP",
+            "gameboyadvance" or "gba" => "GameBoyAdvance",
+            _ => string.Concat(entry.Configuration.Game.PlatformLabel
+                .Where(character => !Path.GetInvalidFileNameChars().Contains(character)))
+                .Trim()
+        };
+        return string.IsNullOrWhiteSpace(platformFolder)
+            ? null
+            : Path.Combine(portableRoot.FullName, "System", "Assets", "Platforms", platformFolder, "Banner.png");
     }
 }

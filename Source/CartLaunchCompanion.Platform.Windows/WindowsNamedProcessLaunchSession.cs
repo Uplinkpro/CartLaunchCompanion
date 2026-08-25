@@ -19,15 +19,11 @@ internal sealed class WindowsNamedProcessLaunchSession(
         var deadline =
             DateTime.UtcNow.AddSeconds(startTimeoutSeconds);
 
-        Process[] processes = [];
-
         while (DateTime.UtcNow < deadline)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            processes = Process.GetProcessesByName(normalizedName);
-
-            if (processes.Length > 0)
+            if (IsProcessRunning(normalizedName))
                 break;
 
             await Task.Delay(
@@ -35,15 +31,26 @@ internal sealed class WindowsNamedProcessLaunchSession(
                 cancellationToken);
         }
 
-        if (processes.Length == 0)
+        if (!IsProcessRunning(normalizedName))
             return;
 
+        while (IsProcessRunning(normalizedName))
+        {
+            await Task.Delay(
+                TimeSpan.FromSeconds(Math.Max(1, pollSeconds)),
+                cancellationToken);
+        }
+    }
+
+    private static bool IsProcessRunning(string normalizedName)
+    {
+        var processes = Process.GetProcessesByName(normalizedName);
         try
         {
-            await Task.WhenAll(
-                processes.Select(
-                    process => process.WaitForExitAsync(
-                        cancellationToken)));
+            // Do not call WaitForExitAsync here. Some launcher-owned and elevated
+            // games deny the process synchronization handle it requests even
+            // though Windows still allows their presence to be enumerated.
+            return processes.Length > 0;
         }
         finally
         {

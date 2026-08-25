@@ -1,0 +1,26 @@
+{
+  "$schema": "../System/Schemas/collection.schema.json",
+  "formatVersion": 1,
+  "enabled": true,
+  "name": "The Grand Theft Auto Master Collection",
+  "description": "Every era of Grand Theft Auto in one cart.",
+  "logo": "System/Assets/Collections/GrandTheftAuto/Logo.png",
+  "accentColor": "#F2C94C",
+  "defaultShelf": "",
+  "shelves": [
+    { "name": "The Topdown Era", "order": 10 },
+    { "name": "The 3D Era", "order": 20 },
+    { "name": "The HD Era", "order": 30 }
+  ],
+  "placements": [
+    { "configuration": "Games/Grand Theft Auto/game.json", "shelf": "The Topdown Era", "order": 10 },
+    { "configuration": "Games/Grand Theft Auto London 1969/game.json", "shelf": "The Topdown Era", "order": 20 },
+    { "configuration": "Games/Grand Theft Auto London 1961/game.json", "shelf": "The Topdown Era", "order": 30 },
+    { "configuration": "Games/Grand Theft Auto II/game.json", "shelf": "The Topdown Era", "order": 40 },
+    { "configuration": "Games/Grand Theft Auto III - The Definitive Edition/game.json", "shelf": "The 3D Era", "order": 10 },
+    { "configuration": "Games/Grand Theft Auto Vice City - The Definitive Edition/game.json", "shelf": "The 3D Era", "order": 20 },
+    { "configuration": "Games/Grand Theft Auto San Andreas - The Definitive Edition/game.json", "shelf": "The 3D Era", "order": 30 },
+    { "configuration": "Games/Grand Theft Auto IV - The Complete Edition/game.json", "shelf": "The HD Era", "order": 10 },
+    { "configuration": "Games/Grand Theft Auto V Enhanced/game.json", "shelf": "The HD Era", "order": 20 }
+  ]
+}

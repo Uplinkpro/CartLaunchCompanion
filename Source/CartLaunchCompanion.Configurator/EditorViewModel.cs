@@ -9,7 +9,7 @@ namespace CartLaunchCompanion.Configurator;
 public sealed class EditorViewModel : INotifyPropertyChanged
 {
     private GameConfiguration _configuration = CreateDefault();
-    private string _filePath = "No game folder selected";
+    private string _filePath = "No CLC game folder selected (normally CartLaunchCompanion/Games/Game Name)";
     private string _status = "Start a new configuration or open an existing game.json file.";
     private string _jsonPreview = "";
     private bool _hasErrors;
@@ -20,7 +20,7 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     private Bitmap? _heroPreview;
     private Bitmap? _logoPreview;
     private Bitmap? _iconPreview;
-    private string _pathStatus = "Choose a game configuration folder before locating portable files.";
+    private string _pathStatus = "Choose a CLC configuration folder inside CartLaunchCompanion/Games—not the Steam or Rockstar installation folder.";
     private CollectionConfiguration _collection = new();
     private Bitmap? _collectionLogoPreview;
     private string _collectionLogoStatus = "No collection logo configured.";
@@ -28,8 +28,9 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     private string _artworkAuditSummary = "Artwork has not been checked yet.";
     private string _windowsLauncherStatus = "Choose a launcher, then verify only that launcher on this computer.";
     private string _linuxLauncherStatus = "Choose a launcher, then verify only that launcher on this computer or Steam Deck.";
+    private InstalledEmulatorOption? _selectedInstalledEmulator;
     private string _newShelfName = "";
-    private string _collectionLayoutStatus = "Drag a game card onto a shelf, then save the layout.";
+    private string _collectionLayoutStatus = "Choose a shelf for each primary game, adjust its order, then save the layout.";
 
     public GameConfiguration Configuration { get => _configuration; set { _configuration = value; Changed(); Changed(nameof(JsonPreview)); } }
     public string FilePath { get => _filePath; set { _filePath = value; Changed(); } }
@@ -62,8 +63,13 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     public string ArtworkAuditSummary { get => _artworkAuditSummary; set { _artworkAuditSummary = value; Changed(); } }
     public string WindowsLauncherStatus { get => _windowsLauncherStatus; set { _windowsLauncherStatus = value; Changed(); } }
     public string LinuxLauncherStatus { get => _linuxLauncherStatus; set { _linuxLauncherStatus = value; Changed(); } }
+    public ObservableCollection<InstalledEmulatorOption> InstalledEmulators { get; } = [];
+    public InstalledEmulatorOption? SelectedInstalledEmulator { get => _selectedInstalledEmulator; set { _selectedInstalledEmulator = value; Changed(); } }
+    public bool HasInstalledEmulators => InstalledEmulators.Count > 0;
     public ObservableCollection<CollectionShelfEditor> CollectionShelves { get; } = [];
     public ObservableCollection<CollectionGameEditor> UnassignedCollectionGames { get; } = [];
+    public ObservableCollection<CollectionGameEditor> CollectionGames { get; } = [];
+    public ObservableCollection<string> CollectionShelfChoices { get; } = ["(Unassigned)"];
     public string NewShelfName { get => _newShelfName; set { _newShelfName = value; Changed(); } }
     public string CollectionLayoutStatus { get => _collectionLayoutStatus; set { _collectionLayoutStatus = value; Changed(); } }
     public bool HasExistingGames => ExistingGames.Count > 0;
@@ -82,15 +88,17 @@ public sealed class EditorViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public void NotifyExistingGamesChanged() => Changed(nameof(HasExistingGames));
+    public void NotifyInstalledEmulatorsChanged() => Changed(nameof(HasInstalledEmulators));
     public void RefreshPreview() => JsonPreview = GameConfigurationJson.Serialize(Configuration);
-    public void Reset() { Configuration = CreateDefault(); FilePath = "No game folder selected"; Status = "New configuration ready."; PathStatus = "Choose a game configuration folder before locating portable files."; ArtworkPreview = null; CoverPreview = null; HeroPreview = null; BackgroundPreview = null; LogoPreview = null; IconPreview = null; ArtworkPreviewTitle = "No artwork selected yet"; RefreshPreview(); }
-    private static GameConfiguration CreateDefault() { var c = new GameConfiguration(); c.Launch.Linux.Enabled = false; return c; }
+    public void Reset() { Configuration = CreateDefault(); FilePath = "No CLC game folder selected (normally CartLaunchCompanion/Games/Game Name)"; Status = "New configuration ready. Find the game on Steam to fill details and select its CLC folder automatically."; PathStatus = "Choose a CLC configuration folder inside CartLaunchCompanion/Games—not the Steam or Rockstar installation folder."; ArtworkPreview = null; CoverPreview = null; HeroPreview = null; BackgroundPreview = null; LogoPreview = null; IconPreview = null; ArtworkPreviewTitle = "No artwork selected yet"; RefreshPreview(); }
+    private static GameConfiguration CreateDefault() { var c = new GameConfiguration(); c.Game.Id = GameIdentity.Create(); c.Launch.Linux.Enabled = false; return c; }
     private void Changed([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
-public sealed record ExistingGameOption(string Name, string ConfigurationPath)
+public sealed record ExistingGameOption(string Name, string ConfigurationPath, string SortName = "", string PlatformLabel = "")
 {
-    public override string ToString() => Name;
+    public string EffectiveSortName => string.IsNullOrWhiteSpace(SortName) ? Name : SortName.Trim();
+    public override string ToString() => string.IsNullOrWhiteSpace(PlatformLabel) ? Name : $"{Name} — {PlatformLabel.Trim()}";
 }
 
 public sealed record ArtworkAuditItem(

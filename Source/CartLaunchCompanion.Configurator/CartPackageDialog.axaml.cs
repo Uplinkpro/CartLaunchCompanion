@@ -146,7 +146,7 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
     {
         var platform = OperatingSystem.IsWindows() ? "Windows-x64" : "Linux-x64";
         var name = OperatingSystem.IsWindows() ? "CartLaunchCompanion.Host.exe" : "CartLaunchCompanion.Host";
-        var candidates = new[] { Path.Combine(SourceRoot, "Host", platform, name), Path.Combine(SourceRoot, "System", platform, name) };
+        var candidates = new[] { Path.Combine(SourceRoot, "System", "Host", platform, name) };
         return candidates.FirstOrDefault(File.Exists);
     }
     private void CloseClicked(object? sender, RoutedEventArgs e) => Close();

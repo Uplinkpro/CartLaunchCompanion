@@ -10,8 +10,6 @@ public sealed class GameLibraryEntry
     public required string ConfigurationPath { get; init; }
     public required GameConfiguration Configuration { get; init; }
 
-    public bool ImportedFromVersion1 { get; init; }
-
     public string? CoverPath { get; init; }
     public string? HeroPath { get; init; }
     public string? BackgroundPath { get; init; }

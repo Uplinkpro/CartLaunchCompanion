@@ -14,6 +14,15 @@ public sealed class CollectionConfiguration
     public string ArtworkStyle { get; set; } = "official";
     public bool AllowHumorArtwork { get; set; }
     public List<CollectionShelfConfiguration> Shelves { get; set; } = [];
+    public List<CollectionGamePlacementConfiguration> Placements { get; set; } = [];
+}
+
+public sealed class CollectionGamePlacementConfiguration
+{
+    public string GameId { get; set; } = "";
+    public string Configuration { get; set; } = "";
+    public string Shelf { get; set; } = "";
+    public int Order { get; set; }
 }
 
 public sealed class CollectionShelfConfiguration

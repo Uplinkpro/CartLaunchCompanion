@@ -182,7 +182,7 @@ public sealed class SteamCatalogService(HttpClient httpClient)
             {
                 var url = $"https://cdn.cloudflare.steamstatic.com/steam/apps/{match.AppId}/header.jpg";
                 using var request = new HttpRequestMessage(HttpMethod.Get, url);
-                request.Headers.UserAgent.ParseAdd("CartLaunchCompanion/2.0");
+                request.Headers.UserAgent.ParseAdd("CartLaunchCompanion/2.3");
                 using var response = await httpClient.SendAsync(request, cancellationToken);
                 if (!response.IsSuccessStatusCode ||
                     response.Content.Headers.ContentType?.MediaType?.StartsWith("image/", StringComparison.OrdinalIgnoreCase) != true)

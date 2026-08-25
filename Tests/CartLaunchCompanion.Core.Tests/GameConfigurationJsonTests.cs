@@ -36,7 +36,7 @@ public sealed class GameConfigurationJsonTests
         Assert.Contains("\"preferredPlatform\": \"automatic\"", json);
         Assert.Contains("\"launcher\": \"steam\"", json);
         Assert.Contains("\"steamDeckCompatibility\": \"verified\"", json);
-        Assert.Contains("\"collection\": {", json);
+        Assert.DoesNotContain("\"collection\": {", json);
     }
 
     [Fact]
@@ -69,7 +69,6 @@ public sealed class GameConfigurationJsonTests
 
         Assert.Equal("Portal 2", configuration.Game.Name);
         Assert.Equal("620", configuration.Launch.Windows.SteamId);
-        Assert.Equal("", configuration.Collection.Shelf);
     }
 
     [Fact]

@@ -1,5 +1,4 @@
 using CartLaunchCompanion.Core.Configuration;
-using CartLaunchCompanion.Core.Configuration.Migration;
 using CartLaunchCompanion.Core.Configuration.Validation;
 using CartLaunchCompanion.Core.Launching;
 using CartLaunchCompanion.Core.Library;
@@ -75,17 +74,17 @@ public sealed class GameLibraryServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task LoadAsync_ImportsVersion1WithoutEnablingLinux()
+    public async Task LoadAsync_RejectsConfigurationsWithoutCurrentFormat()
     {
         var paths = PortablePaths.FromRoot(_root);
-        var folder = Path.Combine(paths.Games, "Legacy");
+        var folder = Path.Combine(paths.Games, "Unsupported");
         Directory.CreateDirectory(folder);
 
         await File.WriteAllTextAsync(
             Path.Combine(folder, "Game.json"),
             """
             {
-              "Name": "Legacy Game",
+              "Name": "Unsupported Game",
               "Launcher": "Steam",
               "SteamID": "123"
             }
@@ -97,14 +96,9 @@ public sealed class GameLibraryServiceTests : IDisposable
             paths,
             PlatformKind.Windows);
 
-        var entry = Assert.Single(result.Games);
-        Assert.True(entry.ImportedFromVersion1);
-        Assert.False(entry.Configuration.Launch.Linux.Enabled);
-        Assert.Contains(
-            entry.Warnings,
-            warning => warning.Contains(
-                "Version 1 compatibility importer",
-                StringComparison.Ordinal));
+        Assert.Empty(result.Games);
+        var failure = Assert.Single(result.Failures);
+        Assert.Contains("formatVersion 2", failure.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -130,7 +124,6 @@ public sealed class GameLibraryServiceTests : IDisposable
     private static GameLibraryService CreateService() =>
         new(
             new GameConfigurationValidator(),
-            new Version1GameConfigurationImporter(),
             new GamePathResolver(),
             new LaunchTargetSelector());
 

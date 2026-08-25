@@ -105,22 +105,36 @@
                             IsVisible="{Binding SelectedGame.HasGamepadSupport}">
                         <StackPanel Orientation="Horizontal" Spacing="8"
                                     VerticalAlignment="Center">
-                            <Canvas Width="32" Height="20">
-                                <Path Data="M8,4 C4,4 2.5,7 2,11 L1,16 C0.6,19 3.8,21 5.8,18.8 L9,15.5 L23,15.5 L26.2,18.8 C28.2,21 31.4,19 31,16 L30,11 C29.5,7 28,4 24,4 Z"
-                                      Stroke="{Binding SelectedGame.GamepadSupportColor}"
-                                      StrokeThickness="2" Fill="#26000000" />
-                                <Path Data="M8,8 L8,13 M5.5,10.5 L10.5,10.5"
-                                      Stroke="{Binding SelectedGame.GamepadSupportColor}"
-                                      StrokeThickness="1.8" />
-                                <Ellipse Canvas.Left="23" Canvas.Top="8" Width="3" Height="3"
-                                         Fill="{Binding SelectedGame.GamepadSupportColor}" />
-                                <Ellipse Canvas.Left="26" Canvas.Top="11" Width="3" Height="3"
-                                         Fill="{Binding SelectedGame.GamepadSupportColor}" />
-                                <Ellipse Canvas.Left="14" Canvas.Top="10" Width="2" Height="2"
-                                         Fill="{Binding SelectedGame.GamepadSupportColor}" Opacity="0.75" />
-                                <Ellipse Canvas.Left="18" Canvas.Top="10" Width="2" Height="2"
-                                         Fill="{Binding SelectedGame.GamepadSupportColor}" Opacity="0.75" />
-                            </Canvas>
+                            <Viewbox Width="38" Height="28" Stretch="Uniform">
+                                <Canvas Width="58" Height="42">
+                                    <Path Data="M9,7 Q13,3 19,4 L21,6 H37 L39,4 Q45,3 49,7 Q53,12 55,21 L57,31 Q58,37 53,40 L47,42 L39,34 Q37,32 34,32 H24 Q21,32 19,34 L11,42 L5,40 Q0,37 1,31 L3,21 Q5,12 9,7 Z"
+                                          Stroke="{Binding SelectedGame.GamepadSupportColor}"
+                                          StrokeThickness="2.4" Fill="Transparent" />
+                                    <Path Data="M14,13 L14,21 M10,17 L18,17"
+                                          Stroke="{Binding SelectedGame.GamepadSupportColor}"
+                                          StrokeThickness="2" />
+                                    <Ellipse Canvas.Left="12" Canvas.Top="10" Width="4" Height="4"
+                                             Fill="Transparent" Stroke="{Binding SelectedGame.GamepadSupportColor}" StrokeThickness="1.6" />
+                                    <Ellipse Canvas.Left="20" Canvas.Top="23" Width="7" Height="7"
+                                             Fill="Transparent" Stroke="{Binding SelectedGame.GamepadSupportColor}" StrokeThickness="1.8" />
+                                    <Ellipse Canvas.Left="34" Canvas.Top="23" Width="7" Height="7"
+                                             Fill="Transparent" Stroke="{Binding SelectedGame.GamepadSupportColor}" StrokeThickness="1.8" />
+                                    <Ellipse Canvas.Left="43" Canvas.Top="11" Width="3.5" Height="3.5"
+                                             Fill="Transparent" Stroke="{Binding SelectedGame.GamepadSupportColor}" StrokeThickness="1.4" />
+                                    <Ellipse Canvas.Left="47" Canvas.Top="15" Width="3.5" Height="3.5"
+                                             Fill="Transparent" Stroke="{Binding SelectedGame.GamepadSupportColor}" StrokeThickness="1.4" />
+                                    <Ellipse Canvas.Left="39" Canvas.Top="15" Width="3.5" Height="3.5"
+                                             Fill="Transparent" Stroke="{Binding SelectedGame.GamepadSupportColor}" StrokeThickness="1.4" />
+                                    <Ellipse Canvas.Left="43" Canvas.Top="19" Width="3.5" Height="3.5"
+                                             Fill="Transparent" Stroke="{Binding SelectedGame.GamepadSupportColor}" StrokeThickness="1.4" />
+                                    <Ellipse Canvas.Left="26" Canvas.Top="7" Width="6" Height="6"
+                                             Fill="Transparent" Stroke="{Binding SelectedGame.GamepadSupportColor}" StrokeThickness="1.6" />
+                                    <Ellipse Canvas.Left="23" Canvas.Top="15" Width="2.5" Height="2.5"
+                                             Fill="Transparent" Stroke="{Binding SelectedGame.GamepadSupportColor}" StrokeThickness="1.2" />
+                                    <Ellipse Canvas.Left="33" Canvas.Top="15" Width="2.5" Height="2.5"
+                                             Fill="Transparent" Stroke="{Binding SelectedGame.GamepadSupportColor}" StrokeThickness="1.2" />
+                                </Canvas>
+                            </Viewbox>
                             <TextBlock Text="{Binding SelectedGame.GamepadSupportText}"
                                        Foreground="White" VerticalAlignment="Center"
                                        FontSize="10" FontWeight="Bold" LetterSpacing="1" />
@@ -128,11 +142,16 @@
                     </Border>
                 </StackPanel>
 
-                <Border Grid.Row="3" Width="245" Height="350" HorizontalAlignment="Left"
-                        CornerRadius="10" Background="#E6000000"
-                        BorderBrush="{Binding SelectedGame.AccentBrightColor}"
-                        BorderThickness="3">
-                    <Grid>
+                <StackPanel Grid.Row="3" Width="233" HorizontalAlignment="Left" Spacing="0">
+                    <Border Height="39" Background="{Binding SelectedGame.AccentColor}"
+                            IsVisible="{Binding SelectedGame.HasNoLauncherBanner}">
+                        <TextBlock Text="{Binding SelectedGame.Launcher}" Foreground="White"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Image Height="39" Source="{Binding SelectedGame.LauncherBannerImage}"
+                           Stretch="Fill" IsVisible="{Binding SelectedGame.HasLauncherBanner}"/>
+                    <Grid Height="350" Background="#E6000000">
                         <Image Source="{Binding SelectedGame.CoverImage}" Stretch="Uniform"
                                IsVisible="{Binding SelectedGame.HasCover}" />
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -142,7 +161,7 @@
                             <TextBlock Text="COVER ART MISSING" Foreground="#AFFFFFFF" FontSize="11" />
                         </StackPanel>
                     </Grid>
-                </Border>
+                </StackPanel>
             </Grid>
 
             <!-- Keep the middle open so the moving trailer remains visible. -->
@@ -150,7 +169,7 @@
             <Grid Grid.Column="2" RowDefinitions="242,*,64" RowSpacing="14">
                 <!-- 430 x 242 is a true 16:9 screenshot viewport at 1280 x 720. -->
                 <Border Grid.Row="0" Width="430" Height="242"
-                        CornerRadius="11" Background="#FF000000"
+                        CornerRadius="0" Background="#FF000000"
                         BorderBrush="{Binding SelectedGame.AccentBrightColor}" BorderThickness="2">
                     <Grid>
                         <Image Source="{Binding SelectedGame.CurrentScreenshotImage}"

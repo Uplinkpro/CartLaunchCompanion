@@ -117,7 +117,7 @@ public sealed class GitHubRuntimeUpdateService(HttpClient httpClient) : IRuntime
     private async Task DownloadFileAsync(Uri uri, string destination, long maximumBytes, IProgress<double>? progress, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-        request.Headers.UserAgent.ParseAdd("CartLaunchCompanion-Updater/1.0");
+        request.Headers.UserAgent.ParseAdd("CartLaunchCompanion-Updater/2.3");
         using var response = await SendApprovedAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
         var length = response.Content.Headers.ContentLength;

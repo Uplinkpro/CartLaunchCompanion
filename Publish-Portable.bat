@@ -7,5 +7,5 @@ if errorlevel 1 (
     exit /b 1
 )
 echo.
-echo RC1 packages are in artifacts\rc1\packages.
+echo Release packages are in the versioned artifacts folder.
 pause
