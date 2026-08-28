@@ -48,7 +48,7 @@ public sealed partial class EmulatorLibraryDialog : Window
             { Patterns = windows ? ["*.exe"] : ["*.AppImage", "*"] }]
         });
         if (files.Count == 0) return;
-        var selected = files[0].Path.LocalPath;
+        var selected = StorageItemPathResolver.Resolve(files[0].Path);
         if (!_library.IsInExpectedFolder(_mediaRoot, row.Item.Definition, windows, selected))
         {
             StatusText.Text = $"Not added. Put the complete portable {row.Item.Definition.DisplayName} build inside {expected}, then select its executable. CLC does not copy only one file because emulators usually require companion files.";

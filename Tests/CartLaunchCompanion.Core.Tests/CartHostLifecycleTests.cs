@@ -39,7 +39,7 @@ public sealed class CartHostLifecycleTests : IDisposable
         Directory.CreateDirectory(published);
         Directory.CreateDirectory(install);
         Directory.CreateDirectory(Path.Combine(data, "Logs"));
-        var executable = OperatingSystem.IsWindows() ? "CartLaunchCompanion.Host.exe" : "CartLaunchCompanion.Host";
+        var executable = OperatingSystem.IsWindows() ? "CLC-CartMonitor.exe" : "CLC-CartMonitor";
         File.WriteAllText(Path.Combine(published, executable), "new runtime");
         File.WriteAllText(Path.Combine(published, "host.dll"), "new dependency");
         File.WriteAllText(Path.Combine(install, executable), "old runtime");

@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 if (args.Length != 2 || !int.TryParse(args[0], out var parentId)) return 2;
 var requestedRoot = Path.TrimEndingDirectorySeparator(Path.GetFullPath(args[1]));
 var local = Path.TrimEndingDirectorySeparator(Path.GetFullPath(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)));
-var expectedRoot = Path.Combine(local, "CartLaunchCompanion", "Host", "Runtime");
+var expectedRoot = Path.Combine(local, "CartLaunchCompanion", "CartMonitor", "Runtime");
 if (!requestedRoot.Equals(expectedRoot, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal)) return 3;
 
 try

@@ -1,0 +1,58 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CartLaunchCompanion.Host.VerificationProgressWindow"
+        Width="520"
+        Height="390"
+        CanResize="False"
+        WindowDecorations="None"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        Topmost="True"
+        WindowStartupLocation="CenterScreen"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
+        Title="Verifying trusted game cart">
+  <Window.Styles>
+    <Style Selector="Canvas.verification-spinner">
+      <Setter Property="RenderTransformOrigin" Value="50%,50%"/>
+      <Setter Property="RenderTransform"><RotateTransform Angle="0"/></Setter>
+      <Style.Animations>
+        <Animation Duration="0:0:0.8" IterationCount="Infinite" Easing="LinearEasing">
+          <KeyFrame Cue="0%"><Setter Property="RotateTransform.Angle" Value="0"/></KeyFrame>
+          <KeyFrame Cue="100%"><Setter Property="RotateTransform.Angle" Value="360"/></KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
+  </Window.Styles>
+
+  <Border Background="#F20B0D10"
+          BorderBrush="#394553"
+          BorderThickness="1"
+          CornerRadius="22"
+          Padding="34">
+    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="18">
+      <Image Source="{Binding CollectionLogo}"
+             IsVisible="{Binding HasCollectionLogo}"
+             Width="210"
+             Height="130"
+             Stretch="Uniform"
+             HorizontalAlignment="Center"/>
+      <Canvas x:Name="Spinner" Classes="verification-spinner" Width="64" Height="64" HorizontalAlignment="Center">
+        <Ellipse Canvas.Left="5" Canvas.Top="5" Width="54" Height="54"
+                 Stroke="#2FFFFFFF" StrokeThickness="5"/>
+        <Path Data="M32,5 A27,27 0 0 1 59,32"
+              Stroke="#59D98E" StrokeThickness="5" StrokeLineCap="Round"/>
+      </Canvas>
+      <TextBlock Text="{Binding CartName}"
+                 Foreground="#E6FFFFFF"
+                 FontSize="18"
+                 FontWeight="SemiBold"
+                 HorizontalAlignment="Center"/>
+      <TextBlock x:Name="Detail"
+                 Text="Checking approved files before launch…"
+                 Foreground="#AAB2BE"
+                 FontSize="14"
+                 HorizontalAlignment="Center"/>
+    </StackPanel>
+  </Border>
+</Window>

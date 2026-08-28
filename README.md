@@ -45,7 +45,7 @@ CLC is **not intended to replace Steam or organize every game installed across a
 
 > **The cart is the product.** CLC and its game definitions live in `Cart/`; installed game files live in the root-level `Games/` folder; shared emulators and game images can live in `Emulators/` and `Roms/`. Relative paths keep the cart usable when its drive letter or mount point changes.
 
-> **Current release:** [Version 2.4](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.4.0) is available for Windows, Linux, and SteamOS. The optional Cart Launch Host adds trusted removable-media detection, verified local staging, automatic launch, and safe ejection.
+> **Current release:** [Version 2.5](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.5.0) is available for Windows, Linux, and SteamOS. The optional CLC-Cart Monitor adds trusted removable-media detection, verified local staging, automatic launch, and safe ejection.
 
 ## Preview
 
@@ -158,15 +158,15 @@ CLC is **not intended to replace Steam or organize every game installed across a
 
 ## Download
 
-Download [Cart Launch Companion 2.4](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.4.0), or browse [all GitHub releases](https://github.com/Uplinkpro/CartLaunchCompanion/releases).
+Download [Cart Launch Companion 2.5](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.5.0), or browse [all GitHub releases](https://github.com/Uplinkpro/CartLaunchCompanion/releases).
 
-Version 2.4 provides three packages:
+Version 2.5 provides three packages:
 
 | Package | Intended use |
 |---|---|
-| `CartLaunchCompanion-2.4.0-win-x64.zip` | Windows-only cart runtime |
-| `CartLaunchCompanion-2.4.0-linux-x64.tar.gz` | Linux or SteamOS cart runtime |
-| `CartLaunchCompanion-2.4.0-portable.zip` | Combined Windows and Linux cart runtime |
+| `CartLaunchCompanion-2.5.0-win-x64.zip` | Windows-only cart runtime |
+| `CartLaunchCompanion-2.5.0-linux-x64.tar.gz` | Linux or SteamOS cart runtime |
+| `CartLaunchCompanion-2.5.0-portable.zip` | Combined Windows and Linux cart runtime |
 
 Every package is self-contained. The correct .NET runtime is included, so end users do not need to install the .NET SDK or runtime. Published archives contain no source, test, or build folders. Verify downloads with the included `SHA256SUMS.txt`.
 
@@ -254,9 +254,9 @@ See the [Game Configurator guide](Documentation/Game-Configurator.md) for the co
 
 ## Optional trusted insertion and automatic launch
 
-Every CLC installation is designed to live on a portable game cart. For a more console-like experience, an optional **Cart Launch Host** on each computer can add trusted insertion detection, protected local staging, automatic launch, and safe eject.
+Every CLC installation is designed to live on a portable game cart. For a more console-like experience, an optional **CLC-Cart Monitor** on each computer can add trusted insertion detection, protected local staging, automatic launch, and safe eject.
 
-Normal portable CLC use does not require the Host. Install it only on computers where you want the physical-cart workflow.
+Normal portable CLC use does not require CLC-Cart Monitor. Install it only on computers where you want the physical-cart workflow.
 
 ### 1. Prepare the media
 
@@ -271,7 +271,7 @@ The resulting media root contains:
 ```text
 GameCart/
 ├── cartlaunch.cartridge.json
-├── Cart/          # CLC, Configurator, Host, updater, configuration, and artwork
+├── Cart/          # CLC, Configurator, Cart Monitor, updater, configuration, and artwork
 ├── Games/         # Installed native game files, when kept on the cart
 ├── Emulators/     # Shared portable emulators
 └── Roms/          # ROMs and disc images
@@ -279,20 +279,20 @@ GameCart/
 
 Game definitions still live under `Cart/Games`. The root-level `Games` directory is for the actual game files. Steam or the operating system may add their own folders alongside these.
 
-### 2. Install the optional Host
+### 2. Install the optional CLC-Cart Monitor
 
-When CLC detects that the Host is unavailable, it offers to open the Host installer. The installer shows every runtime, data, startup, trust, settings, and log location before making changes.
+When CLC detects that CLC-Cart Monitor is unavailable, it offers to open its installer. The installer shows every program, data, startup, trust, settings, and log location before making changes.
 
 - **Current user** is recommended and does not require administrator access.
-- **All Windows users** installs the runtime for all users and requires the normal Windows administrator confirmation. Trust records and settings remain separate for each signed-in user.
-- The Host does not install a service, driver, or system-wide Linux rule.
+- **All Windows users** installs the Monitor for all users and requires the normal Windows administrator confirmation. Trust records and settings remain separate for each signed-in user.
+- CLC-Cart Monitor does not install a service, driver, or system-wide Linux rule.
 - Installation never trusts a cart or enables automatic launch.
 
-Use **Install or repair** again whenever the local Host files need to be refreshed. Repair preserves trust records, settings, and logs.
+Use **Install or repair** again whenever the local Monitor files need to be refreshed. Repair preserves trust records, settings, and logs.
 
 ### 3. Review and trust the cart
 
-After preparation, choose **Review trust in Host**. The Host independently verifies the cart identity and complete CLC runtime inventory, then shows:
+After preparation, choose **Review trust in Monitor**. CLC-Cart Monitor independently verifies the cart identity and complete CLC runtime inventory, then shows:
 
 - the cart name and unique ID;
 - its security version and connected-media path;
@@ -303,7 +303,7 @@ Trust requires an explicit acknowledgment. It permits verified manual launch onl
 
 ### 4. Launch safely
 
-For a manual launch, open **Connected carts**, select the cart, and choose **Verify and launch selected**. The Host checks the identity and every approved file, copies only the approved CLC runtime into a new user-only local session, verifies the copy again, and asks for one final launch confirmation.
+For a manual launch, open **Connected carts**, select the cart, and choose **Verify and launch selected**. CLC-Cart Monitor checks the identity and every approved file, copies only the approved CLC runtime into a new user-only local session, verifies the copy again, and asks for one final launch confirmation.
 
 CLC runs from that protected local session rather than directly from writable removable media. The cart is passed only as its data root, and the temporary local session is removed after CLC exits.
 
@@ -311,7 +311,7 @@ Automatic launch is a separate per-cart option under **Trusted carts**. When ena
 
 ### 5. Eject and remove the cart
 
-While CLC is running as a trusted physical cart, choose its **Eject cart** action. The Host closes only that verified CLC process, removes its protected local session, flushes pending writes, and asks the operating system to eject the matching media. Wait for the success message before unplugging the drive.
+While CLC is running as a trusted physical cart, choose its **Eject cart** action. CLC-Cart Monitor closes only that verified CLC process, removes its protected local session, flushes pending writes, and asks the operating system to eject the matching media. Wait for the success message before unplugging the drive.
 
 If safe eject fails, close applications using the media and try again. Do not unplug the cart while configuration, artwork, game saves, or updates are being written.
 
@@ -319,8 +319,8 @@ If safe eject fails, close applications using the media and try again. Do not un
 
 - **Revoke selected** removes only the selected cart's local approval. It does not alter the cart.
 - **Disable automatic launch** keeps manual trust but stops insertion-based launching.
-- The **Uninstall** tab removes automatic startup and the local Host runtime only after explicit confirmation.
-- Trust records, settings, and logs are optional removal choices. Connected carts are never modified by Host uninstall.
+- The **Uninstall** tab removes automatic startup and CLC-Cart Monitor only after explicit confirmation.
+- Trust records, settings, and logs are optional removal choices. Connected carts are never modified by Monitor uninstall.
 
 See [Security](SECURITY.md) for the threat model and [Physical Cart Hardware Test Checklist](Documentation/Physical-Cart-Hardware-Test-Checklist.md) before relying on a new drive or operating-system configuration.
 
@@ -396,16 +396,16 @@ CartLaunchCompanion/
 ├── Start Cart Launch Companion.sh
 ├── Game Configurator.bat
 ├── Game Configurator.sh
-├── Host/
-│   ├── Windows-x64/
-│   └── Linux-x64/
-├── Assets/
 ├── Config/
 ├── Games/
 ├── Logs/
-├── Cache/
-├── Schemas/
 └── System/
+    ├── Assets/
+    ├── Cache/
+    ├── CartMonitor/
+    │   ├── Windows-x64/
+    │   └── Linux-x64/
+    ├── Schemas/
     ├── Windows-x64/
     └── Linux-x64/
 ```
@@ -563,7 +563,7 @@ Cart Launch Companion is built with:
 
 ## Project status
 
-Version 2.4 is the current stable release. Reports are especially useful for:
+Version 2.5 is the current stable release. Reports are especially useful for:
 
 - physical Steam Deck and SteamOS hardware;
 - different controller models and hot-plug behavior;
@@ -622,7 +622,7 @@ The project is not affiliated with or endorsed by Valve, Microsoft, Rockstar Gam
 
 ### Recycle a drive. Build a collection. Plug in and play.
 
-[Download 2.4](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.4.0)
+[Download 2.5](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.5.0)
 &nbsp;&nbsp;•&nbsp;&nbsp;
 [Documentation](#documentation)
 &nbsp;&nbsp;•&nbsp;&nbsp;

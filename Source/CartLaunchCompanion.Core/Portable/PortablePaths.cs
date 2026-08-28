@@ -3,7 +3,7 @@ namespace CartLaunchCompanion.Core.Portable;
 public sealed record PortablePaths(
     string Root,
     string System,
-    string Host,
+    string CartMonitor,
     string Maintenance,
     string Games,
     string Assets,
@@ -22,7 +22,7 @@ public sealed record PortablePaths(
         return new PortablePaths(
             fullRoot,
             systemRoot,
-            Path.Combine(systemRoot, "Host"),
+            Path.Combine(systemRoot, "CartMonitor"),
             Path.Combine(systemRoot, "Maintenance"),
             Path.Combine(fullRoot, "Games"),
             Path.Combine(systemRoot, "Assets"),

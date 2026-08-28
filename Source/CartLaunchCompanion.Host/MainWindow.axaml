@@ -1,14 +1,14 @@
 <Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        x:Class="CartLaunchCompanion.Host.MainWindow" Title="Cart Launch Host" Width="900" Height="720"
+        x:Class="CartLaunchCompanion.Host.MainWindow" Title="CLC-Cart Monitor" Width="900" Height="720"
         MinWidth="760" MinHeight="620" WindowStartupLocation="CenterScreen">
   <Grid Margin="30" RowDefinitions="Auto,*,Auto" RowSpacing="18">
     <StackPanel Spacing="6">
-      <TextBlock FontSize="32" FontWeight="Bold" Text="Cart Launch Host"/>
+      <TextBlock FontSize="32" FontWeight="Bold" Text="CLC-Cart Monitor"/>
       <TextBlock Classes="help" Text="Optional local support for trusted physical game carts. It never installs a service, driver, or system-wide Linux rule."/>
     </StackPanel>
     <TabControl Grid.Row="1">
       <TabItem Header="Install &amp; repair"><ScrollViewer><StackPanel Margin="8,18" Spacing="14">
-        <Border Classes="card" IsVisible="{Binding ShowWindowsScope}"><StackPanel Spacing="9"><TextBlock FontSize="18" FontWeight="SemiBold" Text="Who can use the Host?"/><RadioButton GroupName="scope" Content="Current user — no administrator approval required" IsChecked="True" Click="CurrentUserScopeChecked"/><RadioButton GroupName="scope" Content="All Windows users — requires administrator approval" Click="AllUsersScopeChecked"/></StackPanel></Border>
+        <Border Classes="card" IsVisible="{Binding ShowWindowsScope}"><StackPanel Spacing="9"><TextBlock FontSize="18" FontWeight="SemiBold" Text="Who can use CLC-Cart Monitor?"/><RadioButton GroupName="scope" Content="Current user — no administrator approval required" IsChecked="True" Click="CurrentUserScopeChecked"/><RadioButton GroupName="scope" Content="All Windows users — requires administrator approval" Click="AllUsersScopeChecked"/></StackPanel></Border>
         <Border Classes="card"><StackPanel Spacing="10">
           <TextBlock FontSize="20" FontWeight="SemiBold" Text="What will be installed"/>
           <TextBlock Text="{Binding InstallPurpose}" TextWrapping="Wrap"/>
@@ -20,7 +20,7 @@
           <TextBlock FontWeight="SemiBold" Text="Trusted carts"/><TextBlock Classes="help" Text="{Binding TrustDatabasePath}"/>
           <TextBlock FontWeight="SemiBold" Text="Logs"/><TextBlock Classes="help" Text="{Binding LogsDirectory}"/>
         </StackPanel></Border>
-        <CheckBox x:Name="InstallConfirm" Content="I understand these per-user changes and want to install or repair Cart Launch Host."/>
+        <CheckBox x:Name="InstallConfirm" Content="I understand these per-user changes and want to install or repair CLC-Cart Monitor."/>
         <Button Content="Install or repair" HorizontalAlignment="Left" Background="#2F80ED" Foreground="White" Click="InstallClicked"/>
       </StackPanel></ScrollViewer></TabItem>
       <TabItem Header="Trusted carts"><Grid Margin="8,18" RowDefinitions="Auto,*,Auto" RowSpacing="12">
@@ -36,10 +36,10 @@
         <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10"><Button Content="Scan mounted media now" Click="ScanClicked"/><Button Content="Verify and prepare selected" Click="PrepareClicked"/><Button Content="Verify and launch selected" Background="#2F80ED" Foreground="White" Click="LaunchClicked"/></StackPanel>
       </Grid></TabItem>
       <TabItem Header="Uninstall"><ScrollViewer><StackPanel Margin="8,18" Spacing="14">
-        <Border Classes="card"><StackPanel Spacing="8"><TextBlock FontSize="20" FontWeight="SemiBold" Text="Remove the local component"/><TextBlock Classes="help" Text="Stops automatic startup and removes the Cart Launch Host runtime. Connected carts are never modified."/></StackPanel></Border>
+        <Border Classes="card"><StackPanel Spacing="8"><TextBlock FontSize="20" FontWeight="SemiBold" Text="Remove the local component"/><TextBlock Classes="help" Text="Stops automatic startup and removes CLC-Cart Monitor. Connected carts are never modified."/></StackPanel></Border>
         <CheckBox x:Name="RemoveTrust" Content="Also remove all trusted-cart approvals"/>
-        <CheckBox x:Name="RemoveSettings" Content="Also remove Host settings"/>
-        <CheckBox x:Name="RemoveLogs" Content="Also remove Host logs and prepared runtime sessions"/>
+        <CheckBox x:Name="RemoveSettings" Content="Also remove Monitor settings"/>
+        <CheckBox x:Name="RemoveLogs" Content="Also remove Monitor logs and prepared runtime sessions"/>
         <CheckBox x:Name="UninstallConfirm" Content="I understand exactly what will be removed."/>
         <Button Content="Uninstall local component" HorizontalAlignment="Left" Background="#8C3341" Foreground="White" Click="UninstallClicked"/>
       </StackPanel></ScrollViewer></TabItem>

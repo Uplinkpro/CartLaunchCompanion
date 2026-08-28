@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 namespace CartLaunchCompanion.Core.PhysicalCarts;
 
 public sealed record DetectedPhysicalCart(string MediaRoot, VerifiedCartIdentity Identity);
@@ -12,10 +14,10 @@ public sealed class SystemMountRootProvider : IMountRootProvider
         {
             foreach (var drive in DriveInfo.GetDrives())
             {
-                bool ready;
-                try { ready = drive.IsReady && drive.DriveType is DriveType.Removable or DriveType.Fixed; }
-                catch { ready = false; }
-                if (ready) yield return drive.RootDirectory.FullName;
+                bool supported;
+                try { supported = drive.DriveType is DriveType.Removable or DriveType.Fixed; }
+                catch { supported = false; }
+                if (supported) yield return drive.RootDirectory.FullName;
             }
             yield break;
         }
@@ -33,25 +35,56 @@ public sealed class SystemMountRootProvider : IMountRootProvider
 
 public sealed class MountedCartDetector(IMountRootProvider mountRoots, CartIdentityService identities)
 {
+    private readonly ConcurrentDictionary<string, byte> _ignoredRoots = new(
+        OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+    private readonly SemaphoreSlim _scanGate = new(1, 1);
+
+    public async Task IgnoreUntilRemovedAsync(string mediaRoot, CancellationToken cancellationToken = default)
+    {
+        var root = NormalizeRoot(mediaRoot);
+        await _scanGate.WaitAsync(cancellationToken);
+        try { _ignoredRoots[root] = 0; }
+        finally { _scanGate.Release(); }
+    }
+
+    public void RestoreRoot(string mediaRoot) => _ignoredRoots.TryRemove(NormalizeRoot(mediaRoot), out _);
+
     public async Task<IReadOnlyList<DetectedPhysicalCart>> ScanAsync(CancellationToken cancellationToken = default)
     {
-        var found = new List<DetectedPhysicalCart>();
-        var seen = new HashSet<string>(OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
-        foreach (var candidate in mountRoots.GetMountedRoots().Take(512))
+        await _scanGate.WaitAsync(cancellationToken);
+        try
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            string root;
-            try { root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(candidate)); }
-            catch { continue; }
-            if (!seen.Add(root) || !File.Exists(Path.Combine(root, CartIdentityService.FileName))) continue;
-            try { found.Add(new(root, await identities.LoadAsync(root, cancellationToken))); }
-            catch (IOException) { }
-            catch (UnauthorizedAccessException) { }
-            catch (InvalidDataException) { }
-            catch (System.Text.Json.JsonException) { }
+            var found = new List<DetectedPhysicalCart>();
+            var comparison = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+            var candidates = new List<string>();
+            foreach (var candidate in mountRoots.GetMountedRoots().Take(512))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                try { candidates.Add(NormalizeRoot(candidate)); }
+                catch { }
+            }
+            var mounted = candidates.ToHashSet(comparison);
+            foreach (var ignored in _ignoredRoots.Keys.Where(root => !mounted.Contains(root)))
+                _ignoredRoots.TryRemove(ignored, out _);
+
+            var seen = new HashSet<string>(comparison);
+            foreach (var root in candidates)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!seen.Add(root) || _ignoredRoots.ContainsKey(root) ||
+                    !File.Exists(Path.Combine(root, CartIdentityService.FileName))) continue;
+                try { found.Add(new(root, await identities.LoadAsync(root, cancellationToken))); }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+                catch (InvalidDataException) { }
+                catch (System.Text.Json.JsonException) { }
+            }
+            return found;
         }
-        return found;
+        finally { _scanGate.Release(); }
     }
+
+    private static string NormalizeRoot(string path) => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
 }
 
 public sealed class PhysicalCartMonitor(MountedCartDetector detector, TimeSpan? interval = null) : IAsyncDisposable
@@ -65,6 +98,9 @@ public sealed class PhysicalCartMonitor(MountedCartDetector detector, TimeSpan? 
     public event EventHandler<string>? CartRemoved;
 
     public void Start() => _loop ??= MonitorAsync(_stop.Token);
+    public Task IgnoreUntilRemovedAsync(string mediaRoot, CancellationToken cancellationToken = default) =>
+        detector.IgnoreUntilRemovedAsync(mediaRoot, cancellationToken);
+    public void RestoreRoot(string mediaRoot) => detector.RestoreRoot(mediaRoot);
     private async Task MonitorAsync(CancellationToken cancellationToken)
     {
         using var timer = new PeriodicTimer(_interval);

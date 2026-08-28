@@ -12,7 +12,7 @@ body:
     attributes:
       label: CLC version
       description: The version shown by the app or the downloaded package name.
-      placeholder: 2.4.0
+      placeholder: 2.5.0
     validations:
       required: true
   - type: dropdown

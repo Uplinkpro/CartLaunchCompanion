@@ -149,6 +149,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public partial bool IsLaunching { get; set; }
 
     [ObservableProperty]
+    public partial bool IsLaunchTransitionVisible { get; set; }
+
+    [ObservableProperty]
+    public partial GameCardViewModel? LaunchingGame { get; set; }
+
+    [ObservableProperty]
     public partial bool IsHomeVisible { get; set; } = true;
 
     [ObservableProperty]
@@ -1013,7 +1019,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             FileName = executable,
             WorkingDirectory = Path.GetDirectoryName(executable)!,
-            UseShellExecute = false
+            UseShellExecute = false,
+            CreateNoWindow = true
         };
         start.ArgumentList.Add("--cart-root");
         start.ArgumentList.Add(_portablePaths.Root);
@@ -1060,7 +1067,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (_trustedCartId is null) return;
         try
         {
-            EjectStatus = "Asking Cart Launch Host to safely remove this cart…";
+            EjectStatus = "Asking CLC-Cart Monitor to safely remove this cart…";
             OnPropertyChanged(nameof(EjectStatus));
             var response = await CartHostEjectProtocol.RequestAsync(_trustedCartId);
             if (!response.Accepted)
@@ -1092,8 +1099,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
 
         IsLaunching = true;
+        IsLaunchTransitionVisible = true;
+        LaunchingGame = game;
         IsTrailerPlaybackEnabled = false;
         MetadataStatus = $"Launching {game.Name}…";
+
+        var launchTransitionStarted = Stopwatch.GetTimestamp();
 
         var request = new GameLaunchRequest(
             game.Name,
@@ -1103,10 +1114,23 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         try
         {
+            // Let Avalonia present and animate the launch transition before
+            // process creation performs any synchronous platform work.
+            await Task.Delay(50);
+
             var result =
                 await _launchService.LaunchAsync(request);
 
             MetadataStatus = result.Message;
+
+            var remainingTransitionTime =
+                TimeSpan.FromMilliseconds(650) -
+                Stopwatch.GetElapsedTime(launchTransitionStarted);
+            if (remainingTransitionTime > TimeSpan.Zero)
+                await Task.Delay(remainingTransitionTime);
+
+            IsLaunchTransitionVisible = false;
+            LaunchingGame = null;
 
             if (!result.Succeeded ||
                 result.Session is null)
@@ -1148,6 +1172,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
         finally
         {
+            IsLaunchTransitionVisible = false;
+            LaunchingGame = null;
             IsLaunching = false;
         }
     }

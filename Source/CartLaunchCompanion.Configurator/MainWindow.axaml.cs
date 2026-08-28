@@ -349,7 +349,7 @@ public sealed partial class MainWindow : Window
 
         try
         {
-            await LoadGameConfigurationAsync(files[0].Path.LocalPath);
+            await LoadGameConfigurationAsync(StorageItemPathResolver.Resolve(files[0].Path));
         }
         catch (Exception ex)
         {
@@ -369,7 +369,7 @@ public sealed partial class MainWindow : Window
         if (folders.Count == 0)
             return;
 
-        SetGameFolder(folders[0].Path.LocalPath);
+        SetGameFolder(StorageItemPathResolver.Resolve(folders[0].Path));
     }
 
     private async void LocatePortableFileClicked(object? sender, RoutedEventArgs e)
@@ -397,7 +397,7 @@ public sealed partial class MainWindow : Window
             return;
 
         var gameFolder = Path.GetDirectoryName(_gameJsonPath)!;
-        var result = _cartPathConverter.Convert(gameFolder, files[0].Path.LocalPath);
+        var result = _cartPathConverter.Convert(gameFolder, StorageItemPathResolver.Resolve(files[0].Path));
         _viewModel.PathStatus = result.IsPortable
             ? $"PORTABLE · {result.DisplayPath} · {result.Message}"
             : $"NOT SAVED · {result.Message} Configuration: {_gameJsonPath}";
@@ -443,7 +443,7 @@ public sealed partial class MainWindow : Window
             var argumentBase = string.IsNullOrWhiteSpace(configuredWorkingDirectory)
                 ? gameFolder
                 : new GamePathResolver().Resolve(gameFolder, configuredWorkingDirectory);
-            argumentPath = Path.GetRelativePath(argumentBase, files[0].Path.LocalPath).Replace('\\', '/');
+            argumentPath = Path.GetRelativePath(argumentBase, StorageItemPathResolver.Resolve(files[0].Path)).Replace('\\', '/');
 
             var emulatorExecutable = launch?.Executable ?? linuxLaunch?.Executable ?? "";
             if (EmulatorLaunchPresetCatalog.Detect(emulatorExecutable) == KnownEmulator.RetroArch)
@@ -455,19 +455,19 @@ public sealed partial class MainWindow : Window
                     ? Directory.EnumerateFiles(coresFolder, corePattern, SearchOption.TopDirectoryOnly).ToArray()
                     : [];
                 var compatible = EmulatorLaunchPresetCatalog.FindCompatibleRetroArchCores(
-                    installedCores, files[0].Path.LocalPath);
+                    installedCores, StorageItemPathResolver.Resolve(files[0].Path));
                 if (compatible.Count == 0)
                 {
-                    var recommended = EmulatorLaunchPresetCatalog.GetRecommendedRetroArchCoreNames(files[0].Path.LocalPath);
+                    var recommended = EmulatorLaunchPresetCatalog.GetRecommendedRetroArchCoreNames(StorageItemPathResolver.Resolve(files[0].Path));
                     if (recommended.Count == 0)
                     {
-                        _viewModel.Status = $"No installed RetroArch core was found for {Path.GetExtension(files[0].Path.LocalPath)} files. This file type is ambiguous, so add the correct core to {coresFolder}, then locate the ROM again.";
+                        _viewModel.Status = $"No installed RetroArch core was found for {Path.GetExtension(StorageItemPathResolver.Resolve(files[0].Path))} files. This file type is ambiguous, so add the correct core to {coresFolder}, then locate the ROM again.";
                         return;
                     }
 
                     var downloadedCore = await new RetroArchCoreDownloadDialog(
                             recommended,
-                            files[0].Path.LocalPath,
+                            StorageItemPathResolver.Resolve(files[0].Path),
                             coresFolder)
                         .ShowDialog<string?>(this);
                     if (downloadedCore is null) return;
@@ -479,8 +479,8 @@ public sealed partial class MainWindow : Window
                     ? compatible[0]
                     : await new RetroArchCoreDialog(
                             compatible,
-                            files[0].Path.LocalPath,
-                            EmulatorLaunchPresetCatalog.IsAmbiguousRetroArchExtension(files[0].Path.LocalPath))
+                            StorageItemPathResolver.Resolve(files[0].Path),
+                            EmulatorLaunchPresetCatalog.IsAmbiguousRetroArchExtension(StorageItemPathResolver.Resolve(files[0].Path)))
                         .ShowDialog<string?>(this);
                 if (selectedCore is null) return;
                 retroArchCoreArgumentPath = Path.GetRelativePath(argumentBase, selectedCore).Replace('\\', '/');
@@ -601,7 +601,7 @@ public sealed partial class MainWindow : Window
             AllowMultiple = false
         });
         if (folders.Count == 0) return;
-        var location = folders[0].Path.LocalPath;
+        var location = StorageItemPathResolver.Resolve(folders[0].Path);
         var message = $"✓ Launcher folder confirmed at {location}. This host-only location will not be written into game.json.";
         if (platform == "windows") _viewModel.WindowsLauncherStatus = message;
         else _viewModel.LinuxLauncherStatus = message;
@@ -628,7 +628,7 @@ public sealed partial class MainWindow : Window
 
         try
         {
-            var source = files[0].Path.LocalPath;
+            var source = StorageItemPathResolver.Resolve(files[0].Path);
             await using (var probe = File.OpenRead(source))
             {
                 using var bitmap = new Avalonia.Media.Imaging.Bitmap(probe);
@@ -750,7 +750,7 @@ public sealed partial class MainWindow : Window
                 return;
             }
 
-            SetGameFolder(folders[0].Path.LocalPath);
+            SetGameFolder(StorageItemPathResolver.Resolve(folders[0].Path));
         }
 
         try

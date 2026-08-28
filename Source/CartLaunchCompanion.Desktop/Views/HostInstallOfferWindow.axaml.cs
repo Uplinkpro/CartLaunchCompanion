@@ -14,7 +14,7 @@ public sealed partial class HostInstallOfferWindow : Window
     {
         IsWindows = platform == PlatformKind.Windows;
         var folder = IsWindows ? "Windows-x64" : "Linux-x64";
-        var executable = IsWindows ? "CartLaunchCompanion.Host.exe" : "CartLaunchCompanion.Host";
+        var executable = IsWindows ? "CLC-CartMonitor.exe" : "CLC-CartMonitor";
         _hostExecutable = Path.Combine(hostRoot, folder, executable);
         InitializeComponent(); DataContext = this;
     }

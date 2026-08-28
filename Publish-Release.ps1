@@ -1,5 +1,5 @@
 param(
-    [string]$Version = '2.4.0',
+    [string]$Version = '2.5.0',
     [string]$OutputRoot = (Join-Path $PSScriptRoot "artifacts\$Version")
 )
 
@@ -50,18 +50,18 @@ foreach ($runtime in $runtimes) {
         throw "Updater publish failed for $($runtime.Id)."
     }
 
-    $hostDestination = Join-Path $staging (Join-Path 'System\Host' $runtime.Folder)
+    $hostDestination = Join-Path $staging (Join-Path 'System\CartMonitor' $runtime.Folder)
     & dotnet publish $hostProject -c Release -r $runtime.Id --self-contained true `
         -p:PublishSingleFile=false -p:PublishTrimmed=false `
         -p:DebugType=None -p:DebugSymbols=false -o $hostDestination
     if ($LASTEXITCODE -ne 0) {
-        throw "Cart Launch Host publish failed for $($runtime.Id)."
+        throw "CLC-Cart Monitor publish failed for $($runtime.Id)."
     }
     & dotnet publish $hostCleanupProject -c Release -r $runtime.Id --self-contained true `
         -p:PublishSingleFile=true -p:PublishTrimmed=true `
         -p:DebugType=None -p:DebugSymbols=false -o $hostDestination
     if ($LASTEXITCODE -ne 0) {
-        throw "Cart Launch Host cleanup publish failed for $($runtime.Id)."
+        throw "CLC-Cart Monitor cleanup publish failed for $($runtime.Id)."
     }
 }
 
@@ -101,7 +101,7 @@ New-Item -ItemType Directory -Path (Join-Path $staging 'System\Cache') -Force | 
 # Portable releases intentionally contain no debugging symbol files.
 Get-ChildItem -LiteralPath (Join-Path $staging 'System') -Recurse -File -Filter '*.pdb' |
     Remove-Item -Force
-Get-ChildItem -LiteralPath (Join-Path $staging 'System\Host') -Recurse -File -Filter '*.pdb' |
+Get-ChildItem -LiteralPath (Join-Path $staging 'System\CartMonitor') -Recurse -File -Filter '*.pdb' |
     Remove-Item -Force
 
 $documentationDestination = Join-Path $staging 'System\Documentation'
@@ -122,15 +122,8 @@ Get-ChildItem -LiteralPath (Join-Path $staging 'System\Assets\Collections') -Dir
     Where-Object { $_.Name -eq 'Concepts' } |
     Remove-Item -Recurse -Force
 
-$windowsLauncher = @'
-@echo off
-setlocal
-cd /d "%~dp0System\Windows-x64"
-CartLaunchCompanion.Desktop.exe
-exit /b %ERRORLEVEL%
-'@
-Set-Content -LiteralPath (Join-Path $staging 'Start Cart Launch Companion.bat') `
-    -Value $windowsLauncher -Encoding ASCII
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Build\WindowsLaunchers\Start Cart Launch Companion.bat') `
+    -Destination $staging
 
 $linuxLauncher = @'
 #!/usr/bin/env sh
@@ -141,15 +134,8 @@ exec ./CartLaunchCompanion.Desktop "$@"
 $linuxLauncherPath = Join-Path $staging 'Start Cart Launch Companion.sh'
 [IO.File]::WriteAllText($linuxLauncherPath, $linuxLauncher, [Text.UTF8Encoding]::new($false))
 
-$windowsConfigurator = @'
-@echo off
-setlocal
-cd /d "%~dp0System\Windows-x64"
-CartLaunchCompanion.Configurator.exe
-exit /b %ERRORLEVEL%
-'@
-Set-Content -LiteralPath (Join-Path $staging 'Game Configurator.bat') `
-    -Value $windowsConfigurator -Encoding ASCII
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Build\WindowsLaunchers\Game Configurator.bat') `
+    -Destination $staging
 
 $linuxConfigurator = @'
 #!/usr/bin/env sh
@@ -160,15 +146,8 @@ exec ./CartLaunchCompanion.Configurator "$@"
 $linuxConfiguratorPath = Join-Path $staging 'Game Configurator.sh'
 [IO.File]::WriteAllText($linuxConfiguratorPath, $linuxConfigurator, [Text.UTF8Encoding]::new($false))
 
-$windowsUpdater = @'
-@echo off
-setlocal
-cd /d "%~dp0System\Windows-x64"
-CartLaunchCompanion.Desktop.exe --check-for-updates
-exit /b %ERRORLEVEL%
-'@
-Set-Content -LiteralPath (Join-Path $staging 'Updater.bat') `
-    -Value $windowsUpdater -Encoding ASCII
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Build\WindowsLaunchers\Updater.bat') `
+    -Destination $staging
 
 $linuxUpdater = @'
 #!/usr/bin/env sh
@@ -185,13 +164,13 @@ Copy-Item -LiteralPath $staging -Destination $windowsStage -Recurse
 Copy-Item -LiteralPath $staging -Destination $linuxStage -Recurse
 Remove-Item -LiteralPath (Join-Path $windowsStage 'System\Linux-x64') -Recurse -Force
 Remove-Item -LiteralPath (Join-Path $windowsStage 'System\Maintenance\Linux-x64') -Recurse -Force
-Remove-Item -LiteralPath (Join-Path $windowsStage 'System\Host\Linux-x64') -Recurse -Force
+Remove-Item -LiteralPath (Join-Path $windowsStage 'System\CartMonitor\Linux-x64') -Recurse -Force
 Remove-Item -LiteralPath (Join-Path $windowsStage 'Start Cart Launch Companion.sh') -Force
 Remove-Item -LiteralPath (Join-Path $windowsStage 'Game Configurator.sh') -Force
 Remove-Item -LiteralPath (Join-Path $windowsStage 'Updater.sh') -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'System\Windows-x64') -Recurse -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'System\Maintenance\Windows-x64') -Recurse -Force
-Remove-Item -LiteralPath (Join-Path $linuxStage 'System\Host\Windows-x64') -Recurse -Force
+Remove-Item -LiteralPath (Join-Path $linuxStage 'System\CartMonitor\Windows-x64') -Recurse -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'Start Cart Launch Companion.bat') -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'Game Configurator.bat') -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'Updater.bat') -Force

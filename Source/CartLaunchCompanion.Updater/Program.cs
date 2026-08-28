@@ -9,12 +9,14 @@ internal static class Program
 
     public static async Task<int> Main(string[] args)
     {
+        UpdateCommandLine? options = null;
         try
         {
-            var options = UpdateCommandLine.Parse(args);
+            options = UpdateCommandLine.Parse(args);
             if (string.IsNullOrWhiteSpace(UpdateTrustAnchor.OfficialPublicKeyPem))
             {
-                Console.Error.WriteLine(
+                UpdaterLog.Write(
+                    options.CartRoot,
                     "Updates are not enabled because the official verification key has not been configured.");
                 return 20;
             }
@@ -51,7 +53,7 @@ internal static class Program
                     options.CartRoot,
                     options.Platform);
                 RestartPreviousRuntime(options.CartRoot, options.Platform);
-                Console.Error.WriteLine("The update failed its startup health check and was rolled back.");
+                UpdaterLog.Write(options.CartRoot, "The update failed its startup health check and was rolled back.");
                 return 30;
             }
 
@@ -62,7 +64,7 @@ internal static class Program
         }
         catch (Exception exception)
         {
-            Console.Error.WriteLine($"Update failed: {exception.Message}");
+            UpdaterLog.Write(options?.CartRoot ?? UpdateCommandLine.TryReadCartRoot(args), $"Update failed: {exception}");
             return 1;
         }
     }
@@ -155,4 +157,37 @@ internal sealed record UpdateCommandLine(
         values.TryGetValue(name, out var value) && !string.IsNullOrWhiteSpace(value)
             ? value
             : throw new ArgumentException($"Missing required updater argument: {name}.");
+
+    public static string? TryReadCartRoot(string[] args)
+    {
+        for (var index = 0; index + 1 < args.Length; index++)
+        {
+            if (args[index] == "--cart-root" && !string.IsNullOrWhiteSpace(args[index + 1]))
+                return args[index + 1];
+        }
+
+        return null;
+    }
+}
+
+internal static class UpdaterLog
+{
+    public static void Write(string? cartRoot, string message)
+    {
+        try
+        {
+            var directory = !string.IsNullOrWhiteSpace(cartRoot)
+                ? Path.Combine(Path.GetFullPath(cartRoot), "Logs")
+                : Path.Combine(Path.GetTempPath(), "CartLaunchCompanion");
+            Directory.CreateDirectory(directory);
+            File.AppendAllText(
+                Path.Combine(directory, "Updater.log"),
+                $"{DateTimeOffset.UtcNow:O} {message}{Environment.NewLine}");
+        }
+        catch
+        {
+            // The updater must preserve its original exit code even when the
+            // selected media is unavailable or its log folder is read-only.
+        }
+    }
 }

@@ -255,15 +255,6 @@
             </Grid>
         </Grid>
 
-        <Border Background="#E8000000" IsVisible="{Binding IsLaunching}" ZIndex="100">
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="18">
-                <ProgressBar IsIndeterminate="True" Width="320" Height="6" />
-                <TextBlock Text="LAUNCHING" Foreground="White" FontSize="24"
-                           FontWeight="Bold" LetterSpacing="4" HorizontalAlignment="Center" />
-                <TextBlock Text="{Binding SelectedGame.Name}" Foreground="#CFFFFFFF"
-                           FontSize="17" HorizontalAlignment="Center" />
-            </StackPanel>
-        </Border>
     </Grid>
 
     <UserControl.Styles>

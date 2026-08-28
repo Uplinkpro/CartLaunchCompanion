@@ -3,7 +3,7 @@
         Width="620" Height="410" CanResize="False" WindowStartupLocation="CenterOwner">
   <Grid Margin="30" RowDefinitions="Auto,*,Auto" RowSpacing="18">
     <StackPanel Spacing="7"><TextBlock FontSize="27" FontWeight="Bold" Text="ENABLE AUTOMATIC LAUNCH?"/><TextBlock Classes="help" Text="This approval applies only to the selected trusted cart and can be revoked at any time."/></StackPanel>
-    <Border Grid.Row="1" Classes="card"><StackPanel Spacing="10"><TextBlock FontWeight="SemiBold" Text="{Binding CartName}"/><TextBlock Classes="help" Text="{Binding CartId}"/><TextBlock TextWrapping="Wrap" Text="When this cart is inserted, the Host will verify its identity and approved runtime, copy it into a protected local session, verify the copy again, then launch CLC."/><TextBlock TextWrapping="Wrap" Foreground="#F2C36B" Text="If verification fails, the cart is removed, or another session is active, nothing launches."/></StackPanel></Border>
+    <Border Grid.Row="1" Classes="card"><StackPanel Spacing="10"><TextBlock FontWeight="SemiBold" Text="{Binding CartName}"/><TextBlock Classes="help" Text="{Binding CartId}"/><TextBlock TextWrapping="Wrap" Text="When this cart is inserted, CLC-Cart Monitor will verify its identity and approved runtime, copy it into a protected local session, verify the copy again, then launch CLC."/><TextBlock TextWrapping="Wrap" Foreground="#F2C36B" Text="If verification fails, the cart is removed, or another session is active, nothing launches."/></StackPanel></Border>
     <Grid Grid.Row="2" ColumnDefinitions="*,12,*"><Button Grid.Column="0" Content="CANCEL" Click="CancelClicked"/><Button Grid.Column="2" Content="ENABLE FOR THIS CART" Background="#2F80ED" Foreground="White" Click="ApproveClicked"/></Grid>
   </Grid>
 </Window>

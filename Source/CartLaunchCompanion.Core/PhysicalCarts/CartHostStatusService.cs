@@ -11,7 +11,7 @@ public sealed class CartHostStatusService
 {
     public CartHostStatus Check()
     {
-        var running = Process.GetProcessesByName("CartLaunchCompanion.Host").Length > 0;
+        var running = Process.GetProcessesByName("CLC-CartMonitor").Length > 0;
         var current = CartHostInstallationPlan.ForCurrentUser();
         if (File.Exists(current.ExecutablePath)) return new(running, true, current);
         if (OperatingSystem.IsWindows())

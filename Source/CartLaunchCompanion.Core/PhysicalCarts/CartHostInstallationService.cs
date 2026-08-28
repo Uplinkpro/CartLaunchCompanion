@@ -9,9 +9,9 @@ public sealed class CartHostInstallationService
         CancellationToken cancellationToken = default)
     {
         var source = Path.GetFullPath(publishedHostRoot);
-        if (!Directory.Exists(source)) throw new DirectoryNotFoundException("The published Cart Launch Host folder was not found.");
+        if (!Directory.Exists(source)) throw new DirectoryNotFoundException("The published CLC-Cart Monitor folder was not found.");
         var executable = Path.Combine(source, Path.GetFileName(plan.ExecutablePath));
-        if (!File.Exists(executable)) throw new FileNotFoundException("The published Cart Launch Host executable was not found.", executable);
+        if (!File.Exists(executable)) throw new FileNotFoundException("The published CLC-Cart Monitor executable was not found.", executable);
         if (Path.GetFullPath(plan.InstallDirectory).StartsWith(source + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("The host cannot install inside its source folder.");
 
@@ -39,9 +39,13 @@ public sealed class CartHostInstallationService
     public void RemoveUserData(CartHostInstallationPlan plan, bool removeTrust, bool removeSettings, bool removeLogs)
     {
         // Protected runtime sessions are transient executable copies, not user data.
-        // They must never survive Host removal regardless of retention choices.
+        // They must never survive CLC-Cart Monitor removal regardless of retention choices.
         DeleteContainedDirectory(plan.DataDirectory, Path.Combine(plan.DataDirectory, "Sessions"));
-        if (removeTrust) DeleteContainedFile(plan.DataDirectory, plan.TrustDatabasePath);
+        if (removeTrust)
+        {
+            DeleteContainedFile(plan.DataDirectory, plan.TrustDatabasePath);
+            DeleteContainedDirectory(plan.DataDirectory, Path.Combine(plan.DataDirectory, "Branding"));
+        }
         if (removeSettings) DeleteContainedFile(plan.DataDirectory, plan.SettingsPath);
         if (removeLogs)
             DeleteContainedDirectory(plan.DataDirectory, plan.LogsDirectory);

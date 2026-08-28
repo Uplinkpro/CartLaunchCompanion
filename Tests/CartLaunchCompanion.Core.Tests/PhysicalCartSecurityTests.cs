@@ -95,7 +95,7 @@ public sealed class PhysicalCartSecurityTests : IDisposable
         var source = Path.Combine(_root, "published");
         var install = Path.Combine(_root, "installed");
         Directory.CreateDirectory(source);
-        var executableName = OperatingSystem.IsWindows() ? "CartLaunchCompanion.Host.exe" : "CartLaunchCompanion.Host";
+        var executableName = OperatingSystem.IsWindows() ? "CLC-CartMonitor.exe" : "CLC-CartMonitor";
         await File.WriteAllTextAsync(Path.Combine(source, executableName), "host");
         await File.WriteAllTextAsync(Path.Combine(source, "dependency.dll"), "dependency");
         await File.WriteAllTextAsync(Path.Combine(source, "symbols.pdb"), "symbols");
@@ -157,6 +157,27 @@ public sealed class PhysicalCartSecurityTests : IDisposable
 
         var carts = await new MountedCartDetector(new StaticMounts(malformed), new CartIdentityService()).ScanAsync();
         Assert.Empty(carts);
+    }
+
+    [Fact]
+    public async Task Detector_SuppressesEjectedRootUntilItIsPhysicallyRemoved()
+    {
+        var media = Path.Combine(_root, "ejected");
+        Directory.CreateDirectory(media);
+        var identities = new CartIdentityService();
+        await identities.SaveNewAsync(media, identities.Create("Ejected Cart"));
+        var mounts = new MutableMounts();
+        mounts.Set(media);
+        var detector = new MountedCartDetector(mounts, identities);
+        Assert.Single(await detector.ScanAsync());
+
+        await detector.IgnoreUntilRemovedAsync(media);
+        Assert.Empty(await detector.ScanAsync());
+
+        mounts.Set();
+        Assert.Empty(await detector.ScanAsync());
+        mounts.Set(media);
+        Assert.Single(await detector.ScanAsync());
     }
 
     [Fact]

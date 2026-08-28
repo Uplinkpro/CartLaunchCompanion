@@ -48,7 +48,7 @@ public sealed class TrustedCartStore(string databasePath)
     public static string DefaultPath()
     {
         var basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        return Path.Combine(basePath, "CartLaunchCompanion", "Host", "trusted-carts.json");
+        return Path.Combine(basePath, "CartLaunchCompanion", "CartMonitor", "trusted-carts.json");
     }
 
     public async Task<TrustedCartDatabase> LoadAsync(CancellationToken cancellationToken = default)

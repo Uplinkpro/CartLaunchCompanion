@@ -123,6 +123,45 @@
             </StackPanel>
         </Grid>
 
+        <Grid IsVisible="{Binding IsLaunchTransitionVisible}"
+              Classes="metadata-loading"
+              Classes.active="{Binding IsLaunchTransitionVisible}"
+              Classes.motion="{Binding UseMotionEffects}"
+              ZIndex="500">
+            <Border Background="#F5030406" />
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="22">
+                <Image Source="{Binding LaunchingGame.CoverImage}"
+                       Width="160"
+                       Height="240"
+                       Stretch="Uniform" />
+                <Canvas Classes="loading-spinner"
+                        Width="56"
+                        Height="56"
+                        HorizontalAlignment="Center">
+                    <Ellipse Canvas.Left="4" Canvas.Top="4"
+                             Width="48" Height="48"
+                             Stroke="#28FFFFFF"
+                             StrokeThickness="4" />
+                    <Path Data="M28,4 A24,24 0 0 1 52,28"
+                          Stroke="{Binding LaunchingGame.AccentBrightColor}"
+                          StrokeThickness="4"
+                          StrokeLineCap="Round" />
+                </Canvas>
+                <TextBlock Text="LAUNCHING"
+                           Foreground="White"
+                           FontSize="22"
+                           FontWeight="Bold"
+                           LetterSpacing="4"
+                           HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding LaunchingGame.Name}"
+                           Foreground="#CFFFFFFF"
+                           FontSize="16"
+                           HorizontalAlignment="Center" />
+            </StackPanel>
+        </Grid>
+
         <Grid IsVisible="{Binding IsUpdateVisible}" ZIndex="600">
             <Border Background="#D8030406" />
             <Grid RowDefinitions="*,Auto" Margin="42">

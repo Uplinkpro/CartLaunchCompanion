@@ -149,9 +149,9 @@ public partial class App : Application
             if (!hostStatus.IsAvailable)
             {
                 var hostFolder = platformService.Current == PlatformKind.Windows ? "Windows-x64" : "Linux-x64";
-                var hostName = platformService.Current == PlatformKind.Windows ? "CartLaunchCompanion.Host.exe" : "CartLaunchCompanion.Host";
-                if (File.Exists(Path.Combine(portablePaths.Host, hostFolder, hostName)))
-                    await new HostInstallOfferWindow(portablePaths.Host, platformService.Current).ShowDialog(mainWindow);
+                var hostName = platformService.Current == PlatformKind.Windows ? "CLC-CartMonitor.exe" : "CLC-CartMonitor";
+                if (File.Exists(Path.Combine(portablePaths.CartMonitor, hostFolder, hostName)))
+                    await new HostInstallOfferWindow(portablePaths.CartMonitor, platformService.Current).ShowDialog(mainWindow);
             }
             if (Program.CheckForUpdatesRequested)
                 await viewModel.CheckForUpdatesInteractivelyAsync();

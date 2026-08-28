@@ -22,7 +22,7 @@
         </StackPanel></Border>
         <Border Classes="card"><StackPanel Spacing="8">
           <TextBlock FontSize="18" FontWeight="SemiBold" Text="Permission being granted"/>
-          <TextBlock TextWrapping="Wrap" Text="The Host will remember this cart identity and these exact runtime file hashes for your signed-in account on this computer. This permits verified manual launch."/>
+          <TextBlock TextWrapping="Wrap" Text="CLC-Cart Monitor will remember this cart identity and these exact runtime file hashes for your signed-in account on this computer. This permits verified manual launch."/>
           <TextBlock TextWrapping="Wrap" Foreground="#F2C36B" Text="Automatic launch remains off. Enabling it later requires a separate confirmation for this cart."/>
         </StackPanel></Border>
         <CheckBox x:Name="TrustConfirm" Content="I reviewed this cart and want to save this trust permission."/>

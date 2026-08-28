@@ -57,12 +57,12 @@ function Assert-ArchiveContents {
 
     $hasWindows = @($entries | Where-Object { $_ -like '*/System/Windows-x64/*' }).Count -gt 0
     $hasLinux = @($entries | Where-Object { $_ -like '*/System/Linux-x64/*' }).Count -gt 0
-    $hasWindowsHost = @($entries | Where-Object { $_ -like '*/System/Host/Windows-x64/*' }).Count -gt 0
-    $hasLinuxHost = @($entries | Where-Object { $_ -like '*/System/Host/Linux-x64/*' }).Count -gt 0
+    $hasWindowsHost = @($entries | Where-Object { $_ -like '*/System/CartMonitor/Windows-x64/*' }).Count -gt 0
+    $hasLinuxHost = @($entries | Where-Object { $_ -like '*/System/CartMonitor/Linux-x64/*' }).Count -gt 0
     Assert-True ($hasWindows -eq $ExpectWindows) "$name has incorrect Windows runtime contents."
     Assert-True ($hasLinux -eq $ExpectLinux) "$name has incorrect Linux runtime contents."
-    Assert-True ($hasWindowsHost -eq $ExpectWindows) "$name has incorrect Windows Host contents."
-    Assert-True ($hasLinuxHost -eq $ExpectLinux) "$name has incorrect Linux Host contents."
+    Assert-True ($hasWindowsHost -eq $ExpectWindows) "$name has incorrect Windows Cart Monitor contents."
+    Assert-True ($hasLinuxHost -eq $ExpectLinux) "$name has incorrect Linux Cart Monitor contents."
     if ($ExpectWindows) {
         Assert-True (@($entries | Where-Object { $_ -like '*/Updater.bat' }).Count -gt 0) "$name is missing Updater.bat."
         Assert-True (@($entries | Where-Object { $_ -like '*/System/Windows-x64/CartLaunchCompanion.Configurator.exe' }).Count -gt 0) "$name is missing the Windows configurator."
@@ -123,8 +123,8 @@ $linuxExecutables = @(
     'CartLaunchCompanion.Desktop',
     'CartLaunchCompanion.Configurator',
     'CartLaunchCompanion.Updater',
-    'CartLaunchCompanion.Host',
-    'CartLaunchCompanion.HostCleanup',
+    'CLC-CartMonitor',
+    'CLC-CartMonitorCleanup',
     'Start Cart Launch Companion.sh',
     'Game Configurator.sh'
     'Updater.sh'

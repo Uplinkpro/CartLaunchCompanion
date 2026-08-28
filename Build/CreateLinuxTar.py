@@ -21,7 +21,7 @@ def normalized_permissions(info: tarfile.TarInfo) -> tarfile.TarInfo:
         }
     ):
         info.mode = 0o755
-    elif "System/Host" in path.as_posix() and path.name in {"CartLaunchCompanion.Host", "CartLaunchCompanion.HostCleanup"}:
+    elif "System/CartMonitor" in path.as_posix() and path.name in {"CLC-CartMonitor", "CLC-CartMonitorCleanup"}:
         info.mode = 0o755
     else:
         info.mode = 0o644

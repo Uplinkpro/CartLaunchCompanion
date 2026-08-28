@@ -6,6 +6,34 @@ The project follows semantic versioning where practical.
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-08-27
+
+### Added
+
+- Added branded verification and launch feedback for trusted physical carts
+- Added native Windows Plug-and-Play safe removal for fixed-media USB bridges
+- Added platform-banner artwork support and clearer physical-cart controls
+- Added Windows launchers that start the graphical applications without command windows
+
+### Changed
+
+- Renamed the optional local component to CLC-Cart Monitor and consolidated its portable files under `System/CartMonitor`
+- Moved portable assets, cache, maintenance tools, and schemas under `Cart/System` for a cleaner cart layout
+- Background Monitor startup now verifies and launches an approved cart that was already mounted at sign-in or immediately after installation
+- Explorer cart windows are minimized during trusted verification and closed before safe removal
+
+### Fixed
+
+- Fixed USB SSD ejection that could report success without actually removing the Windows volume
+- Prevented the post-eject status check from probing and remounting a just-dismounted drive
+- Fixed Monitor repair and startup behavior after the Cart Monitor rename
+- Preserved exact cover-art proportions and platform branding across library, platform selection, and metadata views
+
+### Validation
+
+- Passed an end-to-end Windows 11 NTFS USB SSD cycle: trust, automatic verification, protected local launch, safe eject, physical removal, reinsertion, and automatic relaunch
+- Passed 275 automated Core and Desktop tests
+
 ## [2.4.0] - 2026-08-25
 
 > Physical-cart Host support is opt-in. Hardware reports remain especially valuable on SteamOS, Bazzite, ChimeraOS, CachyOS, and systems with unusual removable-media policies.

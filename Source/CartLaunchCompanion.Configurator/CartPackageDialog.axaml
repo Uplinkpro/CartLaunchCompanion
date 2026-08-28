@@ -48,7 +48,7 @@
       <TextBlock VerticalAlignment="Center" Classes="help" Text="No files are removed from the source or destination."/>
       <Button Grid.Column="1" Content="Close" Click="CloseClicked"/>
       <Button x:Name="CreateButton" Grid.Column="3" Content="Create portable cart" Click="CreateClicked" IsEnabled="False" Background="#2F80ED" Foreground="White" FontWeight="SemiBold"/>
-      <Button x:Name="ReviewTrustButton" Grid.Column="5" Content="Review trust in Host" Click="ReviewTrustClicked" IsVisible="False"/>
+      <Button x:Name="ReviewTrustButton" Grid.Column="5" Content="Review trust in Monitor" Click="ReviewTrustClicked" IsVisible="False"/>
     </Grid>
   </Grid>
 </Window>

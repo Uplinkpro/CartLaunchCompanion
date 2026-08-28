@@ -20,7 +20,7 @@ def mode_for(path: pathlib.Path, relative: pathlib.PurePosixPath) -> int:
         }
     ):
         return 0o100755
-    if "System/Host" in relative.as_posix() and relative.name in {"CartLaunchCompanion.Host", "CartLaunchCompanion.HostCleanup"}:
+    if "System/CartMonitor" in relative.as_posix() and relative.name in {"CLC-CartMonitor", "CLC-CartMonitorCleanup"}:
         return 0o100755
     return 0o100644
 

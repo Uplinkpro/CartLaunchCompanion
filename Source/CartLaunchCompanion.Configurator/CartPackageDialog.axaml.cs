@@ -36,7 +36,7 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
     {
         var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = "Choose removable-media root", AllowMultiple = false });
         if (folders.Count == 0) return;
-        DestinationRoot = folders[0].Path.LocalPath;
+        DestinationRoot = StorageItemPathResolver.Resolve(folders[0].Path);
         ValidateDestination();
     }
 
@@ -44,7 +44,7 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
     {
         var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = "Choose a published Cart Launch Companion folder", AllowMultiple = false });
         if (folders.Count == 0) return;
-        SourceRoot = folders[0].Path.LocalPath;
+        SourceRoot = StorageItemPathResolver.Resolve(folders[0].Path);
         ValidateSource(); ValidateDestination();
     }
 
@@ -113,9 +113,9 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
             Progress = 100;
             var platforms = readiness.RuntimeApprovals.Count == 0 ? "no verified runtimes" : string.Join(", ", readiness.RuntimeApprovals.Select(item => item.Platform));
             ResultStatus = readiness.IsReady
-                ? $"Ready for Host trust. Identity: {readiness.Identity!.Identity.DisplayName}. Verified: {platforms}." +
+                ? $"Ready for CLC-Cart Monitor trust. Identity: {readiness.Identity!.Identity.DisplayName}. Verified: {platforms}." +
                   (result is null ? " Existing files and identity were preserved." : $" Copied {result.FilesCopied} files ({FormatBytes(result.BytesCopied)}).")
-                : "Not ready for Host trust yet. Resolve the failed checks below; no existing identity was replaced.";
+                : "Not ready for CLC-Cart Monitor trust yet. Resolve the failed checks below; no existing identity was replaced.";
             ReviewTrustButton.IsVisible = readiness.IsReady;
         }
         catch (Exception ex) { ResultStatus = "Nothing was overwritten. Package creation stopped: " + ex.Message; ValidateDestination(); }
@@ -131,22 +131,22 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
             {
                 var status = new CartHostStatusService().Check();
                 var executable = status.InstalledPlan?.ExecutablePath ?? FindBundledHost();
-                if (executable is null) { ResultStatus = "Cart Launch Host is not installed. Install it from CLC, then review trust again."; return; }
+                if (executable is null) { ResultStatus = "CLC-Cart Monitor is not installed. Install it from CLC, then review trust again."; return; }
                 Process.Start(new ProcessStartInfo(executable) { UseShellExecute = false, ArgumentList = { "--review-cart", DestinationRoot } });
                 await Task.Delay(750);
                 response = await CartHostTrustReviewProtocol.RequestAsync(DestinationRoot);
             }
             ResultStatus = response.Message + " Trust and automatic launch remain separate confirmations.";
         }
-        catch (Exception ex) { ResultStatus = "Cart Launch Host could not open the trust review: " + ex.Message; }
+        catch (Exception ex) { ResultStatus = "CLC-Cart Monitor could not open the trust review: " + ex.Message; }
         finally { ReviewTrustButton.IsEnabled = true; }
     }
 
     private string? FindBundledHost()
     {
         var platform = OperatingSystem.IsWindows() ? "Windows-x64" : "Linux-x64";
-        var name = OperatingSystem.IsWindows() ? "CartLaunchCompanion.Host.exe" : "CartLaunchCompanion.Host";
-        var candidates = new[] { Path.Combine(SourceRoot, "System", "Host", platform, name) };
+        var name = OperatingSystem.IsWindows() ? "CLC-CartMonitor.exe" : "CLC-CartMonitor";
+        var candidates = new[] { Path.Combine(SourceRoot, "System", "CartMonitor", platform, name) };
         return candidates.FirstOrDefault(File.Exists);
     }
     private void CloseClicked(object? sender, RoutedEventArgs e) => Close();

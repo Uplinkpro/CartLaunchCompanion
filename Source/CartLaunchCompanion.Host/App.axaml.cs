@@ -28,7 +28,11 @@ public sealed partial class App : Application
             if (Program.Arguments.Contains("--background", StringComparer.Ordinal))
             {
                 desktop.ShutdownMode = Avalonia.Controls.ShutdownMode.OnExplicitShutdown;
-                window.Opened += async (_, _) => { await window.ScanMountedCartsAsync(); window.StartPassiveMonitoring(); window.Hide(); };
+                window.Opened += async (_, _) =>
+                {
+                    window.Hide();
+                    await window.StartBackgroundMonitoringAsync();
+                };
             }
         }
         base.OnFrameworkInitializationCompleted();
@@ -42,7 +46,7 @@ public sealed partial class App : Application
             var plan = CartHostInstallationPlan.ForAllUsers();
             await new CartHostInstallationService().InstallFilesAsync(AppContext.BaseDirectory, plan);
             using var key = Registry.LocalMachine.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", writable: true);
-            key.SetValue("CartLaunchCompanionHost", $"\"{plan.ExecutablePath}\" --background", RegistryValueKind.String);
+            key.SetValue("CLCCartMonitor", $"\"{plan.ExecutablePath}\" --background", RegistryValueKind.String);
         }
         finally { desktop.Shutdown(); }
     }

@@ -25,32 +25,32 @@ Because game configurations can intentionally name executables, arguments, launc
 
 ### Safe removal implementation
 
-- `Eject Cart` appears only when CLC was started by the trusted-cart Host.
+- `Eject Cart` appears only when CLC was started by CLC-Cart Monitor.
 - The launcher sends only a versioned `eject` request and trusted cart ID over a current-user-only local pipe; it cannot provide commands, executables, device paths, or shell text.
-- The Host accepts the request only for an exact process session it launched and still tracks.
+- CLC-Cart Monitor accepts the request only for an exact process session it launched and still tracks.
 - It closes that process, removes its verified staging directory, flushes writes, and asks the operating system to eject the matching media root.
-- Immediately before the operating-system operation, the Host reloads the identity from the tracked mount root and rejects media substitution or identity changes.
+- Immediately before the operating-system operation, CLC-Cart Monitor reloads the identity from the tracked mount root and rejects media substitution or identity changes.
 - Windows uses bounded native volume operations. Supported Linux gaming distributions use fixed `udisksctl` arguments without a shell.
 
-Physical Cart support is included as an optional component in the 2.4 release. Users explicitly install the local Host and separately approve each cart before automatic launch is available.
+Physical Cart support is included as an optional component in the 2.4 release. Users explicitly install CLC-Cart Monitor and separately approve each cart before automatic launch is available.
 
-Each physical cart is intended to contain its own portable CLC installation, games, configuration, artwork, and media. A small optional **Cart Launch Host** installed on the computer detects carts and can start only those the user has explicitly trusted.
+Each physical cart is intended to contain its own portable CLC installation, games, configuration, artwork, and media. A small optional **CLC-Cart Monitor** installed on the computer detects carts and can start only those the user has explicitly trusted.
 
 ### Installation and removal
 
-- Installing or uninstalling the Cart Launch Host requires an explicit confirmation screen.
+- Installing or uninstalling CLC-Cart Monitor requires an explicit confirmation screen.
 - The confirmation identifies the component's purpose, every installation location, its startup registration, settings, trust database, and logs.
-- The host runs as the signed-in user. It must not require a Windows service, kernel driver, administrator account, Linux root service, or system-wide `udev` rule for normal operation.
+- CLC-Cart Monitor runs as the signed-in user. It must not require a Windows service, kernel driver, administrator account, Linux root service, or system-wide `udev` rule for normal operation.
 - Windows offers current-user installation without elevation or an all-users runtime installation through the normal administrator confirmation. In both modes, cart trust records, settings, and logs remain isolated to each signed-in user.
 - Uninstallation stops monitoring, removes automatic startup, removes the local host, and clearly offers removal of trust records, settings, and logs.
-- The local Host runtime and its user data occupy separate directories, so removing executable files cannot implicitly remove trust records, settings, or logs the user chose to preserve.
-- Installing or uninstalling the local host never modifies or deletes a connected physical cart without a separate, explicit cart-management action.
+- The CLC-Cart Monitor program and its user data occupy separate directories, so removing executable files cannot implicitly remove trust records, settings, or logs the user chose to preserve.
+- Installing or uninstalling CLC-Cart Monitor never modifies or deletes a connected physical cart without a separate, explicit cart-management action.
 
 ### Detection is not execution permission
 
 Operating-system volume events only report that media was mounted. Detection never grants trust by itself.
 
-The host inspects only a bounded, versioned `cartlaunch.cartridge.json` identity manifest at the cart root. A cart cannot supply PowerShell, shell, command-prompt, interpreter, or arbitrary process instructions to the host.
+CLC-Cart Monitor inspects only a bounded, versioned `cartlaunch.cartridge.json` identity manifest at the cart root. A cart cannot supply PowerShell, shell, command-prompt, interpreter, or arbitrary process instructions to the Monitor.
 
 ### Trust and integrity
 
@@ -64,11 +64,11 @@ The host inspects only a bounded, versioned `cartlaunch.cartridge.json` identity
 
 ### Safe process creation
 
-The host does not execute the verified runtime directly from writable removable media. It copies the protected runtime into a new, user-only local session directory, verifies the staged copy, and launches that copy with the physical cart supplied only as its data root. The session copy is removed after use.
+CLC-Cart Monitor does not execute the verified runtime directly from writable removable media. It copies the protected runtime into a new, user-only local session directory, verifies the staged copy, and launches that copy with the physical cart supplied only as its data root. The session copy is removed after use.
 
 This design reduces file-replacement races, DLL or shared-library substitution, and Linux `noexec` mount compatibility problems while leaving the authoritative portable installation and all user content on the cart.
 
-During trust enrollment, the Host records an exact per-platform runtime inventory containing every relative path, length, SHA-256 hash, and a combined root fingerprint. Preparation verifies the cart against that approved inventory, copies only those approved files to a new per-user session directory, verifies the copied directory again, and exposes only the fixed CLC launcher entry point. Failed or incomplete sessions are removed.
+During trust enrollment, CLC-Cart Monitor records an exact per-platform runtime inventory containing every relative path, length, SHA-256 hash, and a combined root fingerprint. Preparation verifies the cart against that approved inventory, copies only those approved files to a new per-user session directory, verifies the copied directory again, and exposes only the fixed CLC launcher entry point. Failed or incomplete sessions are removed.
 
 Process creation must:
 
@@ -80,13 +80,13 @@ Process creation must:
 - reject executable paths outside the verified staging directory;
 - never accept an executable path or command directly from removable-media metadata.
 
-Manual physical-cart launch additionally requires a separate confirmation showing the cart name, connected media root, and verified local executable. The Host starts only the `PreparedCartRuntime` returned by protected staging, supplies exactly one structured `--cart-root` argument, removes runtime-injection environment variables, tracks the exact child process, and deletes the local runtime session after that process exits. This confirmation does not enable automatic launch.
+Manual physical-cart launch additionally requires a separate confirmation showing the cart name, connected media root, and verified local executable. CLC-Cart Monitor starts only the `PreparedCartRuntime` returned by protected staging, supplies exactly one structured `--cart-root` argument, removes runtime-injection environment variables, tracks the exact child process, and deletes the local runtime session after that process exits. This confirmation does not enable automatic launch.
 
-Automatic launch is a separate per-cart approval. An insertion can launch only after the identity, approval, minimum security version, and complete runtime inventory all match. The Host suppresses duplicate sessions, rate-limits retries, cancels verification when media disappears, and closes only the exact tracked CLC child if its backing cart is removed.
+Automatic launch is a separate per-cart approval. An insertion can launch only after the identity, approval, minimum security version, and complete runtime inventory all match. CLC-Cart Monitor suppresses duplicate sessions, rate-limits retries, cancels verification when media disappears, and closes only the exact tracked CLC child if its backing cart is removed.
 
-After protected staging completes, the Host reloads the connected cart identity and current trust database immediately before process creation. Removal, identity substitution, trust revocation, or runtime-approval changes during staging therefore fail closed and the partial local session is deleted.
+After protected staging completes, CLC-Cart Monitor reloads the connected cart identity and current trust database immediately before process creation. Removal, identity substitution, trust revocation, or runtime-approval changes during staging therefore fail closed and the partial local session is deleted.
 
-The final authorization gate also re-hashes the complete local staged runtime immediately before process creation. A per-user single-instance lock prevents competing Host monitors from maintaining conflicting automatic-launch state.
+The final authorization gate also re-hashes the complete local staged runtime immediately before process creation. A per-user single-instance lock prevents competing Monitor processes from maintaining conflicting automatic-launch state.
 
 ### Path and parser hardening
 
@@ -104,14 +104,14 @@ Detection is debounced and rate-limited. The host examines a fixed root filename
 
 ### Local communication
 
-Communication between CLC and the Cart Launch Host is local and restricted to the signed-in user:
+Communication between CLC and CLC-Cart Monitor is local and restricted to the signed-in user:
 
 - Windows uses a named pipe restricted to the current user identity.
 - Linux uses a user-owned Unix socket under the user's runtime directory.
 - Messages have a version, strict size limits, and a small allowlist of operations.
 - Unknown JSON fields, malformed or truncated payloads, unsafe endpoint names, and unsupported protocol versions are rejected.
 - The protocol has no generic `execute` operation.
-- The Configurator trust-review handoff can only request that the Host validate, display, and select a media root. It cannot grant trust or approve automatic launch.
+- The Configurator trust-review handoff can only request that CLC-Cart Monitor validate, display, and select a media root. It cannot grant trust or approve automatic launch.
 
 ### Media and presentation
 
@@ -131,7 +131,7 @@ A clone must still be unable to introduce new commands, launch targets, or modif
 
 ### BadUSB and malicious hardware
 
-A USB device can impersonate another hardware class, such as a keyboard or network adapter. This occurs below CLC and cannot be prevented by an application after the device is connected. Cart Launch Host verification protects the CLC launch path; it does not certify USB firmware or the physical device.
+A USB device can impersonate another hardware class, such as a keyboard or network adapter. This occurs below CLC and cannot be prevented by an application after the device is connected. CLC-Cart Monitor verification protects the CLC launch path; it does not certify USB firmware or the physical device.
 
 ### Same-user compromise
 
