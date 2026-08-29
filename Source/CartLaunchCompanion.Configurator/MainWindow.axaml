@@ -14,27 +14,27 @@
   </Window.Resources>
   <Grid RowDefinitions="Auto,*,Auto">
     <Border Background="#10141A" BorderBrush="#2A313B" BorderThickness="0,0,0,1" Padding="24,18">
-      <Grid ColumnDefinitions="*,Auto">
+      <Grid RowDefinitions="Auto,Auto">
         <StackPanel>
           <TextBlock FontSize="26" FontWeight="Bold" Text="Game Configurator"/>
-          <TextBlock Foreground="#AAB2BE" Margin="0,4,0,0" Text="Create each game's CLC configuration inside CartLaunchCompanion/Games—without editing JSON by hand."/>
-          <TextBlock Foreground="#77818E" FontSize="12" Margin="0,7,0,0" Text="{Binding FilePath}" TextTrimming="CharacterEllipsis"/>
+          <TextBlock Foreground="#AAB2BE" Margin="0,4,0,0" Text="Create each game's CLC configuration inside CartLaunchCompanion/Games—without editing JSON by hand." TextWrapping="Wrap"/>
+          <TextBlock Foreground="#77818E" FontSize="12" Margin="0,7,0,0" Text="{Binding FilePath}" TextTrimming="CharacterEllipsis" MaxLines="1"/>
         </StackPanel>
-        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-          <ComboBox Width="250" PlaceholderText="No saved games"
+        <WrapPanel Grid.Row="1" Margin="0,16,0,-10" Orientation="Horizontal">
+          <ComboBox Width="250" Margin="0,0,10,10" PlaceholderText="No saved games"
                     ItemsSource="{Binding ExistingGames}"
                     SelectedItem="{Binding SelectedExistingGame}"
                     IsVisible="{Binding HasExistingGames}"
                     SelectionChanged="ExistingGameChanged"/>
-          <Button Content="Settings" Click="SettingsClicked"/>
-          <Button Content="Emulator Library" Click="EmulatorLibraryClicked"/>
-          <Button Content="Prepare physical cart" Click="CreateCartClicked"/>
-          <Button Content="New" Click="NewClicked"/>
-          <Button Content="New Platform" Click="NewPlatformClicked"
+          <Button Margin="0,0,10,10" Content="Settings" Click="SettingsClicked"/>
+          <Button Margin="0,0,10,10" Content="Emulator Library" Click="EmulatorLibraryClicked"/>
+          <Button Margin="0,0,10,10" Content="Prepare physical cart" Click="CreateCartClicked"/>
+          <Button Margin="0,0,10,10" Content="New" Click="NewClicked"/>
+          <Button Margin="0,0,10,10" Content="New Platform" Click="NewPlatformClicked"
                   ToolTip.Tip="Copy the current game into a new platform configuration."/>
-          <Button Content="Open game.json" Click="OpenClicked"/>
-          <Button Content="Change CLC folder" Click="ChooseFolderClicked"/>
-        </StackPanel>
+          <Button Margin="0,0,10,10" Content="Open game.json" Click="OpenClicked"/>
+          <Button Margin="0,0,10,10" Content="Change CLC folder" Click="ChooseFolderClicked"/>
+        </WrapPanel>
       </Grid>
     </Border>
 

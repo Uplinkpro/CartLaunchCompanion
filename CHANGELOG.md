@@ -6,6 +6,10 @@ The project follows semantic versioning where practical.
 
 ## [Unreleased]
 
+### Fixed
+
+- Prevented the Game Configurator title, path, and toolbar from overlapping at high Windows display-scaling levels by placing the controls in a responsive wrapping row
+
 ## [2.5.1] - 2026-08-29
 
 ### Added
