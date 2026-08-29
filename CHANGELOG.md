@@ -6,9 +6,12 @@ The project follows semantic versioning where practical.
 
 ## [Unreleased]
 
+## [2.5.1] - 2026-08-29
+
 ### Added
 
 - Added per-stage physical-cart launch timing diagnostics for detection, trust lookup, source verification, protected copying, staged verification, final authorization, process start, and total automatic-launch time
+- Added unified cartridge artwork for the launcher, configurator, Cart Monitor, repository banner, and social preview
 
 ### Changed
 
@@ -23,6 +26,12 @@ The project follows semantic versioning where practical.
 - Kept exit actions visible after keyboard input and added direct E-key/X-button safe-eject handling for trusted physical carts
 - Prevented background cart detection from probing and remounting a fixed-media USB volume while Windows is safely ejecting it
 - Allow slow UAS enclosures to finish an accepted Plug-and-Play removal before reporting or retrying a safe eject
+
+### Validation
+
+- Passed the complete Windows physical-cart cycle on the GTA Collection USB SSD: trust, automatic launch, busy-drive rejection, retry, safe removal, physical reinsertion, and protected relaunch
+- Hash-verified the Windows and Linux cart runtimes against the v2.5.1 release candidate while preserving cart-specific games, ROMs, emulators, configuration, logs, and metadata cache
+- Passed all 278 automated Core and Desktop tests in the Release configuration
 
 ## [2.5.0] - 2026-08-27
 

@@ -6,6 +6,7 @@ Use a disposable removable drive with no irreplaceable files. Keep automatic lau
 
 | Date | CLC version | Environment | Media | Result | Notes |
 | --- | --- | --- | --- | --- | --- |
+| 2026-08-29 | 2.5.1 release candidate (`72b1764`) | Windows 11 Pro; current-user CLC-Cart Monitor | 500 GB NTFS GPT USB SSD, JMicron Tech bridge; GTA Collection test cart | Passed | Completed trust and auto-launch, busy-drive rejection with immediate progress feedback, retry, safe removal, physical reinsertion, protected relaunch, and keyboard/controller prompt validation. Windows and Linux cart runtimes were then hash-verified against the release candidate without replacing cart-specific content. |
 | 2026-08-27 | 2.5.0 validation build | Windows 11 Pro 23H2, build 22631; current-user CLC-Cart Monitor | 500 GB NTFS GPT USB SSD, JMicron Tech bridge | Passed | Trusted cart safely ejected and disappeared from Windows, physical reinsertion was detected, the approved runtime verified, and exactly one protected local CLC session launched. Repair preserved trust and logs and restored Windows startup registration. Detection-to-launch measured approximately 19.3 seconds, so the sub-10-second performance target remains open. |
 
 ## Common preparation
