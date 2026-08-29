@@ -3,6 +3,7 @@
         xmlns:local="using:CartLaunchCompanion.Configurator"
         x:Class="CartLaunchCompanion.Configurator.MainWindow"
         Title="Cart Launch Companion — Game Configurator"
+        Icon="/Assets/AppIcon.png"
         Width="1280" Height="820" MinWidth="860" MinHeight="540"
         WindowStartupLocation="CenterScreen">
   <Window.Resources>

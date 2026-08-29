@@ -17,7 +17,8 @@
         WindowDecorations="None"
         WindowState="FullScreen"
         WindowStartupLocation="CenterScreen"
-        Title="Cart Launch Companion">
+        Title="Cart Launch Companion"
+        Icon="/Assets/AppIcon.png">
 
     <Window.Styles>
         <Style Selector="Grid.page-transition.active.motion">

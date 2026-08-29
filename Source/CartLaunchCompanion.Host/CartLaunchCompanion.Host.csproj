@@ -8,7 +8,11 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
+    <ApplicationIcon>..\..\Assets\AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="..\..\Assets\AppIcon.png" Link="Assets\AppIcon.png" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.1.0" />
     <PackageReference Include="Avalonia.Desktop" Version="12.1.0" />

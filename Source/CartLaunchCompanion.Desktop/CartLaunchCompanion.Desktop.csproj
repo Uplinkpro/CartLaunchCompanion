@@ -4,10 +4,12 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\Assets\AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
+    <AvaloniaResource Include="..\..\Assets\AppIcon.png" Link="Assets\AppIcon.png" />
   </ItemGroup>
 
   <ItemGroup>

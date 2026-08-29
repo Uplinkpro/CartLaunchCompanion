@@ -1,5 +1,5 @@
 <Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        x:Class="CartLaunchCompanion.Host.MainWindow" Title="CLC-Cart Monitor" Width="900" Height="720"
+        x:Class="CartLaunchCompanion.Host.MainWindow" Title="CLC-Cart Monitor" Icon="/Assets/AppIcon.png" Width="900" Height="720"
         MinWidth="760" MinHeight="620" WindowStartupLocation="CenterScreen">
   <Grid Margin="30" RowDefinitions="Auto,*,Auto" RowSpacing="18">
     <StackPanel Spacing="6">

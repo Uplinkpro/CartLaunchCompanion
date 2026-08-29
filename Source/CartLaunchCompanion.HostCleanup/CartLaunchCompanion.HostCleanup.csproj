@@ -8,5 +8,6 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationIcon>..\..\Assets\AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
 </Project>

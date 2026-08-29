@@ -8,6 +8,7 @@
     <PublishTrimmed>false</PublishTrimmed>
     <DebugType>None</DebugType>
     <DebugSymbols>false</DebugSymbols>
+    <ApplicationIcon>..\..\Assets\AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\CartLaunchCompanion.Core\CartLaunchCompanion.Core.csproj" />
