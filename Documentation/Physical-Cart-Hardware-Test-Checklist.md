@@ -12,7 +12,7 @@ Use a disposable removable drive with no irreplaceable files. Keep automatic lau
 
 - [ ] Format the test media using the filesystem normally recommended by the target operating system.
 - [ ] Copy the expected `Cart`, `Games`, `Emulators`, and `Roms` structure.
-- [ ] Confirm `cartlaunch.cartridge.json` exists only at the media root.
+- [ ] Confirm the identity exists only at `.cartlaunch/cartridge.json` beneath the media root and that `.cartlaunch` is hidden in the normal file-browser view.
 - [ ] Install CLC-Cart Monitor for the current user and confirm every displayed installation/data path.
 - [ ] Confirm an ordinary untrusted drive causes no prompt and launches nothing.
 - [ ] Trust the test cart manually; leave automatic launch disabled.

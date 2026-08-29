@@ -250,14 +250,27 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         LastInputDevice switch
         {
             InputDeviceKind.Keyboard =>
-                "Press Escape again to exit, or Enter to cancel.",
+                IsSafeEjectAvailable
+                    ? "Press E to safely eject, Escape again to exit, or Enter to cancel."
+                    : "Press Escape again to exit, or Enter to cancel.",
             InputDeviceKind.Mouse =>
-                "Choose Exit to close the launcher, or Cancel to return.",
+                IsSafeEjectAvailable
+                    ? "Choose Eject Cart for safe removal, Exit to close, or Cancel to return."
+                    : "Choose Exit to close the launcher, or Cancel to return.",
             InputDeviceKind.Remote =>
-                "Press Back again to exit, or Confirm to cancel.",
+                IsSafeEjectAvailable
+                    ? "Choose Eject Cart for safe removal, Back to exit, or Confirm to cancel."
+                    : "Press Back again to exit, or Confirm to cancel.",
             _ =>
-                "Press B again to exit, or A to cancel."
+                IsSafeEjectAvailable
+                    ? "Press X to safely eject, B to exit, or A to cancel."
+                    : "Press B again to exit, or A to cancel."
         };
+
+    public string EjectPrompt =>
+        LastInputDevice is InputDeviceKind.Controller or InputDeviceKind.Remote
+            ? "X"
+            : "E";
 
     public string TrailerPrompt =>
         LastInputDevice is InputDeviceKind.Controller or InputDeviceKind.Remote
@@ -329,6 +342,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(ConfirmPrompt));
         OnPropertyChanged(nameof(BackPrompt));
         OnPropertyChanged(nameof(TrailerPrompt));
+        OnPropertyChanged(nameof(EjectPrompt));
         OnPropertyChanged(nameof(ShowOnScreenActionButtons));
         OnPropertyChanged(nameof(ExitInstruction));
     }
@@ -484,7 +498,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         if (IsExitVisible)
         {
-            HandleExitInput(input.Action);
+            await HandleExitInputAsync(input.Action);
             return;
         }
 
@@ -575,7 +589,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private void HandleExitInput(LauncherAction action)
+    private async Task HandleExitInputAsync(LauncherAction action)
     {
         switch (action)
         {
@@ -585,6 +599,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             case LauncherAction.Confirm:
                 CancelExitConfirmation();
+                break;
+
+            case LauncherAction.Trailer:
+            case LauncherAction.Options:
+                if (IsSafeEjectAvailable)
+                    await EjectCartAsync();
                 break;
         }
     }

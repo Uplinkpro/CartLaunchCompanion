@@ -9,7 +9,8 @@ public enum CartHostAuditEvent
     HostStarted, ScanCompleted, CartInserted, CartRemoved, TrustGranted, TrustRevoked,
     VerificationStarted, VerificationAccepted, VerificationRejected,
     LaunchStarted, LaunchEnded, EjectRequested, EjectAccepted, EjectRejected,
-    EjectCompleted, EjectAlreadyRemoved, EjectFailed
+    EjectCompleted, EjectAlreadyRemoved, EjectFailed,
+    PerformanceStage = 17
 }
 
 public sealed record CartHostAuditEntry(

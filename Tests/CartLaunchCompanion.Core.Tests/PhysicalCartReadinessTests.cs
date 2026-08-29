@@ -46,7 +46,8 @@ public sealed class PhysicalCartReadinessTests : IDisposable
     public async Task Prepare_DoesNotReplaceInvalidExistingIdentity()
     {
         CreateRuntime(); Directory.CreateDirectory(_root);
-        var path = Path.Combine(_root, CartIdentityService.FileName);
+        Directory.CreateDirectory(Path.Combine(_root, CartIdentityService.DirectoryName));
+        var path = CartIdentityService.GetIdentityPath(_root);
         await File.WriteAllTextAsync(path, "invalid identity");
         var report = await new PhysicalCartReadinessService().PrepareAsync(_root, "New Cart");
         Assert.False(report.IsReady);

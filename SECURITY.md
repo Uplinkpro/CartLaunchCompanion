@@ -50,7 +50,7 @@ Each physical cart is intended to contain its own portable CLC installation, gam
 
 Operating-system volume events only report that media was mounted. Detection never grants trust by itself.
 
-CLC-Cart Monitor inspects only a bounded, versioned `cartlaunch.cartridge.json` identity manifest at the cart root. A cart cannot supply PowerShell, shell, command-prompt, interpreter, or arbitrary process instructions to the Monitor.
+CLC-Cart Monitor inspects only the bounded, versioned `.cartlaunch/cartridge.json` identity manifest beneath the media root. Both the reserved directory and manifest are rejected if they are links, junctions, or reparse points. A cart cannot supply PowerShell, shell, command-prompt, interpreter, or arbitrary process instructions to the Monitor. The directory is hidden for presentation only and is never treated as a security boundary.
 
 ### Trust and integrity
 

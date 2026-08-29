@@ -1,6 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="CartLaunchCompanion.Host.TrustConfirmationWindow" Title="Review cart trust"
-        Width="720" Height="650" MinWidth="620" MinHeight="560" WindowStartupLocation="CenterOwner">
+        Width="720" Height="600" MinWidth="560" MinHeight="420" WindowStartupLocation="CenterOwner">
   <Grid Margin="30" RowDefinitions="Auto,*,Auto" RowSpacing="18">
     <StackPanel Spacing="7">
       <TextBlock FontSize="27" FontWeight="Bold" Text="TRUST THIS CART?"/>
@@ -23,15 +23,21 @@
         <Border Classes="card"><StackPanel Spacing="8">
           <TextBlock FontSize="18" FontWeight="SemiBold" Text="Permission being granted"/>
           <TextBlock TextWrapping="Wrap" Text="CLC-Cart Monitor will remember this cart identity and these exact runtime file hashes for your signed-in account on this computer. This permits verified manual launch."/>
-          <TextBlock TextWrapping="Wrap" Foreground="#F2C36B" Text="Automatic launch remains off. Enabling it later requires a separate confirmation for this cart."/>
+          <TextBlock TextWrapping="Wrap" Foreground="#F2C36B" Text="Trust does not enable automatic launch by itself. After this review, you will be asked separately whether this specific cart should launch automatically."/>
         </StackPanel></Border>
-        <CheckBox x:Name="TrustConfirm" Content="I reviewed this cart and want to save this trust permission."/>
-        <TextBlock x:Name="ConfirmationHelp" Classes="help" Text="Nothing is saved until you confirm below."/>
       </StackPanel>
     </ScrollViewer>
-    <Grid Grid.Row="2" ColumnDefinitions="*,12,*">
-      <Button Grid.Column="0" Content="CANCEL" Click="CancelClicked"/>
-      <Button Grid.Column="2" Content="TRUST THIS CART" Background="#2F80ED" Foreground="White" Click="ApproveClicked"/>
+    <Grid Grid.Row="2" ColumnDefinitions="Auto,18,*,18,Auto">
+      <Button Grid.Column="0" MinWidth="120" Content="CANCEL" Click="CancelClicked"/>
+      <StackPanel Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="3">
+        <CheckBox x:Name="TrustConfirm" MaxWidth="300">
+          <TextBlock Text="I reviewed this cart and want to save this trust permission." TextWrapping="Wrap"/>
+        </CheckBox>
+        <TextBlock x:Name="ConfirmationHelp" Classes="help" Text="Nothing is saved until you confirm here."/>
+      </StackPanel>
+      <Button Grid.Column="4" MinWidth="170" VerticalAlignment="Stretch"
+              HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+              Content="TRUST THIS CART" Background="#2F80ED" Foreground="White" Click="ApproveClicked"/>
     </Grid>
   </Grid>
 </Window>

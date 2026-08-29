@@ -283,8 +283,7 @@
                 </Border>
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="14"
-                      HorizontalAlignment="Center"
-                      IsVisible="{Binding ShowOnScreenActionButtons}">
+                      HorizontalAlignment="Center">
                     <Button Classes="action"
                             BorderBrush="{Binding SelectedGame.AccentBrightColor}"
                             BorderThickness="2"
@@ -318,7 +317,10 @@
                             BorderBrush="{Binding SelectedGame.AccentBrightColor}" BorderThickness="2"
                             AutomationProperties.Name="Safely eject game cart"
                             Command="{Binding EjectCartCommand}">
-                        <TextBlock Text="EJECT CART" HorizontalAlignment="Center" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
+                            <controls:ButtonPromptBadge Label="{Binding EjectPrompt}" BadgeColor="#2F80ED" />
+                            <TextBlock Text="EJECT CART" VerticalAlignment="Center" />
+                        </StackPanel>
                     </Button>
                 </StackPanel>
                 <TextBlock Grid.Row="2" Text="{Binding EjectStatus}" Classes="muted"

@@ -30,6 +30,7 @@ public static class AvaloniaInputMapper
 
             Key.X => LauncherAction.Trailer,
             Key.Space => LauncherAction.Trailer,
+            Key.E => LauncherAction.Options,
 
             _ => LauncherAction.None
         };

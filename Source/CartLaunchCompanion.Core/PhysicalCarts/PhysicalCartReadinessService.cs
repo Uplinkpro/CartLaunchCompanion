@@ -30,7 +30,7 @@ public sealed class PhysicalCartReadinessService
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or System.Text.Json.JsonException)
         {
-            checks.Add(new("Cart identity", false, File.Exists(Path.Combine(root, CartIdentityService.FileName))
+            checks.Add(new("Cart identity", false, File.Exists(CartIdentityService.GetIdentityPath(root))
                 ? "The existing identity is invalid and was not changed."
                 : "No identity has been created yet."));
         }
@@ -68,7 +68,7 @@ public sealed class PhysicalCartReadinessService
         Directory.CreateDirectory(root);
         foreach (var folder in new[] { "Cart", "Games" }) Directory.CreateDirectory(Path.Combine(root, folder));
         EmulatorPortableLayout.Create(root);
-        var identityPath = Path.Combine(root, CartIdentityService.FileName);
+        var identityPath = CartIdentityService.GetIdentityPath(root);
         if (!File.Exists(identityPath))
         {
             var identities = new CartIdentityService();

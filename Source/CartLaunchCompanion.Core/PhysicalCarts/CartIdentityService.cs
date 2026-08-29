@@ -6,7 +6,8 @@ namespace CartLaunchCompanion.Core.PhysicalCarts;
 
 public sealed class CartIdentityService
 {
-    public const string FileName = "cartlaunch.cartridge.json";
+    public const string DirectoryName = ".cartlaunch";
+    public const string FileName = "cartridge.json";
     public const int MaximumBytes = 16 * 1024;
 
     private static readonly JsonSerializerOptions Options = new()
@@ -30,7 +31,7 @@ public sealed class CartIdentityService
 
     public async Task<VerifiedCartIdentity> LoadAsync(string mediaRoot, CancellationToken cancellationToken = default)
     {
-        var path = ResolveIdentityPath(mediaRoot);
+        var path = ResolveIdentityPath(mediaRoot, createDirectory: false);
         var info = new FileInfo(path);
         if (!info.Exists) throw new FileNotFoundException("This media is not a Cart Launch cart.", path);
         if (info.Length is <= 0 or > MaximumBytes) throw new InvalidDataException("The cart identity has an invalid size.");
@@ -46,7 +47,7 @@ public sealed class CartIdentityService
     {
         ArgumentNullException.ThrowIfNull(identity);
         Validate(identity);
-        var path = ResolveIdentityPath(mediaRoot);
+        var path = ResolveIdentityPath(mediaRoot, createDirectory: true);
         if (File.Exists(path)) throw new IOException("This media already has a cart identity.");
         var bytes = JsonSerializer.SerializeToUtf8Bytes(identity, JsonContext.CartIdentity);
         if (bytes.Length > MaximumBytes) throw new InvalidDataException("The cart identity is too large.");
@@ -65,14 +66,41 @@ public sealed class CartIdentityService
         return new VerifiedCartIdentity(identity, Convert.ToHexStringLower(SHA256.HashData(bytes)));
     }
 
-    private static string ResolveIdentityPath(string mediaRoot)
+    public static string GetIdentityPath(string mediaRoot)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(mediaRoot);
         var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(mediaRoot));
+        return Path.Combine(root, DirectoryName, FileName);
+    }
+
+    private static string ResolveIdentityPath(string mediaRoot, bool createDirectory)
+    {
+        var path = GetIdentityPath(mediaRoot);
+        var root = Directory.GetParent(Path.GetDirectoryName(path)!)?.FullName
+            ?? throw new DirectoryNotFoundException("The media root does not exist.");
         if (!Directory.Exists(root)) throw new DirectoryNotFoundException("The media root does not exist.");
         var rootInfo = new DirectoryInfo(root);
         RejectLink(rootInfo);
-        return Path.Combine(root, FileName);
+        var identityDirectory = Path.GetDirectoryName(path)!;
+        if (createDirectory) Directory.CreateDirectory(identityDirectory);
+        var directoryInfo = new DirectoryInfo(identityDirectory);
+        if (directoryInfo.Exists)
+        {
+            RejectLink(directoryInfo);
+            HideDirectoryOnWindows(directoryInfo);
+        }
+        return path;
+    }
+
+    private static void HideDirectoryOnWindows(DirectoryInfo directory)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        try { directory.Attributes |= FileAttributes.Hidden; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or PlatformNotSupportedException)
+        {
+            // The leading dot still provides the cross-platform convention.
+            // Visibility is cosmetic and must never weaken or block identity validation.
+        }
     }
 
     private static void Validate(CartIdentity identity)

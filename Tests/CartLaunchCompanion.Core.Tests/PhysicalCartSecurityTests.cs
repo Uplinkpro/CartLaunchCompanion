@@ -17,13 +17,18 @@ public sealed class PhysicalCartSecurityTests : IDisposable
         Assert.Equal(created.Identity.CartId, loaded.Identity.CartId);
         Assert.Equal(created.Fingerprint, loaded.Fingerprint);
         Assert.Equal(64, loaded.Fingerprint.Length);
+        Assert.True(File.Exists(CartIdentityService.GetIdentityPath(_root)));
+        Assert.False(File.Exists(Path.Combine(_root, "cartlaunch.cartridge.json")));
+        if (OperatingSystem.IsWindows())
+            Assert.True((File.GetAttributes(Path.Combine(_root, CartIdentityService.DirectoryName)) & FileAttributes.Hidden) != 0);
     }
 
     [Fact]
     public async Task Identity_RejectsUnknownFields()
     {
         Directory.CreateDirectory(_root);
-        await File.WriteAllTextAsync(Path.Combine(_root, CartIdentityService.FileName),
+        Directory.CreateDirectory(Path.Combine(_root, CartIdentityService.DirectoryName));
+        await File.WriteAllTextAsync(CartIdentityService.GetIdentityPath(_root),
             """{"FormatVersion":1,"SecurityVersion":1,"CartId":"11111111-1111-1111-1111-111111111111","DisplayName":"Cart","CreatedUtc":"2026-01-01T00:00:00Z","Execute":"cmd.exe"}""");
 
         await Assert.ThrowsAsync<System.Text.Json.JsonException>(() => new CartIdentityService().LoadAsync(_root));
@@ -33,7 +38,8 @@ public sealed class PhysicalCartSecurityTests : IDisposable
     public async Task Identity_RejectsOversizedFile()
     {
         Directory.CreateDirectory(_root);
-        await File.WriteAllBytesAsync(Path.Combine(_root, CartIdentityService.FileName), new byte[CartIdentityService.MaximumBytes + 1]);
+        Directory.CreateDirectory(Path.Combine(_root, CartIdentityService.DirectoryName));
+        await File.WriteAllBytesAsync(CartIdentityService.GetIdentityPath(_root), new byte[CartIdentityService.MaximumBytes + 1]);
         await Assert.ThrowsAsync<InvalidDataException>(() => new CartIdentityService().LoadAsync(_root));
     }
 
@@ -152,11 +158,36 @@ public sealed class PhysicalCartSecurityTests : IDisposable
     {
         var malformed = Path.Combine(_root, "malformed");
         Directory.CreateDirectory(Path.Combine(malformed, "nested"));
-        await File.WriteAllTextAsync(Path.Combine(malformed, CartIdentityService.FileName), "not json");
-        await File.WriteAllTextAsync(Path.Combine(malformed, "nested", CartIdentityService.FileName), "{}");
+        Directory.CreateDirectory(Path.Combine(malformed, CartIdentityService.DirectoryName));
+        await File.WriteAllTextAsync(CartIdentityService.GetIdentityPath(malformed), "not json");
+        Directory.CreateDirectory(Path.Combine(malformed, "nested", CartIdentityService.DirectoryName));
+        await File.WriteAllTextAsync(CartIdentityService.GetIdentityPath(Path.Combine(malformed, "nested")), "{}");
 
         var carts = await new MountedCartDetector(new StaticMounts(malformed), new CartIdentityService()).ScanAsync();
         Assert.Empty(carts);
+    }
+
+    [Fact]
+    public async Task Detector_IgnoresLegacyRootIdentityLocation()
+    {
+        Directory.CreateDirectory(_root);
+        await File.WriteAllTextAsync(Path.Combine(_root, "cartlaunch.cartridge.json"), "{}");
+
+        var carts = await new MountedCartDetector(new StaticMounts(_root), new CartIdentityService()).ScanAsync();
+
+        Assert.Empty(carts);
+    }
+
+    [Fact]
+    public async Task Identity_RejectsLinkedSystemDirectoryWhenSupported()
+    {
+        var outside = Path.Combine(_root, "outside");
+        Directory.CreateDirectory(outside);
+        await File.WriteAllTextAsync(Path.Combine(outside, CartIdentityService.FileName), "{}");
+        try { Directory.CreateSymbolicLink(Path.Combine(_root, CartIdentityService.DirectoryName), outside); }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or PlatformNotSupportedException) { return; }
+
+        await Assert.ThrowsAsync<InvalidDataException>(() => new CartIdentityService().LoadAsync(_root));
     }
 
     [Fact]
@@ -186,7 +217,12 @@ public sealed class PhysicalCartSecurityTests : IDisposable
         var media = await CreateRuntimeCartAsync("good runtime");
         var identities = new CartIdentityService();
         var identity = await identities.SaveNewAsync(media, identities.Create("Staging Cart"));
-        var staging = new TrustedRuntimeStagingService();
+        var measuredStages = new List<RuntimeStagingStage>();
+        var staging = new TrustedRuntimeStagingService(stageCompleted: (stage, elapsed) =>
+        {
+            measuredStages.Add(stage);
+            Assert.True(elapsed >= TimeSpan.Zero);
+        });
         var approvals = await staging.CreateApprovalsAsync(media);
         var store = new TrustedCartStore(Path.Combine(_root, "trust", "trusted-carts.json"));
         await store.TrustAsync(identity, false, approvals);
@@ -196,6 +232,9 @@ public sealed class PhysicalCartSecurityTests : IDisposable
         Assert.StartsWith(Path.Combine(_root, "sessions"), prepared.SessionRoot, StringComparison.OrdinalIgnoreCase);
         Assert.Equal("good runtime", await File.ReadAllTextAsync(prepared.ExecutablePath));
         Assert.Equal(Path.Combine(media, "Cart"), prepared.CartRoot);
+        Assert.Equal(
+            [RuntimeStagingStage.SourceVerification, RuntimeStagingStage.ProtectedCopy, RuntimeStagingStage.StagedVerification],
+            measuredStages);
         TrustedRuntimeStagingService.DeleteSession(prepared);
         Assert.False(Directory.Exists(prepared.SessionRoot));
     }

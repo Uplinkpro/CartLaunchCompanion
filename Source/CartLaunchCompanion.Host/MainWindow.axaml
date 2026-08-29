@@ -16,6 +16,7 @@
           <TextBlock FontWeight="SemiBold" Text="Local component"/><TextBlock Classes="help" Text="{Binding InstallDirectory}"/>
           <TextBlock FontWeight="SemiBold" Text="Local data"/><TextBlock Classes="help" Text="{Binding DataDirectory}"/>
           <TextBlock FontWeight="SemiBold" Text="Automatic startup"/><TextBlock Classes="help" Text="{Binding StartupRegistration}"/>
+          <TextBlock Classes="help" TextWrapping="Wrap" Text="Install or repair registers CLC-Cart Monitor to start with the selected user scope. After a cart is trusted or re-trusted, CLC asks separately whether that specific cart should launch automatically."/>
           <TextBlock FontWeight="SemiBold" Text="Settings"/><TextBlock Classes="help" Text="{Binding SettingsPath}"/>
           <TextBlock FontWeight="SemiBold" Text="Trusted carts"/><TextBlock Classes="help" Text="{Binding TrustDatabasePath}"/>
           <TextBlock FontWeight="SemiBold" Text="Logs"/><TextBlock Classes="help" Text="{Binding LogsDirectory}"/>

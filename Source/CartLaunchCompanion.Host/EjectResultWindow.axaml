@@ -1,0 +1,92 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CartLaunchCompanion.Host.EjectResultWindow"
+        Width="620"
+        Height="520"
+        CanResize="False"
+        WindowDecorations="None"
+        ShowInTaskbar="True"
+        Topmost="True"
+        WindowStartupLocation="CenterScreen"
+        Background="#0B0D10"
+        Title="Cart safe-removal result">
+  <Border BorderBrush="{Binding AccentColor}"
+          BorderThickness="2"
+          CornerRadius="22"
+          Background="#FA0B0D10"
+          Padding="34">
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="18">
+      <Image Grid.Row="0"
+             Source="{Binding CollectionLogo}"
+             IsVisible="{Binding HasCollectionLogo}"
+             Width="220"
+             Height="120"
+             Stretch="Uniform"
+             HorizontalAlignment="Center"/>
+
+      <Border Grid.Row="1"
+              Width="88"
+              Height="88"
+              CornerRadius="44"
+              BorderBrush="{Binding AccentColor}"
+              BorderThickness="4"
+              Background="{Binding AccentBackground}"
+              HorizontalAlignment="Center">
+        <TextBlock Text="{Binding StatusGlyph}"
+                   Foreground="{Binding AccentColor}"
+                   FontSize="48"
+                   FontWeight="Bold"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"/>
+      </Border>
+
+      <StackPanel Grid.Row="2" Spacing="8" HorizontalAlignment="Center">
+        <TextBlock Text="{Binding Heading}"
+                   Foreground="White"
+                   FontSize="30"
+                   FontWeight="Bold"
+                   LetterSpacing="2"
+                   HorizontalAlignment="Center"/>
+        <TextBlock Text="{Binding CartName}"
+                   Foreground="#D9FFFFFF"
+                   FontSize="18"
+                   FontWeight="SemiBold"
+                   HorizontalAlignment="Center"/>
+      </StackPanel>
+
+      <Border Grid.Row="3" Classes="card" VerticalAlignment="Stretch">
+        <TextBlock Text="{Binding Detail}"
+                   Foreground="#C8D0DA"
+                   FontSize="15"
+                   TextWrapping="Wrap"
+                   TextAlignment="Center"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"/>
+      </Border>
+
+      <Button Grid.Row="4"
+              IsVisible="{Binding IsSuccess}"
+              HorizontalAlignment="Stretch"
+              Background="#238653"
+              Foreground="White"
+              Content="DONE"
+              Click="DismissClicked"/>
+
+      <Grid Grid.Row="4"
+            IsVisible="{Binding IsFailure}"
+            ColumnDefinitions="*,12,*,12,*">
+        <Button Grid.Column="0" Content="CLOSE" Click="DismissClicked"/>
+        <Button Grid.Column="2"
+                Content="REOPEN CLC"
+                Background="#394553"
+                Foreground="White"
+                Click="ReopenClicked"/>
+        <Button Grid.Column="4"
+                Content="RETRY EJECT"
+                Background="#C94C4C"
+                Foreground="White"
+                Click="RetryClicked"/>
+      </Grid>
+    </Grid>
+  </Border>
+</Window>

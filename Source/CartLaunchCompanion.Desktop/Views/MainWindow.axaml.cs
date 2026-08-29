@@ -16,6 +16,15 @@ public partial class MainWindow : Window
             KeyDownEvent,
             OnPreviewKeyDown,
             Avalonia.Interactivity.RoutingStrategies.Tunnel);
+
+        if (OperatingSystem.IsWindows())
+        {
+            // Stay above the Windows taskbar only while CLC owns focus. This
+            // preserves console-style fullscreen without trapping the user:
+            // Alt+Tab or activating another window immediately lowers CLC.
+            Activated += (_, _) => Topmost = true;
+            Deactivated += (_, _) => Topmost = false;
+        }
     }
 
     private async void OnPreviewKeyDown(

@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace CartLaunchCompanion.Core.PhysicalCarts;
 
@@ -8,16 +10,24 @@ public interface IMountRootProvider { IEnumerable<string> GetMountedRoots(); }
 
 public sealed class SystemMountRootProvider : IMountRootProvider
 {
+    private const uint DriveRemovable = 2;
+    private const uint DriveFixed = 3;
+
     public IEnumerable<string> GetMountedRoots()
     {
         if (OperatingSystem.IsWindows())
         {
-            foreach (var drive in DriveInfo.GetDrives())
+            // DriveInfo.DriveType can open/probe a volume. During safe eject,
+            // that can remount a fixed-media USB enclosure after CLC has just
+            // dismounted it. Read the logical-drive bitmask and drive type
+            // without touching the cart filesystem instead.
+            var mounted = GetLogicalDrives();
+            for (var index = 0; index < 26; index++)
             {
-                bool supported;
-                try { supported = drive.DriveType is DriveType.Removable or DriveType.Fixed; }
-                catch { supported = false; }
-                if (supported) yield return drive.RootDirectory.FullName;
+                if ((mounted & (1u << index)) == 0) continue;
+                var root = $"{(char)('A' + index)}:\\";
+                var type = GetDriveTypeW(root);
+                if (type is DriveRemovable or DriveFixed) yield return root;
             }
             yield break;
         }
@@ -31,6 +41,12 @@ public sealed class SystemMountRootProvider : IMountRootProvider
             foreach (var child in children) yield return child;
         }
     }
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetLogicalDrives();
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+    private static extern uint GetDriveTypeW(string rootPathName);
 }
 
 public sealed class MountedCartDetector(IMountRootProvider mountRoots, CartIdentityService identities)
@@ -72,7 +88,7 @@ public sealed class MountedCartDetector(IMountRootProvider mountRoots, CartIdent
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (!seen.Add(root) || _ignoredRoots.ContainsKey(root) ||
-                    !File.Exists(Path.Combine(root, CartIdentityService.FileName))) continue;
+                    !File.Exists(CartIdentityService.GetIdentityPath(root))) continue;
                 try { found.Add(new(root, await identities.LoadAsync(root, cancellationToken))); }
                 catch (IOException) { }
                 catch (UnauthorizedAccessException) { }
@@ -87,7 +103,10 @@ public sealed class MountedCartDetector(IMountRootProvider mountRoots, CartIdent
     private static string NormalizeRoot(string path) => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
 }
 
-public sealed class PhysicalCartMonitor(MountedCartDetector detector, TimeSpan? interval = null) : IAsyncDisposable
+public sealed class PhysicalCartMonitor(
+    MountedCartDetector detector,
+    TimeSpan? interval = null,
+    Action<DetectedPhysicalCart, TimeSpan>? insertionScanCompleted = null) : IAsyncDisposable
 {
     private readonly TimeSpan _interval = interval ?? TimeSpan.FromSeconds(2);
     private readonly CancellationTokenSource _stop = new();
@@ -106,6 +125,7 @@ public sealed class PhysicalCartMonitor(MountedCartDetector detector, TimeSpan? 
         using var timer = new PeriodicTimer(_interval);
         do
         {
+            var scanTimer = Stopwatch.StartNew();
             IReadOnlyList<DetectedPhysicalCart> carts;
             try { carts = await detector.ScanAsync(cancellationToken); }
             catch (OperationCanceledException) { break; }
@@ -116,7 +136,13 @@ public sealed class PhysicalCartMonitor(MountedCartDetector detector, TimeSpan? 
                 _baselineEstablished = true;
                 continue;
             }
-            foreach (var cart in carts.Where(cart => !_known.Contains(cart.MediaRoot))) CartInserted?.Invoke(this, cart);
+            var scanElapsed = scanTimer.Elapsed;
+            foreach (var cart in carts.Where(cart => !_known.Contains(cart.MediaRoot)))
+            {
+                try { insertionScanCompleted?.Invoke(cart, scanElapsed); }
+                catch { }
+                CartInserted?.Invoke(this, cart);
+            }
             foreach (var removed in _known.Where(root => !current.Contains(root))) CartRemoved?.Invoke(this, removed);
             _known = current;
         } while (await timer.WaitForNextTickAsync(cancellationToken));

@@ -8,6 +8,14 @@ public sealed class CartHostAuditLogTests : IDisposable
     private readonly string _root = Path.Combine(Path.GetTempPath(), "CLC-AuditTests-" + Guid.NewGuid().ToString("N"));
 
     [Fact]
+    public void PerformanceEvent_AppendsWithoutChangingExistingAuditIds()
+    {
+        Assert.Equal(0, (int)CartHostAuditEvent.HostStarted);
+        Assert.Equal(16, (int)CartHostAuditEvent.EjectFailed);
+        Assert.Equal(17, (int)CartHostAuditEvent.PerformanceStage);
+    }
+
+    [Fact]
     public void Write_UsesStructuredSanitizedEntryWithoutRawCartIdentity()
     {
         const string cartId = "secret-cart-id";

@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Diagnostics;
 using CartLaunchCompanion.Core.Updating;
 
 namespace CartLaunchCompanion.Core.PhysicalCarts;
@@ -7,7 +8,16 @@ public sealed record PreparedCartRuntime(
     string SessionRoot, string ExecutablePath, string CartRoot,
     string Platform, string CartId, string RuntimeFingerprint);
 
-public sealed class TrustedRuntimeStagingService(Action<string>? fileCopied = null)
+public enum RuntimeStagingStage
+{
+    SourceVerification,
+    ProtectedCopy,
+    StagedVerification
+}
+
+public sealed class TrustedRuntimeStagingService(
+    Action<string>? fileCopied = null,
+    Action<RuntimeStagingStage, TimeSpan>? stageCompleted = null)
 {
     public async Task<IReadOnlyList<TrustedRuntimeApproval>> CreateApprovalsAsync(
         string mediaRoot, CancellationToken cancellationToken = default)
@@ -42,7 +52,9 @@ public sealed class TrustedRuntimeStagingService(Action<string>? fileCopied = nu
         var approval = record.RuntimeApprovals.SingleOrDefault(item => item.Platform == platform)
             ?? throw new InvalidDataException($"The {platform} runtime was not approved when this cart was trusted.");
         var source = Path.Combine(ResolveCartRoot(mediaRoot), "System", platform);
+        var stageTimer = Stopwatch.StartNew();
         await VerifyApprovalAsync(source, approval, cancellationToken);
+        ReportStage(RuntimeStagingStage.SourceVerification, stageTimer.Elapsed);
 
         var sessions = Path.GetFullPath(sessionsRoot);
         Directory.CreateDirectory(sessions);
@@ -51,6 +63,7 @@ public sealed class TrustedRuntimeStagingService(Action<string>? fileCopied = nu
         Directory.CreateDirectory(session);
         try
         {
+            stageTimer.Restart();
             foreach (var file in approval.Files)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -62,7 +75,10 @@ public sealed class TrustedRuntimeStagingService(Action<string>? fileCopied = nu
                 await input.CopyToAsync(output, cancellationToken);
                 fileCopied?.Invoke(file.Path);
             }
+            ReportStage(RuntimeStagingStage.ProtectedCopy, stageTimer.Elapsed);
+            stageTimer.Restart();
             await VerifyApprovalAsync(session, approval, cancellationToken);
+            ReportStage(RuntimeStagingStage.StagedVerification, stageTimer.Elapsed);
             var executable = RuntimePathPolicy.ResolveContainedFile(session, approval.EntryPoint);
             if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(executable, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
             return new(session, executable, Path.Combine(Path.GetFullPath(mediaRoot), "Cart"), platform, identity.Identity.CartId, approval.RootFingerprint);
@@ -71,6 +87,16 @@ public sealed class TrustedRuntimeStagingService(Action<string>? fileCopied = nu
         {
             if (Directory.Exists(session)) Directory.Delete(session, recursive: true);
             throw;
+        }
+    }
+
+    private void ReportStage(RuntimeStagingStage stage, TimeSpan elapsed)
+    {
+        if (stageCompleted is null) return;
+        try { stageCompleted(stage, elapsed); }
+        catch
+        {
+            // Performance diagnostics must never affect runtime verification.
         }
     }
 

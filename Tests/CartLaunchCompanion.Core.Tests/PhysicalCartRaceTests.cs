@@ -53,7 +53,7 @@ public sealed class PhysicalCartRaceTests : IDisposable
         var setup = await CreateTrustedCartAsync();
         var prepared = await new TrustedRuntimeStagingService().PrepareAsync(
             setup.Media, setup.Identity, setup.Database, "Windows-x64", Path.Combine(_root, "sessions"));
-        File.Delete(Path.Combine(setup.Media, CartIdentityService.FileName));
+        File.Delete(CartIdentityService.GetIdentityPath(setup.Media));
         var identities = new CartIdentityService();
         await identities.SaveNewAsync(setup.Media, identities.Create("Replacement"));
 

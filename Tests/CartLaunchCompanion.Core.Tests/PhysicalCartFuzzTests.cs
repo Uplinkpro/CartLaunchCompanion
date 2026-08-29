@@ -14,7 +14,8 @@ public sealed class PhysicalCartFuzzTests : IDisposable
     public async Task IdentityManifest_RejectsMalformedBoundaries(string json)
     {
         Directory.CreateDirectory(_root);
-        await File.WriteAllTextAsync(Path.Combine(_root, CartIdentityService.FileName), json);
+        Directory.CreateDirectory(Path.Combine(_root, CartIdentityService.DirectoryName));
+        await File.WriteAllTextAsync(CartIdentityService.GetIdentityPath(_root), json);
         await Assert.ThrowsAnyAsync<Exception>(() => new CartIdentityService().LoadAsync(_root));
     }
 
@@ -32,15 +33,16 @@ public sealed class PhysicalCartFuzzTests : IDisposable
     public async Task IdentityManifest_DeterministicRandomMalformedInputAlwaysFailsClosed()
     {
         Directory.CreateDirectory(_root);
+        Directory.CreateDirectory(Path.Combine(_root, CartIdentityService.DirectoryName));
         var random = new Random(0x434C43);
         for (var index = 0; index < 250; index++)
         {
             var bytes = new byte[random.Next(1, 512)];
             random.NextBytes(bytes);
-            await File.WriteAllBytesAsync(Path.Combine(_root, CartIdentityService.FileName), bytes);
+            await File.WriteAllBytesAsync(CartIdentityService.GetIdentityPath(_root), bytes);
             await Assert.ThrowsAnyAsync<Exception>(() => new CartIdentityService().LoadAsync(_root));
         }
-        Assert.Single(Directory.EnumerateFiles(_root));
+        Assert.Single(Directory.EnumerateFiles(_root, "*", SearchOption.AllDirectories));
     }
 
     [Theory]

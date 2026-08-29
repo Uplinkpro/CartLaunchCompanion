@@ -270,7 +270,8 @@ The resulting media root contains:
 
 ```text
 GameCart/
-├── cartlaunch.cartridge.json
+├── .cartlaunch/   # Hidden CLC device identity and maintenance data
+│   └── cartridge.json
 ├── Cart/          # CLC, Configurator, Cart Monitor, updater, configuration, and artwork
 ├── Games/         # Installed native game files, when kept on the cart
 ├── Emulators/     # Shared portable emulators
@@ -278,6 +279,7 @@ GameCart/
 ```
 
 Game definitions still live under `Cart/Games`. The root-level `Games` directory is for the actual game files. Steam or the operating system may add their own folders alongside these.
+The `.cartlaunch` directory is hidden by its leading dot on Linux and SteamOS; CLC also applies the Windows hidden attribute when creating it. Hiding is only for a clean drive layout—the identity remains bounded and fully validated as untrusted data.
 
 ### 2. Install the optional CLC-Cart Monitor
 
@@ -298,6 +300,8 @@ After preparation, choose **Review trust in Monitor**. CLC-Cart Monitor independ
 - its security version and connected-media path;
 - each verified platform runtime and file count;
 - the exact permission being stored for the signed-in user on that computer.
+
+Immediately after trust or re-trust is approved, the Monitor asks whether that specific cart should launch automatically when inserted. Declining keeps manual launch available. Installing or repairing the Monitor registers the Monitor itself for sign-in startup, but never silently grants automatic launch to a cart.
 
 Trust requires an explicit acknowledgment. It permits verified manual launch only. **Automatic launch remains off** until separately enabled for that individual cart. Trust can be revoked at any time from **Trusted carts** without changing files on the physical media.
 

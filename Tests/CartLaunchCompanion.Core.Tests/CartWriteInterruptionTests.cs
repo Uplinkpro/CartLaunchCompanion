@@ -71,8 +71,9 @@ public sealed class CartWriteInterruptionTests : IDisposable
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
             service.SaveNewAsync(_root, service.Create("Interrupted cart"), cancelled.Token));
 
-        Assert.False(File.Exists(Path.Combine(_root, CartIdentityService.FileName)));
-        Assert.Empty(Directory.EnumerateFiles(_root, CartIdentityService.FileName + ".tmp-*"));
+        Assert.False(File.Exists(CartIdentityService.GetIdentityPath(_root)));
+        Assert.Empty(Directory.EnumerateFiles(
+            Path.Combine(_root, CartIdentityService.DirectoryName), CartIdentityService.FileName + ".tmp-*"));
     }
 
     [Fact]

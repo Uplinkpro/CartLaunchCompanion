@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using CartLaunchCompanion.Core.PhysicalCarts;
 using Microsoft.Win32;
 using System.Runtime.Versioning;
@@ -25,7 +26,8 @@ public sealed partial class App : Application
             var reviewIndex = Array.IndexOf(Program.Arguments, "--review-cart");
             if (reviewIndex >= 0 && reviewIndex + 1 < Program.Arguments.Length)
                 window.Opened += async (_, _) => await window.ReviewPreparedCartAsync(Program.Arguments[reviewIndex + 1]);
-            if (Program.Arguments.Contains("--background", StringComparer.Ordinal))
+            var background = Program.Arguments.Contains("--background", StringComparer.Ordinal);
+            if (background)
             {
                 desktop.ShutdownMode = Avalonia.Controls.ShutdownMode.OnExplicitShutdown;
                 window.Opened += async (_, _) =>
@@ -33,6 +35,14 @@ public sealed partial class App : Application
                     window.Hide();
                     await window.StartBackgroundMonitoringAsync();
                 };
+            }
+            else
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    window.Show();
+                    window.Activate();
+                });
             }
         }
         base.OnFrameworkInitializationCompleted();

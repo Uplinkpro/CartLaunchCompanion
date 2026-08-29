@@ -26,19 +26,38 @@ public sealed class SafeMediaEjectService(
         if (string.IsNullOrWhiteSpace(expectedCartId) || expectedCartId.Length > 128)
             throw new InvalidDataException("The trusted cart identity is invalid.");
         var fullRoot = Path.TrimEndingDirectorySeparator(Path.GetFullPath(mediaRoot));
-        if (!Directory.Exists(fullRoot)) return SafeMediaEjectOutcome.AlreadyRemoved;
+        if (!IsRootPresentWithoutProbing(fullRoot)) return SafeMediaEjectOutcome.AlreadyRemoved;
 
         VerifiedCartIdentity identity;
         try { identity = await _identities.LoadAsync(fullRoot, cancellationToken); }
         catch (DirectoryNotFoundException) { return SafeMediaEjectOutcome.AlreadyRemoved; }
-        catch (FileNotFoundException) when (!Directory.Exists(fullRoot)) { return SafeMediaEjectOutcome.AlreadyRemoved; }
+        catch (FileNotFoundException) when (!IsRootPresentWithoutProbing(fullRoot)) { return SafeMediaEjectOutcome.AlreadyRemoved; }
         if (!identity.Identity.CartId.Equals(expectedCartId, StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("The mounted media no longer matches the active trusted cart.");
 
         try { await _platform.EjectVolumeAsync(fullRoot, cancellationToken); }
-        catch (IOException) when (!Directory.Exists(fullRoot)) { return SafeMediaEjectOutcome.AlreadyRemoved; }
+        // Directory.Exists on a just-dismounted fixed-media USB enclosure can
+        // make Windows probe and remount it. Check the logical-drive bitmask
+        // instead so a bridge that finishes removal while reporting an I/O
+        // error is correctly treated as already removed.
+        catch (IOException) when (!IsRootPresentWithoutProbing(fullRoot)) { return SafeMediaEjectOutcome.AlreadyRemoved; }
         return SafeMediaEjectOutcome.Ejected;
     }
+
+    private static bool IsRootPresentWithoutProbing(string fullRoot)
+    {
+        if (!OperatingSystem.IsWindows()) return Directory.Exists(fullRoot);
+        var pathRoot = Path.GetPathRoot(fullRoot);
+        if (string.IsNullOrWhiteSpace(pathRoot) || pathRoot.Length < 2 || pathRoot[1] != ':' ||
+            !Path.TrimEndingDirectorySeparator(pathRoot).Equals(fullRoot, StringComparison.OrdinalIgnoreCase))
+            return Directory.Exists(fullRoot);
+        var letter = char.ToUpperInvariant(pathRoot[0]);
+        return letter is >= 'A' and <= 'Z' &&
+               (GetLogicalDrives() & (1u << (letter - 'A'))) != 0;
+    }
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetLogicalDrives();
 }
 
 internal static class PhysicalMediaEjectPlatform
@@ -95,9 +114,11 @@ internal sealed class WindowsPhysicalMediaEjectPlatform : IPhysicalMediaEjectPla
         // USB-to-SATA/NVMe bridges commonly expose their volume as fixed media.
         // IOCTL_STORAGE_EJECT_MEDIA can report success for those bridges without
         // asking Plug and Play to remove the USB device. Request removal of the
-        // nearest removable PnP ancestor and preserve Windows' veto reason.
+        // nearest removable PnP ancestor and preserve Windows' veto reason. Some
+        // UAS bridges briefly remount before completing the accepted removal, so
+        // allow Windows enough time to finish instead of issuing a competing retry.
         WindowsPlugAndPlayEjector.RequestEject(deviceNumber);
-        if (await WaitForRemovalAsync(systemRoot, TimeSpan.FromSeconds(6), cancellationToken)) return;
+        if (await WaitForRemovalAsync(systemRoot, TimeSpan.FromSeconds(15), cancellationToken)) return;
 
         throw new IOException(
             "Windows Plug and Play accepted safe removal, but the cart remained mounted. " +

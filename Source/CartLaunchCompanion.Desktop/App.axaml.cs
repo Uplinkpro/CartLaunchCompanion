@@ -93,11 +93,11 @@ public partial class App : Application
 
                     if (visible)
                     {
-                        mainWindow.Show();
-                        mainWindow.Activate();
+                        ShowLauncherWindow(mainWindow);
                     }
                     else
                     {
+                        mainWindow.Topmost = false;
                         mainWindow.Hide();
                     }
                 },
@@ -145,6 +145,19 @@ public partial class App : Application
             base.OnFrameworkInitializationCompleted();
 
             await viewModel.LoadAsync();
+            ShowLauncherWindow(mainWindow);
+            if (OperatingSystem.IsWindows())
+            {
+                // A cart may be launched by the background Monitor, which does not
+                // own foreground activation. Reassert full-screen after the native
+                // window is visible and keep it above the taskbar while CLC is on
+                // screen. The visibility callback releases topmost before a game
+                // launches, so CLC cannot cover the running game.
+                await Task.Delay(150);
+                mainWindow.WindowState = Avalonia.Controls.WindowState.FullScreen;
+                mainWindow.Topmost = true;
+                mainWindow.Activate();
+            }
             var hostStatus = new CartHostStatusService().Check();
             if (!hostStatus.IsAvailable)
             {
@@ -161,6 +174,17 @@ public partial class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static void ShowLauncherWindow(MainWindow window)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            window.WindowState = Avalonia.Controls.WindowState.FullScreen;
+            window.Topmost = true;
+        }
+        window.Show();
+        window.Activate();
     }
 
     private sealed class UnsupportedGameLaunchService

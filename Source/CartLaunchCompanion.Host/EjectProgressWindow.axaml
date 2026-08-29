@@ -1,0 +1,70 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CartLaunchCompanion.Host.EjectProgressWindow"
+        Width="560"
+        Height="430"
+        CanResize="False"
+        WindowDecorations="None"
+        ShowInTaskbar="True"
+        Topmost="True"
+        WindowStartupLocation="CenterScreen"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
+        Title="Preparing cart for safe removal">
+  <Window.Styles>
+    <Style Selector="Canvas.eject-spinner">
+      <Setter Property="RenderTransformOrigin" Value="50%,50%"/>
+      <Setter Property="RenderTransform"><RotateTransform Angle="0"/></Setter>
+      <Style.Animations>
+        <Animation Duration="0:0:0.8" IterationCount="Infinite" Easing="LinearEasing">
+          <KeyFrame Cue="0%"><Setter Property="RotateTransform.Angle" Value="0"/></KeyFrame>
+          <KeyFrame Cue="100%"><Setter Property="RotateTransform.Angle" Value="360"/></KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
+  </Window.Styles>
+
+  <Border Background="#F50B0D10"
+          BorderBrush="#3D8BE8"
+          BorderThickness="2"
+          CornerRadius="22"
+          Padding="36">
+    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="18">
+      <Image Source="{Binding CollectionLogo}"
+             IsVisible="{Binding HasCollectionLogo}"
+             Width="220"
+             Height="120"
+             Stretch="Uniform"
+             HorizontalAlignment="Center"/>
+      <Canvas Classes="eject-spinner" Width="70" Height="70" HorizontalAlignment="Center">
+        <Ellipse Canvas.Left="5" Canvas.Top="5" Width="60" Height="60"
+                 Stroke="#30FFFFFF" StrokeThickness="6"/>
+        <Path Data="M35,5 A30,30 0 0 1 65,35"
+              Stroke="#59A8FF" StrokeThickness="6" StrokeLineCap="Round"/>
+      </Canvas>
+      <TextBlock Text="PREPARING SAFE REMOVAL"
+                 Foreground="White"
+                 FontSize="24"
+                 FontWeight="Bold"
+                 LetterSpacing="2"
+                 HorizontalAlignment="Center"/>
+      <TextBlock Text="{Binding CartName}"
+                 Foreground="#E0FFFFFF"
+                 FontSize="17"
+                 FontWeight="SemiBold"
+                 HorizontalAlignment="Center"/>
+      <TextBlock x:Name="DetailText"
+                 Text="Closing the launcher and flushing pending writes…"
+                 Foreground="#B7C1CD"
+                 FontSize="14"
+                 TextAlignment="Center"
+                 TextWrapping="Wrap"
+                 HorizontalAlignment="Center"/>
+      <TextBlock Text="Do not unplug the cart yet."
+                 Foreground="#FFD37A"
+                 FontSize="14"
+                 FontWeight="SemiBold"
+                 HorizontalAlignment="Center"/>
+    </StackPanel>
+  </Border>
+</Window>
