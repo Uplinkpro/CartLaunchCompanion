@@ -1,5 +1,5 @@
 param(
-    [string]$Version = '2.5.0',
+    [string]$Version = '2.6.0',
     [string]$OutputRoot = (Join-Path $PSScriptRoot "artifacts\$Version")
 )
 
@@ -113,6 +113,7 @@ Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'COMMERCIAL-LICENSE.md') -Destin
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'CHANGELOG.md') -Destination $documentationDestination
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'SECURITY.md') -Destination $documentationDestination
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Game-Configurator.md') -Destination $documentationDestination
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Launcher-ID-Guide.md') -Destination $documentationDestination
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Emulator-Launch-Guide.md') -Destination $documentationDestination
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Updater-Security.md') -Destination $documentationDestination
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Documentation\Physical-Cart-Hardware-Test-Checklist.md') -Destination $documentationDestination

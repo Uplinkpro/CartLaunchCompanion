@@ -6,6 +6,8 @@ The project follows semantic versioning where practical.
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-08-31
+
 ### Added
 
 - Added an in-app launcher ID guide with publisher-specific formats, discovery instructions, reliability warnings, and verified examples
@@ -13,14 +15,25 @@ The project follows semantic versioning where practical.
 - Added confirmed local launcher discovery from Steam manifests, Epic manifests, Windows AUMIDs, and launcher-created shortcuts
 - Added safe Windows drive branding that uses the CLC app icon and collection name without executable AutoRun commands
 - Added normalized platform-banner discovery, Configurator platform suggestions, and optional platform logos for emulated games
+- Added folder-driven launcher branding for Battle.net, EA, Flatpak, Heroic, HoYoverse, itch.io, Proton, Wine, and the existing launcher catalog
+- Added Linux launch autofill from predictable Windows configurations while keeping every generated command editable
 
 ### Changed
 
 - Clarified that GOG, Rockstar, and Amazon game IDs are reference metadata and that CLC requires an executable or complete URI to launch those games
+- Simplified launcher assets to `Banner.png` and `Logo.png`, removing obsolete launcher backgrounds and glyphs
+- Made the Windows and Linux launch pages show only the fields relevant to the selected launcher while retaining executable and companion controls
 
 ### Fixed
 
 - Prevented the Game Configurator title, path, and toolbar from overlapping at high Windows display-scaling levels by placing the controls in a responsive wrapping row
+- Display platform logos for emulator games instead of the generic Cart Launch placeholder when a matching platform logo exists
+
+### Validation
+
+- Passed all 297 automated Core and Desktop tests in the Release configuration
+- Verified PSP banner and logo resolution on the GTA Collection physical test cart
+- Passed the release-package audit for the Windows, Linux, and combined portable distributions
 
 ## [2.5.1] - 2026-08-29
 

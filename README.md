@@ -45,7 +45,7 @@ CLC is **not intended to replace Steam or organize every game installed across a
 
 > **The cart is the product.** CLC and its game definitions live in `Cart/`; installed game files live in the root-level `Games/` folder; shared emulators and game images can live in `Emulators/` and `Roms/`. Relative paths keep the cart usable when its drive letter or mount point changes.
 
-> **Current release:** [Version 2.5.1](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.5.1) is available for Windows, Linux, and SteamOS. The optional CLC-Cart Monitor adds trusted removable-media detection, verified local staging, automatic launch, and safe ejection.
+> **Current release:** [Version 2.6.0](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.6.0) is available for Windows, Linux, and SteamOS. The optional CLC-Cart Monitor adds trusted removable-media detection, verified local staging, automatic launch, and safe ejection.
 
 ## Preview
 
@@ -158,15 +158,15 @@ CLC is **not intended to replace Steam or organize every game installed across a
 
 ## Download
 
-Download [Cart Launch Companion 2.5.1](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.5.1), or browse [all GitHub releases](https://github.com/Uplinkpro/CartLaunchCompanion/releases).
+Download [Cart Launch Companion 2.6.0](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.6.0), or browse [all GitHub releases](https://github.com/Uplinkpro/CartLaunchCompanion/releases).
 
-Version 2.5.1 provides three packages:
+Version 2.6.0 provides three packages:
 
 | Package | Intended use |
 |---|---|
-| `CartLaunchCompanion-2.5.1-win-x64.zip` | Windows-only cart runtime |
-| `CartLaunchCompanion-2.5.1-linux-x64.tar.gz` | Linux or SteamOS cart runtime |
-| `CartLaunchCompanion-2.5.1-portable.zip` | Combined Windows and Linux cart runtime |
+| `CartLaunchCompanion-2.6.0-win-x64.zip` | Windows-only cart runtime |
+| `CartLaunchCompanion-2.6.0-linux-x64.tar.gz` | Linux or SteamOS cart runtime |
+| `CartLaunchCompanion-2.6.0-portable.zip` | Combined Windows and Linux cart runtime |
 
 Every package is self-contained. The correct .NET runtime is included, so end users do not need to install the .NET SDK or runtime. Published archives contain no source, test, or build folders. Verify downloads with the included `SHA256SUMS.txt`.
 
@@ -577,7 +577,7 @@ Cart Launch Companion is built with:
 
 ## Project status
 
-Version 2.5.1 is the current stable release. Reports are especially useful for:
+Version 2.6.0 is the current stable release. Reports are especially useful for:
 
 - physical Steam Deck and SteamOS hardware;
 - different controller models and hot-plug behavior;
@@ -636,7 +636,7 @@ The project is not affiliated with or endorsed by Valve, Microsoft, Rockstar Gam
 
 ### Recycle a drive. Build a collection. Plug in and play.
 
-[Download 2.5.1](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.5.1)
+[Download 2.6.0](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.6.0)
 &nbsp;&nbsp;•&nbsp;&nbsp;
 [Documentation](#documentation)
 &nbsp;&nbsp;•&nbsp;&nbsp;

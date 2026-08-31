@@ -51,7 +51,7 @@ function Assert-ArchiveContents {
     }
 
     Assert-True ($entries.Count -gt 0) "$name is empty."
-    foreach ($required in @('README.md', 'SECURITY.md', 'Physical-Cart-Hardware-Test-Checklist.md')) {
+    foreach ($required in @('README.md', 'SECURITY.md', 'Launcher-ID-Guide.md', 'Physical-Cart-Hardware-Test-Checklist.md')) {
         Assert-True (@($entries | Where-Object { $_ -like "*/$required" }).Count -gt 0) "$name is missing $required."
     }
 
