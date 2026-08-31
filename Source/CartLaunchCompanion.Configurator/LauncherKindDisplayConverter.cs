@@ -11,6 +11,9 @@ public sealed class LauncherKindDisplayConverter : IValueConverter
         {
             LauncherKind.Local => "EXE",
             LauncherKind.Custom => "Emulator",
+            LauncherKind.BattleNet => "Battle.net",
+            LauncherKind.HoYoverse => "HoYoverse",
+            LauncherKind.ItchIo => "itch.io",
             LauncherKind launcher => launcher.ToString(),
             _ => ""
         };

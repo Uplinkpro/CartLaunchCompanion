@@ -29,6 +29,7 @@ public sealed partial class MainWindow : Window
     private CollectionGameEditor? _draggedCollectionGame;
     private bool _usesSuggestedGameFolder;
     private bool _isNewConfiguration = true;
+    private bool _applyingLinuxSuggestion;
 
     public MainWindow()
     {
@@ -55,6 +56,8 @@ public sealed partial class MainWindow : Window
         _startupSetupShown = true;
         FitWindowToWorkingArea();
         _portablePaths = new PortablePathService().Discover(AppContext.BaseDirectory);
+        RefreshPlatformSuggestions();
+        RefreshLauncherSuggestions();
         RefreshInstalledEmulators();
         SuggestGameConfigurationFolder("New Game");
         _ = await MetadataProviderSettings.LoadAsync(_portablePaths);
@@ -201,6 +204,92 @@ public sealed partial class MainWindow : Window
         SuggestGameConfigurationFolder("New Game");
     }
 
+    private async void LauncherIdGuideClicked(object? sender, RoutedEventArgs e) =>
+        await new LauncherIdGuideDialog().ShowDialog(this);
+
+    private async void FindInstalledLauncherMatchClicked(object? sender, RoutedEventArgs e)
+    {
+        var configuration = _viewModel.Configuration;
+        var gameName = configuration.Game.Name.Trim();
+        if (string.IsNullOrWhiteSpace(gameName))
+        {
+            _viewModel.Status = "Enter the game name before searching installed launcher data.";
+            return;
+        }
+
+        var launcher = configuration.Launch.Windows.Launcher;
+        _viewModel.Status = $"Searching this computer for {launcher} matches for {gameName}…";
+        var matches = await Task.Run(() => new InstalledLauncherDiscoveryService().Discover(gameName, launcher));
+        if (matches.Count == 0)
+        {
+            _viewModel.Status = $"No installed {launcher} match was found for {gameName}. Install or recognize the exact edition in its launcher, create a desktop shortcut when supported, then search again.";
+            return;
+        }
+
+        var selected = await new LauncherDiscoveryDialog(gameName, matches).ShowDialog<InstalledLauncherMatch?>(this);
+        if (selected is null)
+        {
+            _viewModel.Status = "Installed launcher search canceled. No configuration fields were changed.";
+            return;
+        }
+
+        if (!ApplyInstalledLauncherMatch(selected, out var message))
+        {
+            _viewModel.Status = message;
+            return;
+        }
+
+        _viewModel.Configuration = GameConfigurationJson.Deserialize(GameConfigurationJson.Serialize(configuration));
+        _viewModel.RefreshPreview();
+        _viewModel.Status = message;
+    }
+
+    private bool ApplyInstalledLauncherMatch(InstalledLauncherMatch match, out string message)
+    {
+        var launch = _viewModel.Configuration.Launch.Windows;
+        switch (match.ValueKind)
+        {
+            case LauncherDiscoveryValueKind.SteamAppId:
+                launch.SteamId = match.Value;
+                break;
+            case LauncherDiscoveryValueKind.XboxAppId:
+                launch.XboxAppId = match.Value;
+                break;
+            case LauncherDiscoveryValueKind.EpicAppName:
+                launch.EpicAppName = match.Value;
+                break;
+            case LauncherDiscoveryValueKind.UbisoftGameId:
+                launch.UbisoftGameId = match.Value;
+                break;
+            case LauncherDiscoveryValueKind.LaunchUri:
+                launch.Uri = match.Value;
+                break;
+            case LauncherDiscoveryValueKind.Executable:
+            {
+                if (string.IsNullOrWhiteSpace(_gameJsonPath))
+                {
+                    message = "Choose a configuration folder inside Cart/Games before applying an installed executable.";
+                    return false;
+                }
+                var gameFolder = Path.GetDirectoryName(_gameJsonPath)!;
+                var portable = _cartPathConverter.Convert(gameFolder, match.Value);
+                if (!portable.IsPortable || !CartContentPathConverter.IsGameContentCategory(portable.Category))
+                {
+                    message = "The discovered executable is installed on the host, not on this cart. CLC did not save it. Move or install the game under the cart's Games or launcher-library folder, then search again.";
+                    return false;
+                }
+                launch.Executable = portable.ConfiguredPath;
+                launch.Arguments = match.Arguments;
+                launch.WorkingDirectory = Path.GetDirectoryName(portable.ConfiguredPath)?.Replace('\\', '/') ?? "";
+                launch.ProcessName = Path.GetFileNameWithoutExtension(match.Value);
+                break;
+            }
+        }
+
+        message = $"Applied {match.Method} for {match.Name} from {Path.GetFileName(match.Source)}. Review the exact edition, then save and test the cart.";
+        return true;
+    }
+
     private async void EmulatorLibraryClicked(object? sender, RoutedEventArgs e)
     {
         var mediaRoot = GetMediaRoot();
@@ -235,6 +324,52 @@ public sealed partial class MainWindow : Window
         _viewModel.Configuration = GameConfigurationJson.Deserialize(GameConfigurationJson.Serialize(_viewModel.Configuration));
         _viewModel.RefreshPreview();
         _viewModel.Status = $"Configured {selected.Definition.DisplayName} for {string.Join(" and ", configured)}. Locate the ROM once for each enabled platform; RetroArch may require a platform-specific core.";
+    }
+
+    private void LinuxEnabledChecked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is ToggleSwitch { IsChecked: true })
+            ApplyLinuxSuggestionFromWindows();
+    }
+
+    private void FillLinuxFromWindowsClicked(object? sender, RoutedEventArgs e) =>
+        ApplyLinuxSuggestionFromWindows();
+
+    private void ApplyLinuxSuggestionFromWindows()
+    {
+        if (_applyingLinuxSuggestion) return;
+        _applyingLinuxSuggestion = true;
+        try
+        {
+            var linuxEmulator = ResolveMatchingLinuxEmulatorPath();
+            var result = LinuxLaunchAutoConfigurator.Apply(_viewModel.Configuration, linuxEmulator);
+            _viewModel.Configuration = GameConfigurationJson.Deserialize(
+                GameConfigurationJson.Serialize(_viewModel.Configuration));
+            _viewModel.RefreshPreview();
+            _viewModel.Status = result.Message;
+        }
+        finally
+        {
+            _applyingLinuxSuggestion = false;
+        }
+    }
+
+    private string? ResolveMatchingLinuxEmulatorPath()
+    {
+        var windows = _viewModel.Configuration.Launch.Windows;
+        if (windows.Launcher != LauncherKind.Custom || string.IsNullOrWhiteSpace(windows.Executable) ||
+            string.IsNullOrWhiteSpace(_gameJsonPath)) return null;
+
+        var emulator = EmulatorLaunchPresetCatalog.Detect(windows.Executable);
+        var linuxExecutable = _viewModel.InstalledEmulators
+            .FirstOrDefault(option => option.Definition.Id == emulator)?.LinuxExecutable;
+        if (string.IsNullOrWhiteSpace(linuxExecutable)) return null;
+
+        var gameFolder = Path.GetDirectoryName(_gameJsonPath)!;
+        var portable = _cartPathConverter.Convert(gameFolder, linuxExecutable);
+        return portable.IsPortable && CartContentPathConverter.IsEmulatorCategory(portable.Category)
+            ? portable.ConfiguredPath
+            : null;
     }
 
     private bool ApplyInstalledEmulatorTarget(string gameFolder, string executable, bool windows)
@@ -275,6 +410,28 @@ public sealed partial class MainWindow : Window
         _viewModel.SelectedInstalledEmulator = _viewModel.InstalledEmulators.FirstOrDefault(item => item.Definition.Id == selectedId)
             ?? _viewModel.InstalledEmulators.FirstOrDefault();
         _viewModel.NotifyInstalledEmulatorsChanged();
+    }
+
+    private void RefreshPlatformSuggestions()
+    {
+        _viewModel.PlatformSuggestions.Clear();
+        if (_portablePaths is null) return;
+        var developmentAssets = Path.Combine(_portablePaths.Root, "Assets");
+        foreach (var platform in PlatformAssetCatalog.GetAvailablePlatformNames(_portablePaths.Assets, developmentAssets))
+            _viewModel.PlatformSuggestions.Add(platform);
+    }
+
+    private void RefreshLauncherSuggestions()
+    {
+        _viewModel.WindowsLauncherKinds.Clear();
+        if (_portablePaths is null) return;
+        var developmentAssets = Path.Combine(_portablePaths.Root, "Assets");
+        foreach (var launcher in LauncherAssetCatalog.GetAvailableWindowsLaunchers(_portablePaths.Assets, developmentAssets))
+            _viewModel.WindowsLauncherKinds.Add(launcher);
+
+        var selected = _viewModel.Configuration.Launch.Windows.Launcher;
+        if (!_viewModel.WindowsLauncherKinds.Contains(selected))
+            _viewModel.WindowsLauncherKinds.Add(selected);
     }
 
     private string? GetMediaRoot()

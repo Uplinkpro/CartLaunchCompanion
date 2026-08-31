@@ -15,7 +15,7 @@ public sealed class HostLauncherDetectionService
 {
     public HostLauncherDetectionResult Detect(LauncherKind launcher, PlatformKind platform)
     {
-        if (launcher is LauncherKind.Local or LauncherKind.Custom or LauncherKind.Wine or LauncherKind.Proton)
+        if (launcher is LauncherKind.Local or LauncherKind.Custom or LauncherKind.Flash or LauncherKind.Wine or LauncherKind.Proton)
         {
             return new HostLauncherDetectionResult(
                 launcher, true, "Cart-managed", "This launch method uses files selected from the cart.");
@@ -123,6 +123,10 @@ public sealed class HostLauncherDetectionService
         LauncherKind.Ubisoft => ["Ubisoft Connect", "Uplay"],
         LauncherKind.Rockstar => ["Rockstar Games Launcher"],
         LauncherKind.Amazon => ["Amazon Games"],
+        LauncherKind.EA => ["EA app", "EA Desktop"],
+        LauncherKind.BattleNet => ["Battle.net"],
+        LauncherKind.HoYoverse => ["HoYoPlay", "HoYoverse"],
+        LauncherKind.ItchIo => ["itch"],
         LauncherKind.Heroic => ["Heroic Games Launcher"],
         _ => []
     };
@@ -131,6 +135,10 @@ public sealed class HostLauncherDetectionService
     {
         LauncherKind.GOG => "GOG Galaxy",
         LauncherKind.Xbox => "Xbox / Microsoft Store",
+        LauncherKind.EA => "EA app",
+        LauncherKind.BattleNet => "Battle.net",
+        LauncherKind.HoYoverse => "HoYoverse",
+        LauncherKind.ItchIo => "itch.io",
         _ => launcher.ToString()
     };
 }

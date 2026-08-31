@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CartLaunchCompanion.Configurator.LauncherDiscoveryDialog"
+        Title="Find installed launcher match" Width="980" Height="680" MinWidth="760" MinHeight="500"
+        WindowStartupLocation="CenterOwner">
+  <Grid RowDefinitions="Auto,*,Auto" Margin="28">
+    <StackPanel Spacing="7">
+      <TextBlock FontSize="28" FontWeight="Bold" Text="Choose the exact installed edition"/>
+      <TextBlock x:Name="SummaryText" Foreground="#B8C0CB" TextWrapping="Wrap"/>
+    </StackPanel>
+
+    <ListBox x:Name="MatchesList" Grid.Row="1" Margin="0,22,0,18" SelectionChanged="SelectionChanged">
+      <ListBox.ItemTemplate>
+        <DataTemplate>
+          <Border Background="#171C23" BorderBrush="#333B46" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,9">
+            <Grid ColumnDefinitions="240,16,160,16,*" RowDefinitions="Auto,Auto">
+              <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="16" TextWrapping="Wrap"/>
+              <TextBlock Grid.Column="2" Text="{Binding Method}" Foreground="#AEEBC3"/>
+              <TextBlock Grid.Column="4" Text="{Binding Value}" FontFamily="Consolas" TextWrapping="Wrap"/>
+              <TextBlock Grid.Row="1" Margin="0,7,0,0" Text="{Binding Confidence}" Foreground="#8D98A7"/>
+              <TextBlock Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="3" Margin="0,7,0,0" Text="{Binding Source}" Foreground="#707B89" FontSize="11" TextTrimming="CharacterEllipsis"/>
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+
+    <Grid Grid.Row="2" ColumnDefinitions="*,Auto,12,Auto">
+      <TextBlock x:Name="SelectionHelp" VerticalAlignment="Center" Foreground="#B8C0CB" TextWrapping="Wrap"
+                 Text="Nothing is changed until you confirm the selected result."/>
+      <Button Grid.Column="1" Content="Cancel" Click="CancelClicked" MinWidth="110"/>
+      <Button x:Name="UseButton" Grid.Column="3" Content="Use selected match" Click="UseClicked" MinWidth="190" IsEnabled="False"/>
+    </Grid>
+  </Grid>
+</Window>

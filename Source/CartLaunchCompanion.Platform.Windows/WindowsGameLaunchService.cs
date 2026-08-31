@@ -92,7 +92,12 @@ public sealed class WindowsGameLaunchService : IGameLaunchService
             LauncherKind.Custom or
             LauncherKind.GOG or
             LauncherKind.Rockstar or
-            LauncherKind.Amazon =>
+            LauncherKind.Amazon or
+            LauncherKind.EA or
+            LauncherKind.BattleNet or
+            LauncherKind.HoYoverse or
+            LauncherKind.ItchIo or
+            LauncherKind.Flash =>
                 StartExecutable(request),
 
             _ => GameLaunchResult.Failure(

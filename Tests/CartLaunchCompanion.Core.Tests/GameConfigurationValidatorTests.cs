@@ -31,6 +31,20 @@ public sealed class GameConfigurationValidatorTests
         Assert.True(result.IsValid);
     }
 
+    [Fact]
+    public void Validate_AcceptsEaGameWithExecutable()
+    {
+        var configuration = CreateValidSteamConfiguration();
+        configuration.Launch.Linux.Enabled = false;
+        configuration.Launch.Windows.Launcher = LauncherKind.EA;
+        configuration.Launch.Windows.SteamId = "";
+        configuration.Launch.Windows.Executable = "Games\\Example\\Game.exe";
+
+        var result = _validator.Validate(configuration);
+
+        Assert.True(result.IsValid);
+    }
+
     private static GameConfiguration CreateValidSteamConfiguration()
         => new()
         {

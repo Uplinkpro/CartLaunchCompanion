@@ -19,6 +19,8 @@ public sealed class PhysicalCartReadinessTests : IDisposable
         Assert.True(Directory.Exists(Path.Combine(_root, "Emulators", "Shared", "Saves")));
         Assert.True(Directory.Exists(Path.Combine(_root, "Roms", "GameCube")));
         Assert.Single(report.RuntimeApprovals);
+        Assert.Contains(report.Checks, check => check.Name == "Windows drive icon" && check.Passed);
+        Assert.True(File.Exists(Path.Combine(_root, WindowsDriveBrandingService.AutorunFileName)));
     }
 
     [Fact]
@@ -59,6 +61,9 @@ public sealed class PhysicalCartReadinessTests : IDisposable
         var runtime = Path.Combine(_root, "Cart", "System", "Windows-x64");
         Directory.CreateDirectory(runtime);
         File.WriteAllText(Path.Combine(runtime, "CartLaunchCompanion.Desktop.exe"), "runtime");
+        var assets = Path.Combine(_root, "Cart", "System", "Assets");
+        Directory.CreateDirectory(assets);
+        File.WriteAllText(Path.Combine(assets, "AppIcon.ico"), "icon");
     }
     public void Dispose() { if (Directory.Exists(_root)) Directory.Delete(_root, true); }
 }

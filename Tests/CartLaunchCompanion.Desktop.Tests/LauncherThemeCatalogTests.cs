@@ -10,6 +10,7 @@ public sealed class LauncherThemeCatalogTests
     [InlineData(LauncherKind.Steam, "#3E8BFF")]
     [InlineData(LauncherKind.GOG, "#A94FDC")]
     [InlineData(LauncherKind.Rockstar, "#E0A623")]
+    [InlineData(LauncherKind.EA, "#FF4747")]
     public void Get_ReturnsExpectedLauncherAccent(
         LauncherKind launcher,
         string expected)

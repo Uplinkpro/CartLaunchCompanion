@@ -2,6 +2,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using CartLaunchCompanion.Core.Configuration;
 using CartLaunchCompanion.Core.Library;
+using CartLaunchCompanion.Core.Portable;
 using CommunityToolkit.Mvvm.Input;
 using CartLaunchCompanion.Desktop.Themes;
 
@@ -44,10 +45,13 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
         HeroImage = hero;
         LogoImage = TryLoadBitmap(entry.LogoPath);
         LauncherLogoImage = TryLoadBitmap(
-            ResolveLauncherAssetPath(entry, "Logo.png"));
+            entry.LaunchTarget?.Launcher == LauncherKind.Custom
+                ? ResolvePlatformAssetPath(entry, "Logo.png")
+                : null)
+            ?? TryLoadBitmap(ResolveLauncherAssetPath(entry, "Logo.png"));
         LauncherBannerImage = TryLoadBitmap(
             entry.LaunchTarget?.Launcher == LauncherKind.Custom
-                ? ResolvePlatformBannerPath(entry)
+                ? ResolvePlatformAssetPath(entry, "Banner.png")
                 : null)
             ?? TryLoadBitmap(ResolveLauncherAssetPath(entry, "Banner.png"));
 
@@ -133,6 +137,9 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
         {
             LauncherKind.Local => "EXE",
             LauncherKind.Custom => "Emulator",
+            LauncherKind.BattleNet => "Battle.net",
+            LauncherKind.HoYoverse => "HoYoverse",
+            LauncherKind.ItchIo => "itch.io",
             { } launcher => launcher.ToString(),
             null => "Unavailable"
         };
@@ -141,9 +148,9 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
         Entry.LaunchTarget?.Launcher
         ?? LauncherKind.Custom;
 
-    public bool UsesCartLaunchBranding =>
-        LauncherKind is LauncherKind.Local or LauncherKind.Custom;
-    public bool UsesLauncherBranding => !UsesCartLaunchBranding;
+    public bool UsesLauncherBranding =>
+        LauncherKind != LauncherKind.Local && LauncherLogoImage is not null;
+    public bool UsesCartLaunchBranding => !UsesLauncherBranding;
 
     public LauncherTheme Theme =>
         LauncherThemeCatalog.Get(LauncherKind);
@@ -311,22 +318,9 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
         if (portableRoot is null)
             return null;
 
-        var launcherFolder = entry.LaunchTarget?.Launcher switch
-        {
-            LauncherKind.Xbox => "Xbox",
-            LauncherKind.Steam => "Steam",
-            LauncherKind.Epic => "Epic",
-            LauncherKind.GOG => "GOG",
-            LauncherKind.Ubisoft => "Ubisoft",
-            LauncherKind.Rockstar => "Rockstar",
-            LauncherKind.Amazon => "Amazon",
-            LauncherKind.Heroic => "Heroic",
-            LauncherKind.Flatpak => "Flatpak",
-            LauncherKind.Wine => "Wine",
-            LauncherKind.Proton => "Proton",
-            LauncherKind.Custom => "Emulator",
-            _ => "DirectExe"
-        };
+        var launcherFolder = entry.LaunchTarget?.Launcher == LauncherKind.Custom
+            ? "Emulator"
+            : LauncherAssetCatalog.FolderName(entry.LaunchTarget?.Launcher ?? LauncherKind.Local);
 
         return Path.Combine(
             portableRoot.FullName,
@@ -337,7 +331,7 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
             fileName);
     }
 
-    private static string? ResolvePlatformBannerPath(GameLibraryEntry entry)
+    private static string? ResolvePlatformAssetPath(GameLibraryEntry entry, string fileName)
     {
         if (string.IsNullOrWhiteSpace(entry.Configuration.Game.PlatformLabel))
             return null;
@@ -347,23 +341,10 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
         if (portableRoot is null)
             return null;
 
-        var normalized = new string(entry.Configuration.Game.PlatformLabel
-            .Where(char.IsLetterOrDigit)
-            .Select(char.ToLowerInvariant)
-            .ToArray());
-        var platformFolder = normalized switch
-        {
-            "playstation" or "sonyplaystation" or "ps1" or "psx" => "PlayStation",
-            "playstation2" or "ps2" => "PlayStation2",
-            "playstation3" or "ps3" => "PlayStation3",
-            "playstationportable" or "psp" => "PSP",
-            "gameboyadvance" or "gba" => "GameBoyAdvance",
-            _ => string.Concat(entry.Configuration.Game.PlatformLabel
-                .Where(character => !Path.GetInvalidFileNameChars().Contains(character)))
-                .Trim()
-        };
-        return string.IsNullOrWhiteSpace(platformFolder)
-            ? null
-            : Path.Combine(portableRoot.FullName, "System", "Assets", "Platforms", platformFolder, "Banner.png");
+        var assetsRoot = Path.Combine(portableRoot.FullName, "System", "Assets");
+        return PlatformAssetCatalog.ResolveAsset(
+            assetsRoot,
+            entry.Configuration.Game.PlatformLabel,
+            fileName);
     }
 }

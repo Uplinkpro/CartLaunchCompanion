@@ -14,6 +14,7 @@ Use a disposable removable drive with no irreplaceable files. Keep automatic lau
 - [ ] Format the test media using the filesystem normally recommended by the target operating system.
 - [ ] Copy the expected `Cart`, `Games`, `Emulators`, and `Roms` structure.
 - [ ] Confirm the identity exists only at `.cartlaunch/cartridge.json` beneath the media root and that `.cartlaunch` is hidden in the normal file-browser view.
+- [ ] Confirm `autorun.inf` is hidden on Windows, points to `Cart\System\Assets\AppIcon.ico`, and contains no `Open`, `ShellExecute`, or shell command entries.
 - [ ] Install CLC-Cart Monitor for the current user and confirm every displayed installation/data path.
 - [ ] Confirm an ordinary untrusted drive causes no prompt and launches nothing.
 - [ ] Trust the test cart manually; leave automatic launch disabled.
@@ -23,6 +24,7 @@ Use a disposable removable drive with no irreplaceable files. Keep automatic lau
 ## Windows 11
 
 - [ ] Test NTFS and exFAT on USB flash media and a USB SSD where available.
+- [ ] Safely eject and reinsert the prepared cart, then confirm Explorer shows the CLC app icon and trusted cart name for the drive.
 - [ ] Test both current-user and all-users Monitor installation; verify trust remains per user.
 - [ ] Enable automatic launch, reinsert once, and confirm exactly one CLC instance starts.
 - [ ] Start a second Monitor manually and confirm it exits without launching a duplicate session.

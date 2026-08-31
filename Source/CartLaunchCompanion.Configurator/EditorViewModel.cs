@@ -70,10 +70,21 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     public ObservableCollection<CollectionGameEditor> UnassignedCollectionGames { get; } = [];
     public ObservableCollection<CollectionGameEditor> CollectionGames { get; } = [];
     public ObservableCollection<string> CollectionShelfChoices { get; } = ["(Unassigned)"];
+    public ObservableCollection<string> PlatformSuggestions { get; } = [];
+    public ObservableCollection<LauncherKind> WindowsLauncherKinds { get; } = [];
     public string NewShelfName { get => _newShelfName; set { _newShelfName = value; Changed(); } }
     public string CollectionLayoutStatus { get => _collectionLayoutStatus; set { _collectionLayoutStatus = value; Changed(); } }
     public bool HasExistingGames => ExistingGames.Count > 0;
-    public Array LauncherKinds { get; } = Enum.GetValues<LauncherKind>();
+    public LauncherKind[] LinuxLauncherKinds { get; } =
+    [
+        LauncherKind.Steam,
+        LauncherKind.Heroic,
+        LauncherKind.Flatpak,
+        LauncherKind.Local,
+        LauncherKind.Wine,
+        LauncherKind.Proton,
+        LauncherKind.Custom
+    ];
     public Array PreferredPlatforms { get; } = Enum.GetValues<PreferredPlatform>();
     public Array DeckRatings { get; } = Enum.GetValues<SteamDeckCompatibility>();
     public Array GamepadRatings { get; } = Enum.GetValues<GamepadSupport>();

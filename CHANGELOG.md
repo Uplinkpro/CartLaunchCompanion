@@ -6,6 +6,18 @@ The project follows semantic versioning where practical.
 
 ## [Unreleased]
 
+### Added
+
+- Added an in-app launcher ID guide with publisher-specific formats, discovery instructions, reliability warnings, and verified examples
+- Added EA app as a first-class Windows launcher using a cart-local executable or complete launch URI
+- Added confirmed local launcher discovery from Steam manifests, Epic manifests, Windows AUMIDs, and launcher-created shortcuts
+- Added safe Windows drive branding that uses the CLC app icon and collection name without executable AutoRun commands
+- Added normalized platform-banner discovery, Configurator platform suggestions, and optional platform logos for emulated games
+
+### Changed
+
+- Clarified that GOG, Rockstar, and Amazon game IDs are reference metadata and that CLC requires an executable or complete URI to launch those games
+
 ### Fixed
 
 - Prevented the Game Configurator title, path, and toolbar from overlapping at high Windows display-scaling levels by placing the controls in a responsive wrapping row

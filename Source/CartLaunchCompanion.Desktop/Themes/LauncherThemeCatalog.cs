@@ -88,6 +88,15 @@ public static class LauncherThemeCatalog
                 "#30FF9900",
                 "#FFF8EC"),
 
+            LauncherKind.EA => new(
+                "#FF4747",
+                "#FF7A7A",
+                "#842C2C",
+                "#70FF4747",
+                "#00FF4747",
+                "#30FF4747",
+                "#FFF3F3"),
+
             LauncherKind.Flatpak => new(
                 "#4A90D9",
                 "#7DB8F2",

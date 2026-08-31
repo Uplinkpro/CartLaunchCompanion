@@ -1,0 +1,77 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CartLaunchCompanion.Configurator.LauncherIdGuideDialog"
+        Title="Launcher ID Guide" Width="980" Height="760" MinWidth="760" MinHeight="560"
+        WindowStartupLocation="CenterOwner">
+  <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="28">
+    <StackPanel Spacing="7">
+      <TextBlock FontSize="28" FontWeight="Bold" Text="Launcher ID Guide"/>
+      <TextBlock Foreground="#B8C0CB" TextWrapping="Wrap"
+                 Text="Choose a launcher to see what CLC expects, where to find it, and when an executable or launch URI is safer than an ID."/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" ColumnDefinitions="Auto,16,*,16,Auto" Margin="0,22,0,16">
+      <TextBlock Text="Launcher" FontWeight="SemiBold" VerticalAlignment="Center"/>
+      <ComboBox x:Name="LauncherSelector" Grid.Column="2" MinWidth="300"
+                SelectionChanged="LauncherSelectionChanged">
+        <ComboBox.ItemTemplate>
+          <DataTemplate><TextBlock Text="{Binding Name}"/></DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+      <TextBox x:Name="ExampleSearch" Grid.Column="4" Width="260"
+               PlaceholderText="Filter examples" TextChanged="ExampleSearchChanged"/>
+    </Grid>
+
+    <ScrollViewer Grid.Row="2">
+      <StackPanel x:Name="GuidePanel" Spacing="14">
+        <Border Background="#171C23" BorderBrush="#333B46" BorderThickness="1" CornerRadius="10" Padding="20">
+          <StackPanel Spacing="12">
+            <TextBlock Text="{Binding Name}" FontSize="24" FontWeight="Bold"/>
+            <TextBlock Text="{Binding Summary}" Foreground="#C5CCD6" TextWrapping="Wrap"/>
+            <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10">
+              <TextBlock Text="CLC setting" Foreground="#8D98A7" FontWeight="SemiBold"/>
+              <TextBlock Grid.Column="1" Text="{Binding Setting}" TextWrapping="Wrap"/>
+              <TextBlock Grid.Row="1" Text="Expected format" Foreground="#8D98A7" FontWeight="SemiBold"/>
+              <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Format}" FontFamily="Consolas" TextWrapping="Wrap"/>
+              <TextBlock Grid.Row="2" Text="How to find it" Foreground="#8D98A7" FontWeight="SemiBold"/>
+              <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Discovery}" TextWrapping="Wrap"/>
+              <TextBlock Grid.Row="3" Text="Recommended method" Foreground="#8D98A7" FontWeight="SemiBold"/>
+              <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Recommendation}" TextWrapping="Wrap"/>
+            </Grid>
+          </StackPanel>
+        </Border>
+
+        <Border Background="#102419" BorderBrush="#347A4D" BorderThickness="1" CornerRadius="10" Padding="18">
+          <StackPanel Spacing="7">
+            <TextBlock Text="Reliability note" Foreground="#AEEBC3" FontWeight="SemiBold"/>
+            <TextBlock Text="{Binding Reliability}" Foreground="#C8EBD4" TextWrapping="Wrap"/>
+          </StackPanel>
+        </Border>
+
+        <StackPanel Spacing="9">
+          <TextBlock Text="Examples" FontSize="19" FontWeight="SemiBold"/>
+          <TextBlock x:Name="NoExamplesText" Foreground="#8D98A7" Text="No examples match this filter." IsVisible="False"/>
+          <ItemsControl x:Name="ExamplesItems">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Background="#15191F" BorderBrush="#303740" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,0,8">
+                  <Grid ColumnDefinitions="220,24,*">
+                    <TextBlock Text="{Binding Game}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                    <TextBlock Grid.Column="2" Text="{Binding Value}" FontFamily="Consolas" TextWrapping="Wrap"/>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+
+    <Grid Grid.Row="3" ColumnDefinitions="*,Auto,12,Auto" Margin="0,18,0,0">
+      <TextBlock VerticalAlignment="Center" Foreground="#8D98A7" TextWrapping="Wrap"
+                 Text="Use the exact edition installed on this computer. IDs from a different store or edition may open the wrong product or do nothing."/>
+      <Button x:Name="DocumentationButton" Grid.Column="1" Content="Official help" Click="OpenDocumentationClicked"/>
+      <Button Grid.Column="3" Content="Done" Click="DoneClicked" MinWidth="110"/>
+    </Grid>
+  </Grid>
+</Window>

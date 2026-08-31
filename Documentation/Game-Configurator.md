@@ -12,6 +12,10 @@ Files outside the cart are reported as non-portable and are not saved by the loc
 
 Launcher verification is opt-in and checks only the launcher selected for that platform. The launcher itself may be installed anywhere on the host computer, but game files must remain on the same media as `Cart`. Native games are accepted from the cart's `Games` folder; emulators from `Emulators`; ROMs from `Roms`; and Steam/Xbox-managed content from `SteamLibrary`, `steamapps`, or `XboxGames` at the media root. A manually located host launcher folder is confirmed for the current setup session and is never written into `game.json`.
 
+The Windows launcher dropdown reads supported folders from `System/Assets/Launchers`. Only the ID field belonging to the selected launcher is displayed; shared executable, arguments, working-directory, URI, process, and companion-app controls remain available for every launch method.
+
+The Linux page follows the same selected-launcher layout. Enabling Linux, or pressing **Fill from Windows**, can safely reuse a Steam App ID, map an Epic app name to Heroic, pair matching Windows/Linux emulator installations, or configure a portable Windows `.exe` through Wine. Existing Linux fields are never overwritten. Publisher-specific commands that cannot be inferred reliably are left for manual verification.
+
 The Game Configurator is a separate desktop app for creating and editing Version 2 game folders without writing JSON by hand.
 
 On first launch, the online metadata setup appears before the editor. It provides official registration links for a Steam Web API key and an optional SteamGridDB API key. The setup can be reopened later with **Settings**. API keys are stored in Windows Credential Manager or the Linux desktop keyring and are never kept in `game.json` or plain-text settings files.
@@ -76,10 +80,24 @@ The Windows and Linux launch pages include command-line recipes for RetroArch, D
 
 For an emulated game:
 
-1. Set **Launcher** to **Custom**.
+1. Set **Launcher** to **Emulator**.
 2. Set **Executable** to the emulator executable or AppImage.
 3. Set **Working directory** to `.` when game-image paths are relative to the game folder.
 4. Copy the matching fullscreen recipe into **Arguments** and replace the sample game path.
 5. Set **Process name** to the emulator process so the launcher returns after emulation ends.
+
+### Platform banners and logos
+
+Use the editable **Platform** selector on Game details to choose the branding for an emulated version. Every folder under `System/Assets/Platforms` is loaded into this list, even before artwork is added. Its value is matched without considering spaces, punctuation, or capitalization. Common aliases are also recognized, so `PS2`, `PlayStation 2`, and a `PlayStation 2` asset folder resolve to the same platform.
+
+Each platform folder can contain:
+
+```text
+System/Assets/Platforms/PlayStation 2/
+├── Banner.png   # Shown directly above the 2:3 cover
+└── Logo.png     # Optional platform logo used in launcher-branding positions
+```
+
+`Banner.png` is used only when the launch method is **Emulator**. If it is missing, CLC falls back to the configured launcher banner or text. `Logo.png` is optional; when present for an emulated game, it takes priority over the generic emulator launcher logo. The game-specific `Artwork/Logo.png` remains separate and continues to represent the game itself.
 
 See the [Emulator launch guide](Emulator-Launch-Guide.md) for shared portable emulator folders, complete Windows and Linux examples, controller exit hotkeys, and troubleshooting.

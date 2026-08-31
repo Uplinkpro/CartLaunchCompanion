@@ -36,6 +36,8 @@ Physical Cart support is included as an optional component in the 2.4 release. U
 
 Each physical cart is intended to contain its own portable CLC installation, games, configuration, artwork, and media. A small optional **CLC-Cart Monitor** installed on the computer detects carts and can start only those the user has explicitly trusted.
 
+Windows drive branding uses a hidden root `autorun.inf` only for `Icon` and `Label`. CLC never writes `Open`, `ShellExecute`, or shell-menu execution directives, and preparation rejects linked branding paths. The file does not participate in trust, verification, or automatic launch; CLC-Cart Monitor remains the only optional insertion-launch component.
+
 ### Installation and removal
 
 - Installing or uninstalling CLC-Cart Monitor requires an explicit confirmation screen.

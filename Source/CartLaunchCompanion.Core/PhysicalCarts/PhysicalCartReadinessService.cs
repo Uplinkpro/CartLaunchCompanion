@@ -22,6 +22,16 @@ public sealed class PhysicalCartReadinessService
             checks.Add(new($"{folder} folder", exists, exists ? "Present" : $"Create {folder} at the media root."));
         }
 
+        try
+        {
+            var branding = new WindowsDriveBrandingService().Inspect(root);
+            checks.Add(new("Windows drive icon", branding.Applied, branding.Detail));
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException)
+        {
+            checks.Add(new("Windows drive icon", false, "Drive branding is unsafe or unreadable: " + ex.Message));
+        }
+
         VerifiedCartIdentity? identity = null;
         try
         {
@@ -73,6 +83,16 @@ public sealed class PhysicalCartReadinessService
         {
             var identities = new CartIdentityService();
             await identities.SaveNewAsync(root, identities.Create(displayName), cancellationToken);
+        }
+        try
+        {
+            var verifiedIdentity = await new CartIdentityService().LoadAsync(root, cancellationToken);
+            _ = new WindowsDriveBrandingService().Apply(root, verifiedIdentity.Identity.DisplayName);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or System.Text.Json.JsonException)
+        {
+            // InspectAsync reports the invalid identity. Do not alter root branding
+            // when the cart identity cannot be trusted.
         }
         return await InspectAsync(root, cancellationToken);
     }

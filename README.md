@@ -181,12 +181,19 @@ Every package is self-contained. The correct .NET runtime is included, so end us
 | Ubisoft Connect | ✅ | Via Wine | Ubisoft game ID or URI |
 | Rockstar Games Launcher | ✅ | Via Wine | Executable, game ID, or URI |
 | Amazon Games | ✅ | Via Wine | Executable, game ID, or URI |
+| EA app | ✅ | Via Wine | Executable or complete launch URI |
+| Battle.net | ✅ | Via Wine | Executable or complete launch URI |
+| HoYoverse / HoYoPlay | ✅ | Via Wine | Executable or complete launch URI |
+| itch.io | ✅ | ✅ | Executable and optional arguments |
+| Flash | ✅ | ✅ | Portable player executable and game arguments |
 | Heroic Games Launcher | — | ✅ | Heroic game ID or URI |
 | Flatpak | — | ✅ | Flatpak application ID |
 | Wine | — | ✅ | Windows executable and optional prefix |
 | Proton | — | ✅ | Steam App ID or direct Proton executable |
 | Local executable | ✅ | ✅ | Executable and optional arguments |
 | Custom URI or command | ✅ | ✅ | Platform-specific URI or executable |
+
+For publisher-specific identifier formats, verified examples, and safer discovery methods, see the [Launcher ID and URI Guide](Documentation/Launcher-ID-Guide.md). The same guide is available inside the Game Configurator under **Windows launch → Launcher ID guide**. On Windows, **Find installed match** can scan local manifests, AUMIDs, and launcher shortcuts, then apply a user-confirmed match. The Windows launcher list is assembled from the folders under `System/Assets/Launchers`; adding or removing a supported launcher asset folder updates the Configurator list.
 
 ## Requirements
 
@@ -270,6 +277,7 @@ The resulting media root contains:
 
 ```text
 GameCart/
+├── autorun.inf   # Hidden Windows-only drive icon and label; never executes software
 ├── .cartlaunch/   # Hidden CLC device identity and maintenance data
 │   └── cartridge.json
 ├── Cart/          # CLC, Configurator, Cart Monitor, updater, configuration, and artwork
@@ -279,7 +287,7 @@ GameCart/
 ```
 
 Game definitions still live under `Cart/Games`. The root-level `Games` directory is for the actual game files. Steam or the operating system may add their own folders alongside these.
-The `.cartlaunch` directory is hidden by its leading dot on Linux and SteamOS; CLC also applies the Windows hidden attribute when creating it. Hiding is only for a clean drive layout—the identity remains bounded and fully validated as untrusted data.
+The `.cartlaunch` directory is hidden by its leading dot on Linux and SteamOS; CLC also applies the Windows hidden attribute when creating it. Hiding is only for a clean drive layout—the identity remains bounded and fully validated as untrusted data. On Windows, preparation also creates a hidden `autorun.inf` containing only the cart label and a reference to `Cart/System/Assets/AppIcon.ico`. It contains no command capable of launching software. Explorer may require the cart to be safely ejected and reinserted before a cached drive icon changes.
 
 ### 2. Install the optional CLC-Cart Monitor
 
@@ -415,6 +423,8 @@ CartLaunchCompanion/
 ```
 
 Platform-specific packages include only their matching `System` directory and launch scripts. The combined package includes both. `Games`, `Config`, `Logs`, and `Cache` must remain writable. The cache is disposable, and logs rotate automatically.
+
+Emulated games select platform branding through the Configurator's editable **Platform** field. Every folder under `System/Assets/Platforms` appears in the list. Folders use `Banner.png` above the cover and may provide an optional `Logo.png`; spaces and common abbreviations such as PS2, PSP, GBA, SNES, and GCN are normalized automatically.
 
 ## Game folder layout
 
