@@ -1,0 +1,44 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CartLaunchCompanion.Host.FirstInsertSetupWindow" Title="Set up this game cart?"
+        Width="720" Height="650" MinWidth="560" MinHeight="500" WindowStartupLocation="CenterOwner">
+  <Grid Margin="30" RowDefinitions="Auto,*,Auto" RowSpacing="18">
+    <StackPanel Spacing="7">
+      <TextBlock FontSize="27" FontWeight="Bold" Text="SET UP THIS GAME CART?"/>
+      <TextBlock Classes="help" Text="CLC files were detected, but this drive has not been prepared or trusted yet."/>
+    </StackPanel>
+    <ScrollViewer Grid.Row="1">
+      <StackPanel Spacing="14">
+        <Border Classes="card"><Grid ColumnDefinitions="Auto,18,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+          <TextBlock FontWeight="SemiBold" Text="Connected media"/><TextBlock Grid.Column="2" Text="{Binding MediaRoot}" TextWrapping="Wrap"/>
+          <TextBlock Grid.Row="1" Text="Detected runtimes"/><TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding RuntimeSummary}"/>
+          <TextBlock Grid.Row="2" Text="Missing folders"/><TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding MissingFolderSummary}"/>
+        </Grid></Border>
+        <Border Classes="card"><StackPanel Spacing="8">
+          <TextBlock FontSize="18" FontWeight="SemiBold" Text="Cart name"/>
+          <TextBlock Classes="help" Text="This appears in CLC-Cart Monitor and Windows drive branding. You can use the collection name."/>
+          <TextBox x:Name="CartName" Text="{Binding SuggestedName}" MaxLength="80"/>
+        </StackPanel></Border>
+        <Border Classes="card"><StackPanel Spacing="8">
+          <TextBlock FontSize="18" FontWeight="SemiBold" Text="What setup changes"/>
+          <TextBlock TextWrapping="Wrap" Text="• Creates a new random cart identity in .cartlaunch/cartridge.json."/>
+          <TextBlock TextWrapping="Wrap" Text="• Creates only missing Games, Emulators, and Roms folders."/>
+          <TextBlock TextWrapping="Wrap" Text="• Adds safe Windows icon and label branding when the CLC icon is present."/>
+          <TextBlock TextWrapping="Wrap" Text="• Verifies the included CLC runtime before opening a separate trust review."/>
+          <TextBlock Foreground="#F2C36B" TextWrapping="Wrap" Text="No game, ROM, emulator, or existing configuration file is removed or replaced. Setup does not grant trust or automatic launch by itself."/>
+        </StackPanel></Border>
+      </StackPanel>
+    </ScrollViewer>
+    <Grid Grid.Row="2" ColumnDefinitions="Auto,18,*,18,Auto">
+      <Button Content="NOT NOW" MinWidth="120" Click="CancelClicked"/>
+      <StackPanel Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="3">
+        <CheckBox x:Name="SetupConfirm" MaxWidth="320">
+          <TextBlock Text="I reviewed these changes and want to prepare this drive as a CLC cart." TextWrapping="Wrap"/>
+        </CheckBox>
+        <TextBlock x:Name="ConfirmationHelp" Classes="help" Text="Nothing changes until you confirm here."/>
+      </StackPanel>
+      <Button Grid.Column="4" Content="SET UP CART" MinWidth="170" VerticalAlignment="Stretch"
+              HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+              Background="#2F80ED" Foreground="White" Click="ApproveClicked"/>
+    </Grid>
+  </Grid>
+</Window>

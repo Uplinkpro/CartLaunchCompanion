@@ -45,15 +45,15 @@ CLC is **not intended to replace Steam or organize every game installed across a
 
 > **The cart is the product.** CLC and its game definitions live in `Cart/`; installed game files live in the root-level `Games/` folder; shared emulators and game images can live in `Emulators/` and `Roms/`. Relative paths keep the cart usable when its drive letter or mount point changes.
 
-> **Current release:** [Version 2.6.0](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.6.0) is available for Windows, Linux, and SteamOS. The optional CLC-Cart Monitor adds trusted removable-media detection, verified local staging, automatic launch, and safe ejection.
+> **Current release:** [Version 2.7.0](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.7.0) is available for Windows, Linux, and SteamOS. The optional CLC-Cart Monitor adds trusted removable-media detection, verified local staging, automatic launch, and safe ejection.
 
 ## Preview
 
 | Cart home screen | Game details |
 |---|---|
 | ![Cart home screen](docs/screenshots/library.png) | ![Game details](docs/screenshots/details.png) |
-| **Game Configurator** | **Custom Series Collection** |
-| ![Game Configurator](docs/screenshots/game-configurator.png) | ![Custom Series Collection launcher](docs/screenshots/custom-series-collection.png) |
+| **Game Configurator** | **Platform selection** |
+| ![Game Configurator](docs/screenshots/game-configurator.png) | ![Choose between PC and emulated platform versions](docs/screenshots/platform-selection.png) |
 
 ## Highlights
 
@@ -158,15 +158,15 @@ CLC is **not intended to replace Steam or organize every game installed across a
 
 ## Download
 
-Download [Cart Launch Companion 2.6.0](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.6.0), or browse [all GitHub releases](https://github.com/Uplinkpro/CartLaunchCompanion/releases).
+Download [Cart Launch Companion 2.7.0](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.7.0), or browse [all GitHub releases](https://github.com/Uplinkpro/CartLaunchCompanion/releases).
 
-Version 2.6.0 provides three packages:
+Version 2.7.0 provides three packages:
 
 | Package | Intended use |
 |---|---|
-| `CartLaunchCompanion-2.6.0-win-x64.zip` | Windows-only cart runtime |
-| `CartLaunchCompanion-2.6.0-linux-x64.tar.gz` | Linux or SteamOS cart runtime |
-| `CartLaunchCompanion-2.6.0-portable.zip` | Combined Windows and Linux cart runtime |
+| `CartLaunchCompanion-2.7.0-win-x64.zip` | Windows-only cart runtime |
+| `CartLaunchCompanion-2.7.0-linux-x64.tar.gz` | Linux or SteamOS cart runtime |
+| `CartLaunchCompanion-2.7.0-portable.zip` | Combined Windows and Linux cart runtime |
 
 Every package is self-contained. The correct .NET runtime is included, so end users do not need to install the .NET SDK or runtime. Published archives contain no source, test, or build folders. Verify downloads with the included `SHA256SUMS.txt`.
 
@@ -189,11 +189,20 @@ Every package is self-contained. The correct .NET runtime is included, so end us
 | Heroic Games Launcher | — | ✅ | Heroic game ID or URI |
 | Flatpak | — | ✅ | Flatpak application ID |
 | Wine | — | ✅ | Windows executable and optional prefix |
-| Proton | — | ✅ | Steam App ID or direct Proton executable |
+| UMU-Proton | — | ✅ | Portable Windows executable; stable or GE-Proton version |
 | Local executable | ✅ | ✅ | Executable and optional arguments |
 | Custom URI or command | ✅ | ✅ | Platform-specific URI or executable |
 
 For publisher-specific identifier formats, verified examples, and safer discovery methods, see the [Launcher ID and URI Guide](Documentation/Launcher-ID-Guide.md). The same guide is available inside the Game Configurator under **Windows launch → Launcher ID guide**. On Windows, **Find installed match** can scan local manifests, AUMIDs, and launcher shortcuts, then apply a user-confirmed match. The Windows launcher list is assembled from the folders under `System/Assets/Launchers`; adding or removing a supported launcher asset folder updates the Configurator list.
+
+Portable Windows executables can be configured for Linux with **Fill from Windows**. CLC uses UMU Launcher rather than invoking Proton directly, offers automatically managed UMU-Proton and GE-Proton choices, and discovers installed Proton builds when the Configurator runs on Linux. The game stays on the cart; generated compatibility data is isolated in the Linux user's local CLC data folder by default because cross-platform removable filesystems do not reliably support every feature used by a Proton prefix.
+
+When a game starts through an executable but still depends on Steam, Rockstar,
+or another installed client, set **Required launcher and branding** in the
+Configurator. CLC keeps the executable as the launch method, displays the
+correct storefront branding, and starts the required client first when it is
+not already running. Register portable Steam libraries once through Steam's
+Storage settings; CLC deliberately does not edit storefront library databases.
 
 ## Requirements
 
@@ -264,6 +273,8 @@ See the [Game Configurator guide](Documentation/Game-Configurator.md) for the co
 Every CLC installation is designed to live on a portable game cart. For a more console-like experience, an optional **CLC-Cart Monitor** on each computer can add trusted insertion detection, protected local staging, automatic launch, and safe eject.
 
 Normal portable CLC use does not require CLC-Cart Monitor. Install it only on computers where you want the physical-cart workflow.
+
+If the Monitor is already installed and a drive contains a published CLC runtime but no cart identity, insertion opens a **Set up this game cart?** review. The review lists every change, requires a cart name and explicit confirmation, creates only missing structure and identity files, then opens the separate trust review. Ordinary storage devices, incomplete `Cart` folders, and media with an invalid existing identity remain silent and are never repaired automatically.
 
 ### 1. Prepare the media
 
@@ -577,7 +588,7 @@ Cart Launch Companion is built with:
 
 ## Project status
 
-Version 2.6.0 is the current stable release. Reports are especially useful for:
+Version 2.7.0 is the current stable release. Reports are especially useful for:
 
 - physical Steam Deck and SteamOS hardware;
 - different controller models and hot-plug behavior;
@@ -636,7 +647,7 @@ The project is not affiliated with or endorsed by Valve, Microsoft, Rockstar Gam
 
 ### Recycle a drive. Build a collection. Plug in and play.
 
-[Download 2.6.0](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.6.0)
+[Download 2.7.0](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.7.0)
 &nbsp;&nbsp;•&nbsp;&nbsp;
 [Documentation](#documentation)
 &nbsp;&nbsp;•&nbsp;&nbsp;

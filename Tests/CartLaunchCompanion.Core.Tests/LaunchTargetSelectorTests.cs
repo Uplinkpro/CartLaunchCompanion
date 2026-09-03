@@ -65,4 +65,31 @@ public sealed class LaunchTargetSelectorTests
         Assert.Equal(PlatformKind.Windows, target.Platform);
         Assert.Equal("Example!App", target.ApplicationId);
     }
+
+    [Fact]
+    public void Select_KeepsLaunchMethodSeparateFromRequiredLauncherAndBranding()
+    {
+        var configuration = new GameConfiguration
+        {
+            Launch =
+            {
+                Windows =
+                {
+                    Launcher = LauncherKind.Local,
+                    RequiredLauncher = LauncherKind.Rockstar,
+                    Executable = "PlayGTAV.exe"
+                }
+            }
+        };
+
+        var target = new LaunchTargetSelector().Select(
+            configuration,
+            PlatformKind.Windows);
+
+        Assert.NotNull(target);
+        Assert.Equal(LauncherKind.Local, target.Launcher);
+        Assert.Equal(LauncherKind.Rockstar, target.RequiredLauncher);
+        Assert.Equal(LauncherKind.Rockstar, target.BrandingLauncher);
+        Assert.Equal("PlayGTAV.exe", target.Executable);
+    }
 }

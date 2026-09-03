@@ -52,7 +52,9 @@ Windows drive branding uses a hidden root `autorun.inf` only for `Icon` and `Lab
 
 Operating-system volume events only report that media was mounted. Detection never grants trust by itself.
 
-CLC-Cart Monitor inspects only the bounded, versioned `.cartlaunch/cartridge.json` identity manifest beneath the media root. Both the reserved directory and manifest are rejected if they are links, junctions, or reparse points. A cart cannot supply PowerShell, shell, command-prompt, interpreter, or arbitrary process instructions to the Monitor. The directory is hidden for presentation only and is never treated as a security boundary.
+For prepared carts, CLC-Cart Monitor inspects only the bounded, versioned `.cartlaunch/cartridge.json` identity manifest beneath the media root. Both the reserved directory and manifest are rejected if they are links, junctions, or reparse points. A cart cannot supply PowerShell, shell, command-prompt, interpreter, or arbitrary process instructions to the Monitor. The directory is hidden for presentation only and is never treated as a security boundary.
+
+For first-insert setup discovery, the Monitor performs a narrower non-executing shape check: there must be no identity file, `Cart` must be a real directory rather than a link, and at least one expected nonempty CLC entry-point file must exist at its fixed Windows-x64 or Linux-x64 runtime path. It does not parse game configuration or execute anything during discovery. A setup prompt lists every proposed write and requires explicit confirmation. Existing identities—even malformed ones—are never replaced automatically, and trust plus automatic launch remain separate confirmations after preparation.
 
 ### Trust and integrity
 

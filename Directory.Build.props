@@ -1,9 +1,9 @@
 <Project>
   <PropertyGroup>
-    <VersionPrefix>2.6.0</VersionPrefix>
+    <VersionPrefix>2.7.0</VersionPrefix>
     <VersionSuffix></VersionSuffix>
-    <AssemblyVersion>2.6.0.0</AssemblyVersion>
-    <FileVersion>2.6.0.0</FileVersion>
+    <AssemblyVersion>2.7.0.0</AssemblyVersion>
+    <FileVersion>2.7.0.0</FileVersion>
     <Authors>Uplinkpro</Authors>
     <Company>Cart Launch Companion</Company>
     <Product>Cart Launch Companion</Product>

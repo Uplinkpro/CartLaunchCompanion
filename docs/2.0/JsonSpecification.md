@@ -58,6 +58,36 @@ Initial launcher values:
 
 The schema is authoritative as the list evolves.
 
+### Launch method and required launcher
+
+`launcher` controls how CLC starts the game. The optional `requiredLauncher`
+field is separate: it identifies a storefront client that must already be
+running and controls the storefront branding shown in CLC.
+
+For example, a Rockstar game can still start through its portable executable:
+
+```json
+{
+  "launcher": "local",
+  "requiredLauncher": "rockstar",
+  "executable": "../../../Games/Example/PlayGame.exe"
+}
+```
+
+Before launching that executable, CLC starts the required client when needed
+and waits briefly for it to become ready. Steam library locations must first be
+registered in Steam's Storage settings; CLC does not rewrite another
+launcher's library database.
+
+### UMU-Proton on Linux
+
+For a portable Windows executable on Linux, set `launcher` to `Proton`, put the
+portable EXE path in `executable`, and set `compatibilityTool` to
+`UMU-Proton`, `GE-Proton`, or an installed Proton directory. CLC invokes
+`umu-run`; it does not call Proton's internal script directly. When
+`winePrefix` is blank, CLC creates isolated compatibility data in the Linux
+user's local CLC data folder while keeping the installed game on the cart.
+
 ## Artwork terminology
 
 Version 2 uses:

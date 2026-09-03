@@ -9,6 +9,7 @@ using CartLaunchCompanion.Core.Library;
 using CartLaunchCompanion.Core.Launching;
 using CartLaunchCompanion.Core.Metadata;
 using CartLaunchCompanion.Core.Portable;
+using System.Diagnostics;
 using System.Text;
 
 namespace CartLaunchCompanion.Configurator;
@@ -20,6 +21,7 @@ public sealed partial class MainWindow : Window
     private readonly CartContentPathConverter _cartPathConverter = new();
     private readonly HostLauncherDetectionService _hostLauncherDetector = new();
     private readonly EmulatorLibraryService _emulatorLibrary = new();
+    private readonly ProtonRuntimeDiscoveryService _protonRuntimeDiscovery = new();
     private readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
     private readonly HttpClient _downloadHttpClient = new() { Timeout = TimeSpan.FromMinutes(30) };
     private string? _gameJsonPath;
@@ -59,6 +61,7 @@ public sealed partial class MainWindow : Window
         RefreshPlatformSuggestions();
         RefreshLauncherSuggestions();
         RefreshInstalledEmulators();
+        RefreshProtonVersions();
         SuggestGameConfigurationFolder("New Game");
         _ = await MetadataProviderSettings.LoadAsync(_portablePaths);
         await LoadCollectionBrandingAsync();
@@ -334,6 +337,36 @@ public sealed partial class MainWindow : Window
 
     private void FillLinuxFromWindowsClicked(object? sender, RoutedEventArgs e) =>
         ApplyLinuxSuggestionFromWindows();
+
+    private void RefreshProtonVersionsClicked(object? sender, RoutedEventArgs e) =>
+        RefreshProtonVersions();
+
+    private void RefreshProtonVersions()
+    {
+        var selected = _viewModel.Configuration.Launch.Linux.CompatibilityTool;
+        var inventory = _protonRuntimeDiscovery.Discover();
+        _viewModel.ProtonSuggestions.Clear();
+        _viewModel.ProtonSuggestions.Add("UMU-Proton");
+        _viewModel.ProtonSuggestions.Add("GE-Proton");
+        foreach (var version in inventory.ProtonVersions)
+            _viewModel.ProtonSuggestions.Add(version);
+        _viewModel.Configuration.Launch.Linux.CompatibilityTool = selected;
+        _viewModel.ProtonRuntimeStatus = inventory.Summary;
+    }
+
+    private void OpenProtonSetupClicked(object? sender, RoutedEventArgs e)
+    {
+        const string url = "https://github.com/Open-Wine-Components/umu-launcher#installing";
+        try
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            _viewModel.Status = "Opened the official UMU installation guide. UMU-Proton installs its current stable build automatically; GE-Proton does the same for the current GE build.";
+        }
+        catch (Exception ex)
+        {
+            _viewModel.Status = $"Could not open the UMU guide: {ex.Message} Visit {url}";
+        }
+    }
 
     private void ApplyLinuxSuggestionFromWindows()
     {

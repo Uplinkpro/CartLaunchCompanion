@@ -6,6 +6,31 @@ The project follows semantic versioning where practical.
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-09-03
+
+### Added
+
+- Added an optional required-launcher setting that keeps executable launch commands separate from Steam, Rockstar, and other storefront ownership and branding
+- Added pre-launch readiness checks that start required Windows launchers, or Steam and Heroic on Linux, before starting the configured game command
+- Added UMU-Proton support for portable Windows executables on Linux and SteamOS, including installed-version discovery and guided UMU setup
+- Added a cross-platform first-insert setup review for CLC-shaped drives when CLC-Cart Monitor is already installed; setup, trust, and automatic launch remain separate confirmations
+
+### Changed
+
+- Updated the exit confirmation overlay to use the current cartridge logo instead of the retired generic device glyph
+- Direct executable games can now retain the correct storefront banner, logo, colors, and launcher label
+- Replaced circular loading indicators with a consistent animated three-dot throbber
+- Moved one-time trailer runtime preparation into cold startup so opening a metadata page no longer waits for VLC initialization
+- Replaced the retired cold-start device symbol with the current cartridge app logo and audited executable, window, drive, loading, and confirmation branding
+- Linux autofill now maps portable Windows EXEs to UMU-Proton, with automatically managed stable or GE-Proton choices and isolated host-side compatibility data
+- Refreshed the repository screenshots to show the current collection library, metadata layout, platform selection, and UMU-Proton configuration workflow
+
+### Validation
+
+- Passed all 305 automated Core and Desktop tests in the Release configuration
+- Installed and hash-verified the Windows and Linux launchers on the GTA Collection physical test cart
+- Passed the release-package audit for the Windows, Linux, and combined portable distributions
+
 ## [2.6.0] - 2026-08-31
 
 ### Added

@@ -17,6 +17,10 @@ Use a disposable removable drive with no irreplaceable files. Keep automatic lau
 - [ ] Confirm `autorun.inf` is hidden on Windows, points to `Cart\System\Assets\AppIcon.ico`, and contains no `Open`, `ShellExecute`, or shell command entries.
 - [ ] Install CLC-Cart Monitor for the current user and confirm every displayed installation/data path.
 - [ ] Confirm an ordinary untrusted drive causes no prompt and launches nothing.
+- [ ] Insert an unprepared drive containing a valid published CLC runtime and no identity; confirm the Monitor immediately offers the setup review.
+- [ ] Decline first-insert setup and confirm no files change and the prompt does not repeat until physical reinsertion.
+- [ ] Approve first-insert setup and confirm the name, exact writes, runtime verification, separate trust review, and separate automatic-launch review are all shown.
+- [ ] Place malformed data at `.cartlaunch/cartridge.json` and confirm the Monitor stays silent and never replaces or repairs it automatically.
 - [ ] Trust the test cart manually; leave automatic launch disabled.
 - [ ] Reconnect and confirm detection completes without recursively scanning game data.
 - [ ] Manually launch and verify CLC runs from the local Monitor session while loading data from the cart.

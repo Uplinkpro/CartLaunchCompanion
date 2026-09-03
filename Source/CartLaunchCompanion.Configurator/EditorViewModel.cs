@@ -28,11 +28,12 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     private string _artworkAuditSummary = "Artwork has not been checked yet.";
     private string _windowsLauncherStatus = "Choose a launcher, then verify only that launcher on this computer.";
     private string _linuxLauncherStatus = "Choose a launcher, then verify only that launcher on this computer or Steam Deck.";
+    private string _protonRuntimeStatus = "Proton versions have not been checked yet.";
     private InstalledEmulatorOption? _selectedInstalledEmulator;
     private string _newShelfName = "";
     private string _collectionLayoutStatus = "Choose a shelf for each primary game, adjust its order, then save the layout.";
 
-    public GameConfiguration Configuration { get => _configuration; set { _configuration = value; Changed(); Changed(nameof(JsonPreview)); } }
+    public GameConfiguration Configuration { get => _configuration; set { _configuration = value; Changed(); Changed(nameof(JsonPreview)); Changed(nameof(WindowsRequiredLauncher)); Changed(nameof(LinuxRequiredLauncher)); } }
     public string FilePath { get => _filePath; set { _filePath = value; Changed(); } }
     public string Status { get => _status; set { _status = value; Changed(); } }
     public string JsonPreview { get => _jsonPreview; set { _jsonPreview = value; Changed(); } }
@@ -63,6 +64,7 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     public string ArtworkAuditSummary { get => _artworkAuditSummary; set { _artworkAuditSummary = value; Changed(); } }
     public string WindowsLauncherStatus { get => _windowsLauncherStatus; set { _windowsLauncherStatus = value; Changed(); } }
     public string LinuxLauncherStatus { get => _linuxLauncherStatus; set { _linuxLauncherStatus = value; Changed(); } }
+    public string ProtonRuntimeStatus { get => _protonRuntimeStatus; set { _protonRuntimeStatus = value; Changed(); } }
     public ObservableCollection<InstalledEmulatorOption> InstalledEmulators { get; } = [];
     public InstalledEmulatorOption? SelectedInstalledEmulator { get => _selectedInstalledEmulator; set { _selectedInstalledEmulator = value; Changed(); } }
     public bool HasInstalledEmulators => InstalledEmulators.Count > 0;
@@ -72,6 +74,47 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     public ObservableCollection<string> CollectionShelfChoices { get; } = ["(Unassigned)"];
     public ObservableCollection<string> PlatformSuggestions { get; } = [];
     public ObservableCollection<LauncherKind> WindowsLauncherKinds { get; } = [];
+    public LauncherRequirementOption[] RequiredLauncherOptions { get; } =
+    [
+        new(null, "None — use launch method"),
+        new(LauncherKind.Steam, "Steam"),
+        new(LauncherKind.Epic, "Epic"),
+        new(LauncherKind.GOG, "GOG Galaxy"),
+        new(LauncherKind.Ubisoft, "Ubisoft Connect"),
+        new(LauncherKind.Rockstar, "Rockstar Games Launcher"),
+        new(LauncherKind.Amazon, "Amazon Games"),
+        new(LauncherKind.EA, "EA app"),
+        new(LauncherKind.BattleNet, "Battle.net"),
+        new(LauncherKind.HoYoverse, "HoYoPlay"),
+        new(LauncherKind.ItchIo, "itch.io"),
+        new(LauncherKind.Heroic, "Heroic")
+    ];
+    public LauncherRequirementOption[] LinuxRequiredLauncherOptions { get; } =
+    [
+        new(null, "None — use launch method"),
+        new(LauncherKind.Steam, "Steam"),
+        new(LauncherKind.Heroic, "Heroic")
+    ];
+    public LauncherRequirementOption WindowsRequiredLauncher
+    {
+        get => RequiredLauncherOptions.First(option => option.Launcher == Configuration.Launch.Windows.RequiredLauncher);
+        set
+        {
+            Configuration.Launch.Windows.RequiredLauncher = value.Launcher;
+            Changed();
+            RefreshPreview();
+        }
+    }
+    public LauncherRequirementOption LinuxRequiredLauncher
+    {
+        get => LinuxRequiredLauncherOptions.First(option => option.Launcher == Configuration.Launch.Linux.RequiredLauncher);
+        set
+        {
+            Configuration.Launch.Linux.RequiredLauncher = value.Launcher;
+            Changed();
+            RefreshPreview();
+        }
+    }
     public string NewShelfName { get => _newShelfName; set { _newShelfName = value; Changed(); } }
     public string CollectionLayoutStatus { get => _collectionLayoutStatus; set { _collectionLayoutStatus = value; Changed(); } }
     public bool HasExistingGames => ExistingGames.Count > 0;
@@ -88,14 +131,7 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     public Array PreferredPlatforms { get; } = Enum.GetValues<PreferredPlatform>();
     public Array DeckRatings { get; } = Enum.GetValues<SteamDeckCompatibility>();
     public Array GamepadRatings { get; } = Enum.GetValues<GamepadSupport>();
-    public string[] ProtonSuggestions { get; } =
-    [
-        "proton",
-        "Proton Experimental",
-        "Proton 10",
-        "Proton 9",
-        "GE-Proton"
-    ];
+    public ObservableCollection<string> ProtonSuggestions { get; } = ["UMU-Proton", "GE-Proton"];
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public void NotifyExistingGamesChanged() => Changed(nameof(HasExistingGames));
@@ -111,6 +147,8 @@ public sealed record ExistingGameOption(string Name, string ConfigurationPath, s
     public string EffectiveSortName => string.IsNullOrWhiteSpace(SortName) ? Name : SortName.Trim();
     public override string ToString() => string.IsNullOrWhiteSpace(PlatformLabel) ? Name : $"{Name} — {PlatformLabel.Trim()}";
 }
+
+public sealed record LauncherRequirementOption(LauncherKind? Launcher, string DisplayName);
 
 public sealed record ArtworkAuditItem(
     string Game,

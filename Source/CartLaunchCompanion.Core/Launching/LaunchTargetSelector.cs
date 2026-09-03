@@ -56,7 +56,11 @@ public sealed class LaunchTargetSelector : ILaunchTargetSelector
             launch.ProcessName,
             launch.Uri,
             "",
-            "") { CompanionApplication = launch.CompanionApplication };
+            "")
+        {
+            CompanionApplication = launch.CompanionApplication,
+            RequiredLauncher = launch.RequiredLauncher
+        };
     }
 
     private static LaunchTargetSelection FromLinux(
@@ -81,6 +85,10 @@ public sealed class LaunchTargetSelector : ILaunchTargetSelector
             launch.ProcessName,
             launch.Uri,
             launch.CompatibilityTool,
-            launch.WinePrefix) { CompanionApplication = launch.CompanionApplication };
+            launch.WinePrefix)
+        {
+            CompanionApplication = launch.CompanionApplication,
+            RequiredLauncher = launch.RequiredLauncher
+        };
     }
 }

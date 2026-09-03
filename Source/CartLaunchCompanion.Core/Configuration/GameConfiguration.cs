@@ -74,6 +74,8 @@ public sealed class WindowsLaunchConfiguration
 {
     public bool Enabled { get; set; } = true;
     public LauncherKind Launcher { get; set; } = LauncherKind.Steam;
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LauncherKind? RequiredLauncher { get; set; }
 
     public string SteamId { get; set; } = "";
     public string XboxAppId { get; set; } = "";
@@ -95,6 +97,8 @@ public sealed class LinuxLaunchConfiguration
 {
     public bool Enabled { get; set; } = true;
     public LauncherKind Launcher { get; set; } = LauncherKind.Steam;
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LauncherKind? RequiredLauncher { get; set; }
 
     public string SteamId { get; set; } = "";
     public string HeroicGameId { get; set; } = "";

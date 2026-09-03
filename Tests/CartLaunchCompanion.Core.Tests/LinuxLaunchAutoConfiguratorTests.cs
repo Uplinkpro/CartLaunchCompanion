@@ -32,7 +32,7 @@ public sealed class LinuxLaunchAutoConfiguratorTests
     }
 
     [Fact]
-    public void Apply_UsesWineForPortableWindowsExecutableWithoutOverwritingArguments()
+    public void Apply_UsesUmuProtonForPortableWindowsExecutableWithoutOverwritingArguments()
     {
         var configuration = Configuration(LauncherKind.Local);
         configuration.Launch.Windows.Executable = "../../Games/Test/Test.exe";
@@ -41,10 +41,10 @@ public sealed class LinuxLaunchAutoConfiguratorTests
 
         LinuxLaunchAutoConfigurator.Apply(configuration);
 
-        Assert.Equal(LauncherKind.Wine, configuration.Launch.Linux.Launcher);
+        Assert.Equal(LauncherKind.Proton, configuration.Launch.Linux.Launcher);
         Assert.Equal(configuration.Launch.Windows.Executable, configuration.Launch.Linux.Executable);
         Assert.Equal("--user-choice", configuration.Launch.Linux.Arguments);
-        Assert.Equal("wine", configuration.Launch.Linux.CompatibilityTool);
+        Assert.Equal("UMU-Proton", configuration.Launch.Linux.CompatibilityTool);
     }
 
     [Fact]

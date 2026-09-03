@@ -22,11 +22,14 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private TrustedCartItem? _selectedCart;
     private ConnectedCartItem? _selectedConnectedCart;
     private PhysicalCartMonitor? _monitor;
+    private UnpreparedCartMonitor? _setupMonitor;
+    private readonly HashSet<string> _setupPromptsInProgress = new(StringComparer.OrdinalIgnoreCase);
     private readonly AutomaticCartLaunchPolicy _autoLaunchPolicy = new();
     private readonly Dictionary<string, CancellationTokenSource> _pendingAutoLaunches = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, PreparedCartLaunchSession> _activeLaunches = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, DateTimeOffset> _suppressAutoLaunchUntil = new(StringComparer.OrdinalIgnoreCase);
     private readonly MountedCartDetector _cartDetector = new(new SystemMountRootProvider(), new CartIdentityService());
+    private readonly UnpreparedCartDetector _unpreparedCartDetector = new(new SystemMountRootProvider());
     private readonly CartHostEjectServer _ejectServer;
     private readonly CartHostTrustReviewServer _trustReviewServer;
 
@@ -42,7 +45,13 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         _trustReviewServer = new CartHostTrustReviewServer(HandleTrustReviewRequestAsync);
         _trustReviewServer.Start();
         Opened += async (_, _) => await RefreshTrustAsync();
-        Closed += async (_, _) => { await _ejectServer.DisposeAsync(); await _trustReviewServer.DisposeAsync(); };
+        Closed += async (_, _) =>
+        {
+            if (_monitor is not null) await _monitor.DisposeAsync();
+            if (_setupMonitor is not null) await _setupMonitor.DisposeAsync();
+            await _ejectServer.DisposeAsync();
+            await _trustReviewServer.DisposeAsync();
+        };
     }
 
     public string InstallPurpose => "Runs in each signed-in user's session. It detects inserted carts, verifies only carts that user approved, and launches CLC from a protected local copy after checking every approved file.";
@@ -348,6 +357,11 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         });
         _monitor.CartRemoved += (_, root) => Dispatcher.UIThread.Post(async () => { _auditLog.Write(CartHostAuditEvent.CartRemoved, "detected"); await ScanMountedCartsAsync(); await HandleRemovalAsync(root); });
         _monitor.Start();
+
+        _setupMonitor = new UnpreparedCartMonitor(_unpreparedCartDetector);
+        _setupMonitor.CandidateInserted += (_, candidate) => Dispatcher.UIThread.Post(
+            async () => await HandleUnpreparedInsertionAsync(candidate));
+        _setupMonitor.Start();
     }
 
     public async Task StartBackgroundMonitoringAsync()
@@ -356,10 +370,65 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         // immediately after installation. The passive monitor treats its first
         // scan as a baseline, so explicitly process that initial set once.
         var mounted = await _cartDetector.ScanAsync();
+        var unprepared = _unpreparedCartDetector.Scan();
         await ScanMountedCartsAsync();
         StartPassiveMonitoring();
+        foreach (var candidate in unprepared)
+            await HandleUnpreparedInsertionAsync(candidate);
         foreach (var cart in mounted)
             await HandleAutomaticInsertionAsync(cart);
+    }
+
+    private async Task HandleUnpreparedInsertionAsync(UnpreparedCartCandidate candidate)
+    {
+        var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(candidate.MediaRoot));
+        if (!_setupPromptsInProgress.Add(root)) return;
+        var wasVisible = IsVisible;
+        try
+        {
+            if (File.Exists(CartIdentityService.GetIdentityPath(root))) return;
+            _ = MinimizeExplorerWindowWhenAvailableAsync(root);
+            _auditLog.Write(CartHostAuditEvent.SetupOffered, "runtime_detected");
+            if (!wasVisible)
+            {
+                Show();
+                Activate();
+            }
+
+            var setupWindow = new FirstInsertSetupWindow(candidate);
+            if (!await setupWindow.ShowDialog<bool>(this))
+            {
+                _auditLog.Write(CartHostAuditEvent.SetupDeclined, "not_now");
+                Status = "Cart setup was postponed. No files were changed; CLC will ask again after this drive is removed and reinserted.";
+                return;
+            }
+
+            Status = "Preparing the cart identity, folders, drive branding, and runtime review…";
+            var report = await new PhysicalCartReadinessService().PrepareAsync(root, setupWindow.ConfirmedName);
+            if (!report.IsReady || report.Identity is null)
+            {
+                _auditLog.Write(CartHostAuditEvent.SetupDeclined, "readiness_failed");
+                Status = "Cart setup could not be completed. Existing game content was preserved; open CLC-Cart Monitor to review the readiness checks.";
+                return;
+            }
+
+            _auditLog.Write(CartHostAuditEvent.SetupAccepted, "prepared", report.Identity.Identity.CartId);
+            await ScanMountedCartsAsync();
+            SelectedConnectedCart = ConnectedCarts.FirstOrDefault(item =>
+                Path.GetFullPath(item.MediaRoot).Equals(root, StringComparison.OrdinalIgnoreCase));
+            Status = $"{report.Identity.Identity.DisplayName} is prepared. Review its verified runtime before granting trust.";
+            await ReviewAndTrustAsync(root);
+        }
+        catch (Exception ex)
+        {
+            _auditLog.Write(CartHostAuditEvent.SetupDeclined, ex.GetType().Name);
+            Status = "Cart setup stopped safely: " + ex.Message;
+        }
+        finally
+        {
+            _setupPromptsInProgress.Remove(root);
+            if (!wasVisible) Hide();
+        }
     }
 
     private async Task<CartHostTrustReviewResponse> HandleTrustReviewRequestAsync(CartHostTrustReviewRequest request)

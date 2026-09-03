@@ -66,24 +66,6 @@
             </Style.Animations>
         </Style>
 
-        <Style Selector="Canvas.loading-spinner">
-            <Setter Property="RenderTransformOrigin" Value="50%,50%" />
-            <Setter Property="RenderTransform">
-                <RotateTransform Angle="0" />
-            </Setter>
-            <Style.Animations>
-                <Animation Duration="0:0:0.85"
-                           IterationCount="Infinite"
-                           Easing="LinearEasing">
-                    <KeyFrame Cue="0%">
-                        <Setter Property="RotateTransform.Angle" Value="0" />
-                    </KeyFrame>
-                    <KeyFrame Cue="100%">
-                        <Setter Property="RotateTransform.Angle" Value="360" />
-                    </KeyFrame>
-                </Animation>
-            </Style.Animations>
-        </Style>
     </Window.Styles>
 
     <!-- A fixed 1280x720 presentation canvas scales cleanly to 2560x1440.
@@ -108,19 +90,8 @@
                        Width="150"
                        Height="225"
                        Stretch="Uniform" />
-                <Canvas Classes="loading-spinner"
-                        Width="52"
-                        Height="52"
-                        HorizontalAlignment="Center">
-                    <Ellipse Canvas.Left="4" Canvas.Top="4"
-                             Width="44" Height="44"
-                             Stroke="#24FFFFFF"
-                             StrokeThickness="4" />
-                    <Path Data="M26,4 A22,22 0 0 1 48,26"
-                          Stroke="{Binding LoadingGame.AccentBrightColor}"
-                          StrokeThickness="4"
-                          StrokeLineCap="Round" />
-                </Canvas>
+                <controls:LoadingThrobber Accent="{Binding LoadingGame.AccentBrightColor}"
+                                          HorizontalAlignment="Center" />
             </StackPanel>
         </Grid>
 
@@ -137,19 +108,8 @@
                        Width="160"
                        Height="240"
                        Stretch="Uniform" />
-                <Canvas Classes="loading-spinner"
-                        Width="56"
-                        Height="56"
-                        HorizontalAlignment="Center">
-                    <Ellipse Canvas.Left="4" Canvas.Top="4"
-                             Width="48" Height="48"
-                             Stroke="#28FFFFFF"
-                             StrokeThickness="4" />
-                    <Path Data="M28,4 A24,24 0 0 1 52,28"
-                          Stroke="{Binding LaunchingGame.AccentBrightColor}"
-                          StrokeThickness="4"
-                          StrokeLineCap="Round" />
-                </Canvas>
+                <controls:LoadingThrobber Accent="{Binding LaunchingGame.AccentBrightColor}"
+                                          HorizontalAlignment="Center" />
                 <TextBlock Text="LAUNCHING"
                            Foreground="White"
                            FontSize="22"
@@ -239,32 +199,11 @@
                     <StackPanel HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Spacing="16">
-                        <Border Width="86"
-                                Height="70"
-                                CornerRadius="11"
-                                BorderBrush="#E5E8EDF3"
-                                BorderThickness="3"
-                                Background="#0B0D11">
-                            <Grid RowDefinitions="*,13"
-                                  Margin="9">
-                                <Border Grid.Row="0"
-                                        Margin="8,3,8,5"
-                                        CornerRadius="4"
-                                        BorderBrush="#E5E8EDF3"
-                                        BorderThickness="2" />
-
-                                <StackPanel Grid.Row="1"
-                                            Orientation="Horizontal"
-                                            HorizontalAlignment="Center"
-                                            Spacing="3">
-                                    <Border Width="6" Height="10" Background="#E5E8EDF3" />
-                                    <Border Width="6" Height="10" Background="#E5E8EDF3" />
-                                    <Border Width="6" Height="10" Background="#E5E8EDF3" />
-                                    <Border Width="6" Height="10" Background="#E5E8EDF3" />
-                                    <Border Width="6" Height="10" Background="#E5E8EDF3" />
-                                </StackPanel>
-                            </Grid>
-                        </Border>
+                        <Image Source="/Assets/AppIcon.png"
+                               Width="108"
+                               Height="108"
+                               Stretch="Uniform"
+                               AutomationProperties.Name="Cart Launch Companion cartridge logo" />
 
                         <TextBlock Classes="chrome-title"
                                    Text="EXIT CART LAUNCH COMPANION?"

@@ -18,4 +18,6 @@ public sealed record LaunchTargetSelection(
     string WinePrefix)
 {
     public CompanionApplicationConfiguration CompanionApplication { get; init; } = new();
+    public LauncherKind? RequiredLauncher { get; init; }
+    public LauncherKind BrandingLauncher => RequiredLauncher ?? Launcher;
 }

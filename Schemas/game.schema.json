@@ -235,6 +235,13 @@
         "launcher": {
           "$ref": "#/$defs/launcher"
         },
+        "requiredLauncher": {
+          "anyOf": [
+            { "$ref": "#/$defs/launcher" },
+            { "type": "null" }
+          ],
+          "description": "Optional launcher that must be running before this target starts. Also controls launcher branding without changing the launch method."
+        },
         "steamId": {
           "type": "string"
         },
@@ -300,6 +307,13 @@
         },
         "launcher": {
           "$ref": "#/$defs/launcher"
+        },
+        "requiredLauncher": {
+          "anyOf": [
+            { "$ref": "#/$defs/launcher" },
+            { "type": "null" }
+          ],
+          "description": "Optional launcher that must be running before this target starts. Also controls launcher branding without changing the launch method."
         },
         "steamId": {
           "type": "string"

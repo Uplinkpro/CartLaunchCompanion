@@ -357,6 +357,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         IsLoading = true;
         StatusMessage = "Loading portable library…";
         LibraryErrorMessage = string.Empty;
+        var trailerRuntimePreparation = PrepareTrailerRuntimeSafelyAsync();
 
         try
         {
@@ -375,6 +376,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             var result = await _libraryService.LoadAsync(
                 _portablePaths,
                 _platform);
+            await trailerRuntimePreparation;
 
             var shelfOrder = Collection.Shelves
                 .Where(shelf => !string.IsNullOrWhiteSpace(shelf.Name))
@@ -823,16 +825,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             var minimumDisplay = Task.Delay(
                 UseMotionEffects ? 180 : 30,
                 transition.Token);
-            if (game.HasTrailerSource)
-            {
-                await Task.WhenAll(
-                    minimumDisplay,
-                    _prepareTrailerRuntime(transition.Token));
-            }
-            else
-            {
-                await minimumDisplay;
-            }
+            await minimumDisplay;
 
             SelectedGame = game;
             IsTrailerPlaybackEnabled = false;
@@ -863,6 +856,20 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 _metadataLoadingCancellation = null;
                 transition.Dispose();
             }
+        }
+    }
+
+    private async Task PrepareTrailerRuntimeSafelyAsync()
+    {
+        try
+        {
+            await _prepareTrailerRuntime(CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            // A missing video runtime should disable trailers, not prevent the
+            // cart library or metadata page from opening.
+            Trace.WriteLine($"Trailer runtime preparation failed: {ex}");
         }
     }
 

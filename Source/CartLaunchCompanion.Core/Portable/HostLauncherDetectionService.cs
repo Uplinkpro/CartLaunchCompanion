@@ -15,7 +15,8 @@ public sealed class HostLauncherDetectionService
 {
     public HostLauncherDetectionResult Detect(LauncherKind launcher, PlatformKind platform)
     {
-        if (launcher is LauncherKind.Local or LauncherKind.Custom or LauncherKind.Flash or LauncherKind.Wine or LauncherKind.Proton)
+        if (launcher is LauncherKind.Local or LauncherKind.Custom or LauncherKind.Flash or LauncherKind.Wine ||
+            launcher == LauncherKind.Proton && platform != PlatformKind.Linux)
         {
             return new HostLauncherDetectionResult(
                 launcher, true, "Cart-managed", "This launch method uses files selected from the cart.");
@@ -97,8 +98,28 @@ public sealed class HostLauncherDetectionService
                 Path.Combine(home, ".local", "share", "flatpak"),
                 Path.Combine(Path.DirectorySeparatorChar.ToString(), "var", "lib", "flatpak")
             ],
+            LauncherKind.Proton => FindLinuxCommands("umu-run", home),
             _ => []
         };
+    }
+
+    private static List<string> FindLinuxCommands(string command, string home)
+    {
+        var results = (Environment.GetEnvironmentVariable("PATH") ?? "")
+            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
+            .Select(folder => Path.Combine(folder, command))
+            .Where(File.Exists)
+            .ToList();
+        foreach (var candidate in new[]
+                 {
+                     Path.Combine(home, ".local", "bin", command),
+                     Path.Combine(home, ".local", "share", "umu", command)
+                 })
+        {
+            if (File.Exists(candidate) && !results.Contains(candidate, StringComparer.Ordinal))
+                results.Add(candidate);
+        }
+        return results;
     }
 
     [SupportedOSPlatform("windows")]

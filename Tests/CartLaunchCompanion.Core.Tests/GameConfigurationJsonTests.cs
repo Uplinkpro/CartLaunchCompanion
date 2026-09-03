@@ -37,6 +37,22 @@ public sealed class GameConfigurationJsonTests
         Assert.Contains("\"launcher\": \"steam\"", json);
         Assert.Contains("\"steamDeckCompatibility\": \"verified\"", json);
         Assert.DoesNotContain("\"collection\": {", json);
+        Assert.DoesNotContain("\"requiredLauncher\"", json);
+    }
+
+    [Fact]
+    public void RequiredLauncher_RoundTripsWithoutChangingLaunchMethod()
+    {
+        var configuration = new GameConfiguration();
+        configuration.Launch.Windows.Launcher = LauncherKind.Local;
+        configuration.Launch.Windows.RequiredLauncher = LauncherKind.Steam;
+
+        var json = GameConfigurationJson.Serialize(configuration);
+        var restored = GameConfigurationJson.Deserialize(json);
+
+        Assert.Contains("\"requiredLauncher\": \"steam\"", json);
+        Assert.Equal(LauncherKind.Local, restored.Launch.Windows.Launcher);
+        Assert.Equal(LauncherKind.Steam, restored.Launch.Windows.RequiredLauncher);
     }
 
     [Fact]

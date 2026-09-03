@@ -45,12 +45,14 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
         HeroImage = hero;
         LogoImage = TryLoadBitmap(entry.LogoPath);
         LauncherLogoImage = TryLoadBitmap(
-            entry.LaunchTarget?.Launcher == LauncherKind.Custom
+            entry.LaunchTarget?.Launcher == LauncherKind.Custom &&
+            entry.LaunchTarget.RequiredLauncher is null
                 ? ResolvePlatformAssetPath(entry, "Logo.png")
                 : null)
             ?? TryLoadBitmap(ResolveLauncherAssetPath(entry, "Logo.png"));
         LauncherBannerImage = TryLoadBitmap(
-            entry.LaunchTarget?.Launcher == LauncherKind.Custom
+            entry.LaunchTarget?.Launcher == LauncherKind.Custom &&
+            entry.LaunchTarget.RequiredLauncher is null
                 ? ResolvePlatformAssetPath(entry, "Banner.png")
                 : null)
             ?? TryLoadBitmap(ResolveLauncherAssetPath(entry, "Banner.png"));
@@ -133,7 +135,7 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
     };
 
     public string Launcher =>
-        Entry.LaunchTarget?.Launcher switch
+        Entry.LaunchTarget?.BrandingLauncher switch
         {
             LauncherKind.Local => "EXE",
             LauncherKind.Custom => "Emulator",
@@ -145,7 +147,7 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
         };
 
     public LauncherKind LauncherKind =>
-        Entry.LaunchTarget?.Launcher
+        Entry.LaunchTarget?.BrandingLauncher
         ?? LauncherKind.Custom;
 
     public bool UsesLauncherBranding =>
@@ -318,9 +320,10 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
         if (portableRoot is null)
             return null;
 
-        var launcherFolder = entry.LaunchTarget?.Launcher == LauncherKind.Custom
+        var launcherFolder = entry.LaunchTarget?.Launcher == LauncherKind.Custom &&
+                             entry.LaunchTarget.RequiredLauncher is null
             ? "Emulator"
-            : LauncherAssetCatalog.FolderName(entry.LaunchTarget?.Launcher ?? LauncherKind.Local);
+            : LauncherAssetCatalog.FolderName(entry.LaunchTarget?.BrandingLauncher ?? LauncherKind.Local);
 
         return Path.Combine(
             portableRoot.FullName,

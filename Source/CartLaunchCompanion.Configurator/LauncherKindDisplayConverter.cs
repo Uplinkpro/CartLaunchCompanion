@@ -9,6 +9,7 @@ public sealed class LauncherKindDisplayConverter : IValueConverter
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         value switch
         {
+            null => "None — use launch method",
             LauncherKind.Local => "EXE",
             LauncherKind.Custom => "Emulator",
             LauncherKind.BattleNet => "Battle.net",

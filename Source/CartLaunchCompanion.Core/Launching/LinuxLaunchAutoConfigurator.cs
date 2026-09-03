@@ -54,13 +54,13 @@ public static partial class LinuxLaunchAutoConfigurator
             Path.GetExtension(windows.Executable).Equals(".exe", StringComparison.OrdinalIgnoreCase))
         {
             if (targetWasBlank || linux.Launcher is LauncherKind.Wine or LauncherKind.Proton)
-                linux.Launcher = LauncherKind.Wine;
+                linux.Launcher = LauncherKind.Proton;
             linux.Executable = Fill(linux.Executable, windows.Executable);
             linux.Arguments = Fill(linux.Arguments, windows.Arguments);
             linux.WorkingDirectory = Fill(linux.WorkingDirectory, windows.WorkingDirectory);
             linux.ProcessName = Fill(linux.ProcessName, windows.ProcessName);
-            linux.CompatibilityTool = Fill(linux.CompatibilityTool, "wine");
-            return new(true, "Configured the portable Windows executable through Wine. Change the compatibility tool if this cart should use a specific Wine or Proton build.");
+            linux.CompatibilityTool = Fill(linux.CompatibilityTool, "UMU-Proton");
+            return new(true, "Configured the portable Windows executable through UMU-Proton. The default Proton build is downloaded and updated automatically on Linux; choose another installed or managed version if needed.");
         }
 
         return new(false, $"CLC cannot safely infer a Linux command for {windows.Launcher}. Choose Wine, Proton, Heroic, or a native executable and enter the verified target.");
