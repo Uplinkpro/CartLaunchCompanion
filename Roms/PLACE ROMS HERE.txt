@@ -1,0 +1,1 @@
+Place legally obtained game images in the matching platform folder.

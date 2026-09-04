@@ -4,7 +4,11 @@
         x:Class="CartLaunchCompanion.Configurator.MainWindow"
         Title="Cart Launch Companion — Game Configurator"
         Icon="/Assets/AppIcon.png"
-        Width="1280" Height="820" MinWidth="860" MinHeight="540"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="32"
+        WindowDecorations="Full"
+        Width="1360" Height="860" MinWidth="760" MinHeight="540"
+        WindowState="Maximized"
         WindowStartupLocation="CenterScreen">
   <Window.Resources>
     <local:LauncherKindDisplayConverter x:Key="LauncherKindDisplayConverter"/>
@@ -13,38 +17,63 @@
       <TextBlock Text="{Binding Converter={StaticResource LauncherKindDisplayConverter}}"/>
     </DataTemplate>
   </Window.Resources>
-  <Grid RowDefinitions="Auto,*,Auto">
-    <Border Background="#10141A" BorderBrush="#2A313B" BorderThickness="0,0,0,1" Padding="24,18">
-      <Grid RowDefinitions="Auto,Auto">
-        <StackPanel>
+  <Grid RowDefinitions="32,Auto,*,Auto">
+    <Border Grid.Row="0" Background="#10141A"
+            WindowDecorationProperties.ElementRole="TitleBar" />
+    <Border Grid.Row="1" Background="#10141A" BorderBrush="#2A313B" BorderThickness="0,0,0,1" Padding="22,16">
+      <Grid RowDefinitions="Auto,Auto" RowSpacing="12">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
+        <StackPanel VerticalAlignment="Center">
           <TextBlock FontSize="26" FontWeight="Bold" Text="Game Configurator"/>
           <TextBlock Foreground="#AAB2BE" Margin="0,4,0,0" Text="Create each game's CLC configuration inside CartLaunchCompanion/Games—without editing JSON by hand." TextWrapping="Wrap"/>
           <TextBlock Foreground="#77818E" FontSize="12" Margin="0,7,0,0" Text="{Binding FilePath}" TextTrimming="CharacterEllipsis" MaxLines="1"/>
         </StackPanel>
-        <WrapPanel Grid.Row="1" Margin="0,16,0,-10" Orientation="Horizontal">
-          <ComboBox Width="250" Margin="0,0,10,10" PlaceholderText="No saved games"
+          <ComboBox Grid.Column="1" Width="290" PlaceholderText="No saved games"
                     ItemsSource="{Binding ExistingGames}"
                     SelectedItem="{Binding SelectedExistingGame}"
                     IsVisible="{Binding HasExistingGames}"
                     SelectionChanged="ExistingGameChanged"/>
-          <Button Margin="0,0,10,10" Content="Settings" Click="SettingsClicked"/>
-          <Button Margin="0,0,10,10" Content="Emulator Library" Click="EmulatorLibraryClicked"/>
-          <Button Margin="0,0,10,10" Content="Prepare physical cart" Click="CreateCartClicked"/>
-          <Button Margin="0,0,10,10" Content="New" Click="NewClicked"/>
-          <Button Margin="0,0,10,10" Content="New Platform" Click="NewPlatformClicked"
+        </Grid>
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <Button Content="New" Click="NewClicked"/>
+          <Button Content="New Platform" Click="NewPlatformClicked"
                   ToolTip.Tip="Copy the current game into a new platform configuration."/>
-          <Button Margin="0,0,10,10" Content="Open game.json" Click="OpenClicked"/>
-          <Button Margin="0,0,10,10" Content="Change CLC folder" Click="ChooseFolderClicked"/>
-        </WrapPanel>
+          <Button Content="Open game.json" Click="OpenClicked"/>
+          <Button Content="Change CLC folder" Click="ChooseFolderClicked"/>
+          <Button Content="Emulator Library" Click="EmulatorLibraryClicked"/>
+          <Button Content="Prepare physical cart" Click="CreateCartClicked"/>
+          <Button Content="Settings" Click="SettingsClicked"/>
+        </StackPanel>
+        </ScrollViewer>
       </Grid>
     </Border>
 
-    <TabControl x:Name="EditorTabs" Grid.Row="1" Margin="20" SelectionChanged="EditorTabsChanged">
-      <TabItem Header="1  Game details">
+    <TabControl x:Name="EditorTabs" Grid.Row="2" Margin="16" TabStripPlacement="Left" SelectionChanged="EditorTabsChanged">
+      <TabControl.Styles>
+        <Style Selector="TabItem">
+          <Setter Property="MinWidth" Value="210"/>
+          <Setter Property="MinHeight" Value="44"/>
+          <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+          <Setter Property="Padding" Value="16,8"/>
+          <Setter Property="Margin" Value="0,0,12,4"/>
+          <Setter Property="FontSize" Value="15"/>
+        </Style>
+        <Style Selector="TabItem:selected">
+          <Setter Property="Background" Value="#253140"/>
+          <Setter Property="Foreground" Value="White"/>
+          <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="TabControl.compact TabItem">
+          <Setter Property="MinWidth" Value="54"/>
+          <Setter Property="Padding" Value="18,10"/>
+        </Style>
+      </TabControl.Styles>
+      <TabItem><TabItem.Header><StackPanel Orientation="Horizontal" Spacing="12"><TextBlock Text="1" FontWeight="Bold"/><TextBlock x:Name="GameDetailsNavLabel" Text="Game details"/></StackPanel></TabItem.Header>
         <ScrollViewer><StackPanel Margin="12" MaxWidth="900">
           <Border Classes="card"><StackPanel>
             <TextBlock Classes="section" Text="Game details"/><TextBlock Classes="help" Margin="0,4,0,20" Text="The information people see on the home and details screens."/>
-            <local:LabeledField Label="Game name" Requirement="Required" Description="The title shown in Cart Launch Companion. Find on Steam can fill the remaining metadata after you choose the exact edition."><local:LabeledField.FieldContent><Grid ColumnDefinitions="*,12,Auto"><TextBox Text="{Binding Configuration.Game.Name}" PlaceholderText="Example: Grand Theft Auto V"/><Button Grid.Column="2" Content="Find on Steam" Click="FindOnSteamClicked"/></Grid></local:LabeledField.FieldContent></local:LabeledField>
+            <local:LabeledField Label="Game name" Requirement="Required" Description="The title shown in Cart Launch Companion. Find on Steam can fill the remaining metadata after you choose the exact edition."><local:LabeledField.FieldContent><Grid ColumnDefinitions="*,12,Auto"><TextBox x:Name="GameNameBox" Text="{Binding Configuration.Game.Name}" TextChanged="GameNameChanged" PlaceholderText="Example: Grand Theft Auto V"/><Button Grid.Column="2" Content="Find on Steam" Click="FindOnSteamClicked"/></Grid></local:LabeledField.FieldContent></local:LabeledField>
           <local:LabeledField Label="Sort name" Description="Optional. Use this when the game should be alphabetized differently, such as ignoring “The”."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Game.SortName}"/></local:LabeledField.FieldContent></local:LabeledField>
           <Border Background="#101923" BorderBrush="#31506E" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,8,0,14">
             <StackPanel Spacing="8">
@@ -52,7 +81,7 @@
               <TextBlock Classes="help" Text="Optional. Give PC, PSP, PS2, or other releases the same Version group. CLC will show one shelf card, then let the player choose a version by cover art before opening metadata." TextWrapping="Wrap"/>
             </StackPanel>
           </Border>
-          <local:LabeledField Label="Version group" Description="Optional. Use the exact same short identifier for every version, such as gta-vice-city-stories."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Game.VersionGroup}" PlaceholderText="Example: gta-vice-city-stories"/></local:LabeledField.FieldContent></local:LabeledField>
+          <local:LabeledField Label="Version group" Description="Defaults to the game name. Change it only when differently named releases should share one platform chooser."><local:LabeledField.FieldContent><TextBox x:Name="VersionGroupBox" Text="{Binding Configuration.Game.VersionGroup}" TextChanged="VersionGroupChanged" PlaceholderText="Automatically follows the game name"/></local:LabeledField.FieldContent></local:LabeledField>
           <local:LabeledField Label="Platform" Description="Recommended for grouped or emulated games. Choose a platform asset name to apply its Banner.png and optional Logo.png."><local:LabeledField.FieldContent><ComboBox IsEditable="True" ItemsSource="{Binding PlatformSuggestions}" Text="{Binding Configuration.Game.PlatformLabel}" PlaceholderText="Example: PlayStation 2"/></local:LabeledField.FieldContent></local:LabeledField>
           <local:LabeledField Label="Primary shelf version" Description="Optional. Choose one version to provide the cover shown on the main shelf. If none is selected, CLC uses the first sorted version."><local:LabeledField.FieldContent><ToggleSwitch IsChecked="{Binding Configuration.Game.PrimaryVersion}" OnContent="Primary version" OffContent="Alternate version"/></local:LabeledField.FieldContent></local:LabeledField>
             <local:LabeledField Label="Description" Description="Optional. A short summary shown on the metadata page."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Game.Description}" AcceptsReturn="True" MinHeight="100" TextWrapping="Wrap"/></local:LabeledField.FieldContent></local:LabeledField>
@@ -69,12 +98,43 @@
               <local:LabeledField Grid.Column="2" Label="Gamepad support" Description="Optional. Shows whether the game works fully or partly with a controller."><local:LabeledField.FieldContent><ComboBox ItemsSource="{Binding GamepadRatings}" SelectedItem="{Binding Configuration.Game.GamepadSupport}"/></local:LabeledField.FieldContent></local:LabeledField>
             </Grid>
             <local:LabeledField Label="Steam Deck compatibility" Description="Optional. The game’s Steam Deck rating, if known."><local:LabeledField.FieldContent><ComboBox ItemsSource="{Binding DeckRatings}" SelectedItem="{Binding Configuration.Game.SteamDeckCompatibility}"/></local:LabeledField.FieldContent></local:LabeledField>
+            <Border Classes="card" Margin="0,10,0,14">
+              <StackPanel Spacing="12">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel>
+                    <TextBlock FontSize="18" FontWeight="SemiBold" Text="RetroAchievements"/>
+                    <TextBlock Classes="help" Text="Optional for emulated games. CLC identifies supported cartridge ROMs by their exact revision; your emulator remains responsible for unlocking achievements." TextWrapping="Wrap"/>
+                  </StackPanel>
+                  <ToggleSwitch Grid.Column="1" IsChecked="{Binding Configuration.Achievements.RetroAchievementsEnabled}" OnContent="Shown" OffContent="Hidden"/>
+                </Grid>
+                <Grid ColumnDefinitions="*,16,*">
+                  <local:LabeledField Label="Game ID" Description="Optional fallback. Enter the public RetroAchievements game ID when a disc or compressed container cannot be hashed by CLC.">
+                    <local:LabeledField.FieldContent>
+                      <StackPanel>
+                        <TextBox Text="{Binding Configuration.Achievements.RetroAchievementsGameId}" PlaceholderText="Paste the number, such as 11240"/>
+                        <WrapPanel Classes="url-example">
+                          <TextBlock Text="Example: https://retroachievements.org/game/"/>
+                          <Border Classes="url-id"><TextBlock Text="11240"/></Border>
+                          <TextBlock Text="  ← this highlighted number is the Game ID"/>
+                        </WrapPanel>
+                      </StackPanel>
+                    </local:LabeledField.FieldContent>
+                  </local:LabeledField>
+                  <local:LabeledField Grid.Column="2" Label="ROM hash" Description="Calculated automatically for supported cartridge ROMs. For CHD and other disc containers, paste the 32-character RA hash shown by the emulator."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Achievements.RetroAchievementsRomHash}" MaxLength="32" PlaceholderText="Calculated automatically or pasted from the emulator"/></local:LabeledField.FieldContent></local:LabeledField>
+                </Grid>
+                <Grid ColumnDefinitions="*,Auto,12,Auto" ColumnSpacing="12">
+                  <TextBlock Text="{Binding RetroAchievementsStatus}" Classes="help" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                  <Button Grid.Column="1" Content="Match entered hash" Click="MatchRetroAchievementsHashClicked"/>
+                  <Button Grid.Column="3" Content="Choose ROM and match" Click="MatchRetroAchievementsClicked"/>
+                </Grid>
+              </StackPanel>
+            </Border>
             <local:LabeledField Label="Private notes" Description="Optional. Notes for the person maintaining this configuration; not needed to launch the game."><local:LabeledField.FieldContent><TextBox Text="{Binding Configuration.Notes}" AcceptsReturn="True" MinHeight="70"/></local:LabeledField.FieldContent></local:LabeledField>
           </StackPanel></Border>
         </StackPanel></ScrollViewer>
       </TabItem>
 
-      <TabItem Header="2  Artwork &amp; media">
+      <TabItem><TabItem.Header><StackPanel Orientation="Horizontal" Spacing="12"><TextBlock Text="2" FontWeight="Bold"/><TextBlock x:Name="ArtworkNavLabel" Text="Artwork &amp; media"/></StackPanel></TabItem.Header>
         <ScrollViewer><StackPanel Margin="12" MaxWidth="900" Spacing="16">
           <Border Classes="card">
             <StackPanel Spacing="14">
@@ -147,7 +207,7 @@
         </StackPanel></ScrollViewer>
       </TabItem>
 
-      <TabItem Header="3  Windows launch">
+      <TabItem><TabItem.Header><StackPanel Orientation="Horizontal" Spacing="12"><TextBlock Text="3" FontWeight="Bold"/><TextBlock x:Name="WindowsNavLabel" Text="Windows launch"/></StackPanel></TabItem.Header>
         <ScrollViewer><StackPanel Margin="12" MaxWidth="900"><Border Classes="card"><StackPanel>
           <TextBlock Classes="section" Text="Windows launch"/><TextBlock Classes="help" Margin="0,4,0,20" Text="Choose how this game starts on Windows. Only the target matching the selected launcher is normally needed."/>
           <Border Background="#101923" BorderBrush="#31506E" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,18"
@@ -210,7 +270,7 @@
         </StackPanel></Border></StackPanel></ScrollViewer>
       </TabItem>
 
-      <TabItem Header="4  Linux &amp; Steam Deck">
+      <TabItem><TabItem.Header><StackPanel Orientation="Horizontal" Spacing="12"><TextBlock Text="4" FontWeight="Bold"/><TextBlock x:Name="LinuxNavLabel" Text="Linux &amp; Steam Deck"/></StackPanel></TabItem.Header>
         <ScrollViewer><StackPanel Margin="12" MaxWidth="900"><Border Classes="card"><StackPanel>
           <TextBlock Classes="section" Text="Linux and Steam Deck launch"/><TextBlock Classes="help" Margin="0,4,0,20" Text="Leave this disabled for a Windows-only game. Steam, Heroic, Flatpak, Wine, Proton, local files, and custom URIs are supported."/>
           <Border Background="#101923" BorderBrush="#31506E" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,0,14">
@@ -267,7 +327,7 @@
         </StackPanel></Border></StackPanel></ScrollViewer>
       </TabItem>
 
-      <TabItem Header="5  Series collection">
+      <TabItem><TabItem.Header><StackPanel Orientation="Horizontal" Spacing="12"><TextBlock Text="5" FontWeight="Bold"/><TextBlock x:Name="CollectionNavLabel" Text="Series collection"/></StackPanel></TabItem.Header>
         <ScrollViewer><StackPanel Margin="12" MaxWidth="900" Spacing="16">
           <Border Classes="card"><Grid ColumnDefinitions="380,24,*">
             <Border Width="360" Height="112" HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -343,7 +403,7 @@
         </StackPanel></ScrollViewer>
       </TabItem>
 
-      <TabItem Header="6  Behavior">
+      <TabItem><TabItem.Header><StackPanel Orientation="Horizontal" Spacing="12"><TextBlock Text="6" FontWeight="Bold"/><TextBlock x:Name="BehaviorNavLabel" Text="Behavior"/></StackPanel></TabItem.Header>
         <ScrollViewer><StackPanel Margin="12" MaxWidth="900" Spacing="16">
           <Border Classes="card"><StackPanel>
             <TextBlock Classes="section" Text="Platform preference"/><TextBlock Classes="help" Margin="0,4,0,20" Text="Automatic is recommended and selects the matching configuration for the current computer."/>
@@ -359,7 +419,7 @@
         </StackPanel></ScrollViewer>
       </TabItem>
 
-      <TabItem Header="7  Review &amp; save">
+      <TabItem><TabItem.Header><StackPanel Orientation="Horizontal" Spacing="12"><TextBlock Text="7" FontWeight="Bold"/><TextBlock x:Name="ReviewNavLabel" Text="Review &amp; save"/></StackPanel></TabItem.Header>
         <Grid Margin="12" RowDefinitions="Auto,Auto,*" RowSpacing="14">
           <Border Classes="card"><StackPanel>
             <TextBlock Classes="section" Text="Check before saving"/>
@@ -398,11 +458,24 @@
       </TabItem>
     </TabControl>
 
-    <Border Grid.Row="2" Background="#10141A" BorderBrush="#2A313B" BorderThickness="0,1,0,0" Padding="24,14">
-      <Grid ColumnDefinitions="*,Auto">
+    <Border Grid.Row="3" Background="#10141A" BorderBrush="#2A313B" BorderThickness="0,1,0,0" Padding="24,14">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
         <StackPanel VerticalAlignment="Center"><TextBlock FontWeight="SemiBold" Text="{Binding Status}" TextWrapping="Wrap"/><TextBlock Classes="help" Text="Required = needed to save a working configuration  •  Optional = improves presentation or detection  •  Advanced = safe to leave at its default"/></StackPanel>
-        <Button Grid.Column="1" Background="#2F80ED" Foreground="White" FontWeight="SemiBold" Content="Validate and save game.json" Click="SaveClicked" MinWidth="230"/>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+          <Button x:Name="BackButton" Content="← Back" Click="BackPageClicked" MinWidth="100" IsEnabled="False"/>
+          <Button x:Name="NextButton" Content="Next →" Click="NextPageClicked" MinWidth="100"/>
+          <Button x:Name="SaveButton" Classes="primary" Content="Validate and save" Click="SaveClicked" MinWidth="180" IsVisible="False"/>
+          <Button Classes="danger" Content="Exit" Click="ExitClicked" MinWidth="100"/>
+        </StackPanel>
       </Grid>
+    </Border>
+
+    <Border Grid.RowSpan="4" Background="#D910141A" IsVisible="{Binding IsBusy}" ZIndex="1000">
+      <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16" MaxWidth="440">
+        <ProgressBar Width="240" Height="6" IsIndeterminate="True"/>
+        <TextBlock Text="{Binding BusyMessage}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap"/>
+        <TextBlock Text="You can leave this window open while CLC finishes." Foreground="#9DA7B4" TextAlignment="Center"/>
+      </StackPanel>
     </Border>
   </Grid>
 </Window>

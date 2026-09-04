@@ -10,6 +10,10 @@ public sealed class ConfiguratorSettings
     public string SteamWebApiKey { get; set; } = "";
     [JsonIgnore]
     public string SteamGridDbApiKey { get; set; } = "";
+    [JsonIgnore]
+    public string RetroAchievementsUserName { get; set; } = "";
+    [JsonIgnore]
+    public string RetroAchievementsWebApiKey { get; set; } = "";
     public bool SetupCompleted { get; set; }
 
     private static string FilePath => Path.Combine(
@@ -25,7 +29,9 @@ public sealed class ConfiguratorSettings
             return new ConfiguratorSettings
             {
                 SteamWebApiKey = await MetadataSecretStore.ReadAsync(MetadataSecretStore.SteamWebApiKey),
-                SteamGridDbApiKey = await MetadataSecretStore.ReadAsync(MetadataSecretStore.SteamGridDbApiKey)
+                SteamGridDbApiKey = await MetadataSecretStore.ReadAsync(MetadataSecretStore.SteamGridDbApiKey),
+                RetroAchievementsUserName = await MetadataSecretStore.ReadAsync(MetadataSecretStore.RetroAchievementsUserName),
+                RetroAchievementsWebApiKey = await MetadataSecretStore.ReadAsync(MetadataSecretStore.RetroAchievementsWebApiKey)
             };
         }
         try
@@ -34,6 +40,8 @@ public sealed class ConfiguratorSettings
             var result = JsonSerializer.Deserialize<ConfiguratorSettings>(json) ?? new ConfiguratorSettings();
             result.SteamWebApiKey = await MetadataSecretStore.ReadAsync(MetadataSecretStore.SteamWebApiKey);
             result.SteamGridDbApiKey = await MetadataSecretStore.ReadAsync(MetadataSecretStore.SteamGridDbApiKey);
+            result.RetroAchievementsUserName = await MetadataSecretStore.ReadAsync(MetadataSecretStore.RetroAchievementsUserName);
+            result.RetroAchievementsWebApiKey = await MetadataSecretStore.ReadAsync(MetadataSecretStore.RetroAchievementsWebApiKey);
             return result;
         }
         catch { return new ConfiguratorSettings(); }
@@ -43,6 +51,8 @@ public sealed class ConfiguratorSettings
     {
         await MetadataSecretStore.WriteAsync(MetadataSecretStore.SteamWebApiKey, SteamWebApiKey);
         await MetadataSecretStore.WriteAsync(MetadataSecretStore.SteamGridDbApiKey, SteamGridDbApiKey);
+        await MetadataSecretStore.WriteAsync(MetadataSecretStore.RetroAchievementsUserName, RetroAchievementsUserName);
+        await MetadataSecretStore.WriteAsync(MetadataSecretStore.RetroAchievementsWebApiKey, RetroAchievementsWebApiKey);
         Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
         await File.WriteAllTextAsync(FilePath, JsonSerializer.Serialize(this));
     }

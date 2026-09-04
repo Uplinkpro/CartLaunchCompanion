@@ -13,11 +13,22 @@ public sealed class GameConfiguration
 
     public ArtworkConfiguration Artwork { get; set; } = new();
 
+    public AchievementsConfiguration Achievements { get; set; } = new();
+
     public LaunchConfiguration Launch { get; set; } = new();
 
     public BehaviorConfiguration Behavior { get; set; } = new();
 
     public string Notes { get; set; } = "";
+}
+
+public sealed class AchievementsConfiguration
+{
+    public bool RetroAchievementsEnabled { get; set; }
+    public int? RetroAchievementsGameId { get; set; }
+    public string RetroAchievementsRomHash { get; set; } = "";
+    public string RetroAchievementsTitle { get; set; } = "";
+    public string RetroAchievementsConsole { get; set; } = "";
 }
 
 public sealed class GameInformation

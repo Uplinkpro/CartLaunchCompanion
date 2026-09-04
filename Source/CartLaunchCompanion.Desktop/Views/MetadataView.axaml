@@ -236,6 +236,60 @@
                                 <TextBlock Grid.Row="4" Text="PLAYERS" Classes="metadata-label" />
                                 <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedGame.PlayersDisplay}" Classes="metadata-value" />
                             </Grid>
+                            <Border Classes="ra-panel"
+                                    BorderBrush="{Binding SelectedGame.AccentBrightColor}"
+                                    IsVisible="{Binding IsRetroAchievementsVisible}">
+                                <StackPanel Spacing="10">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                        <TextBlock Text="{Binding RetroAchievementsStatus}"
+                                                   Classes="ra-heading" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding RetroAchievementsAward}"
+                                                   Classes="ra-award" />
+                                    </Grid>
+                                    <ProgressBar IsIndeterminate="True"
+                                                 Classes="ra-loading"
+                                                 IsVisible="{Binding IsRetroAchievementsLoading}" />
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10"
+                                          IsVisible="{Binding !IsRetroAchievementsLoading}">
+                                        <TextBlock Text="{Binding RetroAchievementsProgress}"
+                                                   Classes="ra-progress" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding RetroAchievementsPoints}"
+                                                   Classes="ra-points" />
+                                    </Grid>
+                                    <ItemsControl ItemsSource="{Binding RetroAchievementsRecent}"
+                                                  IsVisible="{Binding HasRetroAchievementsRecent}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel ItemWidth="180" ItemHeight="58" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:RetroAchievementItemViewModel">
+                                                <Grid Classes="ra-badge" ColumnDefinitions="46,*"
+                                                      ColumnSpacing="8">
+                                                    <Border Classes="ra-badge-image-frame">
+                                                        <Grid>
+                                                            <Image Source="{Binding BadgeImage}"
+                                                                   Stretch="UniformToFill"
+                                                                   IsVisible="{Binding HasBadge}" />
+                                                            <TextBlock Text="★" Classes="ra-badge-fallback"
+                                                                       IsVisible="{Binding !HasBadge}" />
+                                                        </Grid>
+                                                    </Border>
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Title}" Classes="ra-badge-title"
+                                                                   MaxLines="1" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Text="{Binding PointsText}" Classes="ra-badge-points" />
+                                                        <TextBlock Text="{Binding EarnedText}" Classes="ra-badge-earned" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </ScrollViewer>
                 </Border>

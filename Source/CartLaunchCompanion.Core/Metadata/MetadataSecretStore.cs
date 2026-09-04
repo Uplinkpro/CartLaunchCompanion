@@ -8,6 +8,8 @@ public static class MetadataSecretStore
 {
     public const string SteamWebApiKey = "SteamWebApiKey";
     public const string SteamGridDbApiKey = "SteamGridDbApiKey";
+    public const string RetroAchievementsUserName = "RetroAchievementsUserName";
+    public const string RetroAchievementsWebApiKey = "RetroAchievementsWebApiKey";
     private const string ApplicationName = "CartLaunchCompanion";
 
     public static Task<string> ReadAsync(string key, CancellationToken cancellationToken = default) =>

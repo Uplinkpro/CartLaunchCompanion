@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net.Http;
 using Avalonia.Media.Imaging;
 using CartLaunchCompanion.Core.Input;
 using CartLaunchCompanion.Core.Configuration;
@@ -8,6 +9,7 @@ using CartLaunchCompanion.Core.Platform;
 using CartLaunchCompanion.Core.Portable;
 using CartLaunchCompanion.Core.Updating;
 using CartLaunchCompanion.Core.PhysicalCarts;
+using CartLaunchCompanion.Core.Metadata;
 using CartLaunchCompanion.Desktop.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -25,6 +27,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly Action<bool> _setWindowVisible;
     private readonly Func<CancellationToken, Task> _prepareTrailerRuntime;
     private readonly string? _trustedCartId;
+    private readonly RetroAchievementsClient? _retroAchievementsClient;
+    private readonly HttpClient? _metadataHttpClient;
+    private readonly string _retroAchievementsCacheDirectory;
 
     private DateTimeOffset _lastInputAt = DateTimeOffset.MinValue;
     private LauncherAction _lastInputAction = LauncherAction.None;
@@ -32,6 +37,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private RuntimeUpdateAvailability? _availableUpdate;
     private CancellationTokenSource? _updateCancellation;
     private CancellationTokenSource? _metadataLoadingCancellation;
+    private CancellationTokenSource? _retroAchievementsCancellation;
     private readonly List<GameCardViewModel> _allGameCards = [];
     private bool _metadataOpenedFromVersionPicker;
     private GameCardViewModel? _versionGroupRepresentative;
@@ -62,7 +68,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         IRuntimeUpdateService updateService,
         Action exitApplication,
         Action<bool> setWindowVisible,
-        Func<CancellationToken, Task>? prepareTrailerRuntime = null)
+        Func<CancellationToken, Task>? prepareTrailerRuntime = null,
+        RetroAchievementsClient? retroAchievementsClient = null,
+        HttpClient? metadataHttpClient = null)
     {
         _libraryService = libraryService;
         _launchService = launchService;
@@ -72,6 +80,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _exitApplication = exitApplication;
         _setWindowVisible = setWindowVisible;
         _prepareTrailerRuntime = prepareTrailerRuntime ?? (_ => Task.CompletedTask);
+        _retroAchievementsClient = retroAchievementsClient;
+        _metadataHttpClient = metadataHttpClient;
+        _retroAchievementsCacheDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "CartLaunchCompanion", "Cache", "RetroAchievements");
         _trustedCartId = Environment.GetEnvironmentVariable("CLC_TRUSTED_CART_ID");
 
         ReloadCommand = new AsyncRelayCommand(LoadAsync);
@@ -119,6 +132,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public ObservableCollection<GameCardViewModel> Games { get; } = [];
     public ObservableCollection<GameShelfViewModel> Shelves { get; } = [];
     public ObservableCollection<GameCardViewModel> VersionChoices { get; } = [];
+    public ObservableCollection<RetroAchievementItemViewModel> RetroAchievementsRecent { get; } = [];
 
     [ObservableProperty]
     public partial CollectionConfiguration Collection { get; set; } = new();
@@ -162,6 +176,27 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     public partial bool IsMetadataLoading { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsRetroAchievementsVisible { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsRetroAchievementsLoading { get; set; }
+
+    [ObservableProperty]
+    public partial bool HasRetroAchievementsRecent { get; set; }
+
+    [ObservableProperty]
+    public partial string RetroAchievementsStatus { get; set; } = "";
+
+    [ObservableProperty]
+    public partial string RetroAchievementsProgress { get; set; } = "";
+
+    [ObservableProperty]
+    public partial string RetroAchievementsPoints { get; set; } = "";
+
+    [ObservableProperty]
+    public partial string RetroAchievementsAward { get; set; } = "";
 
     [ObservableProperty]
     public partial GameCardViewModel? LoadingGame { get; set; }
@@ -834,6 +869,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 : "This game is not launchable on the current platform.";
 
             IsMetadataVisible = true;
+            StartRetroAchievementsLoad(game);
             // Keep the loading layer above the page through its 240 ms entrance
             // animation. The native trailer remains hidden until the overlay is
             // gone and its surface has completed a real layout pass.
@@ -891,6 +927,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
 
         _metadataLoadingCancellation?.Cancel();
+        ClearRetroAchievements();
 
         IsTrailerPlaybackEnabled = false;
         IsExitVisible = false;
@@ -1280,8 +1317,124 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         CollectionLogoImage?.Dispose();
         _metadataLoadingCancellation?.Cancel();
         _metadataLoadingCancellation?.Dispose();
+        ClearRetroAchievements();
         _updateCancellation?.Cancel();
         _updateCancellation?.Dispose();
+    }
+
+    private void StartRetroAchievementsLoad(GameCardViewModel game)
+    {
+        ClearRetroAchievements();
+        var achievements = game.Entry.Configuration.Achievements;
+        if (!achievements.RetroAchievementsEnabled || achievements.RetroAchievementsGameId is not > 0)
+            return;
+
+        IsRetroAchievementsVisible = true;
+        IsRetroAchievementsLoading = true;
+        RetroAchievementsStatus = "CHECKING RETROACHIEVEMENTS…";
+        var cancellation = new CancellationTokenSource();
+        _retroAchievementsCancellation = cancellation;
+        _ = LoadRetroAchievementsAsync(achievements.RetroAchievementsGameId.Value, cancellation);
+    }
+
+    private async Task LoadRetroAchievementsAsync(int gameId, CancellationTokenSource cancellation)
+    {
+        try
+        {
+            if (_retroAchievementsClient is null || _metadataHttpClient is null)
+            {
+                RetroAchievementsStatus = "RETROACHIEVEMENTS IS UNAVAILABLE";
+                return;
+            }
+
+            var userTask = MetadataSecretStore.ReadAsync(MetadataSecretStore.RetroAchievementsUserName, cancellation.Token);
+            var keyTask = MetadataSecretStore.ReadAsync(MetadataSecretStore.RetroAchievementsWebApiKey, cancellation.Token);
+            await Task.WhenAll(userTask, keyTask);
+            var userName = await userTask;
+            var apiKey = await keyTask;
+            if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(apiKey))
+            {
+                RetroAchievementsStatus = "SET UP YOUR ACCOUNT IN THE CONFIGURATOR";
+                return;
+            }
+
+            var progress = await _retroAchievementsClient.GetUserGameProgressAsync(
+                userName, gameId, apiKey, _retroAchievementsCacheDirectory, cancellation.Token);
+            cancellation.Token.ThrowIfCancellationRequested();
+            RetroAchievementsProgress = $"{progress.EarnedAchievements} / {progress.TotalAchievements} UNLOCKED";
+            RetroAchievementsPoints = $"{progress.EarnedPoints:N0} POINTS";
+            RetroAchievementsAward = progress.Award;
+            RetroAchievementsStatus = progress.TotalAchievements > 0
+                ? "RETROACHIEVEMENTS"
+                : "NO ACHIEVEMENTS ARE AVAILABLE FOR THIS GAME";
+
+            var badgeTasks = progress.RecentAchievements.Select(item =>
+                CreateAchievementItemAsync(item, cancellation.Token));
+            foreach (var item in await Task.WhenAll(badgeTasks))
+                RetroAchievementsRecent.Add(item);
+            HasRetroAchievementsRecent = RetroAchievementsRecent.Count > 0;
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"RetroAchievements progress could not be loaded: {ex}");
+            RetroAchievementsStatus = "PROGRESS UNAVAILABLE — OFFLINE DATA WILL BE RETRIED LATER";
+        }
+        finally
+        {
+            if (ReferenceEquals(_retroAchievementsCancellation, cancellation))
+                IsRetroAchievementsLoading = false;
+        }
+    }
+
+    private async Task<RetroAchievementItemViewModel> CreateAchievementItemAsync(
+        RetroAchievementProgressItem achievement,
+        CancellationToken cancellationToken)
+    {
+        Bitmap? badge = null;
+        if (!string.IsNullOrWhiteSpace(achievement.BadgeName))
+        {
+            try
+            {
+                var url = RetroAchievementsClient.ResolveBadgeUrl(achievement.BadgeName);
+                var cacheName = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+                    System.Text.Encoding.UTF8.GetBytes(url))).ToLowerInvariant() + ".png";
+                var cachePath = Path.Combine(_retroAchievementsCacheDirectory, "Badges", cacheName);
+                if (!File.Exists(cachePath))
+                {
+                    var bytes = await _metadataHttpClient!.GetByteArrayAsync(url, cancellationToken);
+                    Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
+                    await File.WriteAllBytesAsync(cachePath, bytes, cancellationToken);
+                }
+                badge = new Bitmap(cachePath);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                Trace.WriteLine($"RetroAchievements badge could not be loaded: {ex.Message}");
+            }
+        }
+
+        return new RetroAchievementItemViewModel(
+            achievement.Title, achievement.Description, achievement.Points,
+            achievement.EarnedHardcore, badge);
+    }
+
+    private void ClearRetroAchievements()
+    {
+        _retroAchievementsCancellation?.Cancel();
+        _retroAchievementsCancellation?.Dispose();
+        _retroAchievementsCancellation = null;
+        foreach (var achievement in RetroAchievementsRecent) achievement.Dispose();
+        RetroAchievementsRecent.Clear();
+        IsRetroAchievementsVisible = false;
+        IsRetroAchievementsLoading = false;
+        HasRetroAchievementsRecent = false;
+        RetroAchievementsStatus = "";
+        RetroAchievementsProgress = "";
+        RetroAchievementsPoints = "";
+        RetroAchievementsAward = "";
     }
 
     private sealed class UnavailableRuntimeUpdateService : IRuntimeUpdateService

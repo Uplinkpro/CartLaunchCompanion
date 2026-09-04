@@ -112,6 +112,84 @@
         <Style Selector="TextBlock.muted">
             <Setter Property="Foreground" Value="#9FFFFFFF" />
         </Style>
+
+        <Style Selector="Border.ra-panel">
+            <Setter Property="Padding" Value="12" />
+            <Setter Property="CornerRadius" Value="7" />
+            <Setter Property="Background" Value="#D112151A" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style Selector="TextBlock.ra-heading">
+            <Setter Property="Foreground" Value="#F8FAFC" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="LetterSpacing" Value="1.2" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="TextBlock.ra-award">
+            <Setter Property="Foreground" Value="#F5C451" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="LetterSpacing" Value="1" />
+        </Style>
+
+        <Style Selector="ProgressBar.ra-loading">
+            <Setter Property="Height" Value="3" />
+            <Setter Property="MinHeight" Value="3" />
+        </Style>
+
+        <Style Selector="TextBlock.ra-progress">
+            <Setter Property="Foreground" Value="#E8FFFFFF" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <Style Selector="TextBlock.ra-points">
+            <Setter Property="Foreground" Value="#F5C451" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+
+        <Style Selector="Grid.ra-badge">
+            <Setter Property="Margin" Value="0,3,6,3" />
+            <Setter Property="Height" Value="52" />
+        </Style>
+
+        <Style Selector="Border.ra-badge-image-frame">
+            <Setter Property="Width" Value="42" />
+            <Setter Property="Height" Value="42" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Background" Value="#FF20242B" />
+            <Setter Property="ClipToBounds" Value="True" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="TextBlock.ra-badge-fallback">
+            <Setter Property="Foreground" Value="#F5C451" />
+            <Setter Property="FontSize" Value="22" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="TextBlock.ra-badge-title">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <Style Selector="TextBlock.ra-badge-points">
+            <Setter Property="Foreground" Value="#CFFFFFFF" />
+            <Setter Property="FontSize" Value="9" />
+        </Style>
+
+        <Style Selector="TextBlock.ra-badge-earned">
+            <Setter Property="Foreground" Value="#66E38A" />
+            <Setter Property="FontSize" Value="8" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="LetterSpacing" Value="0.8" />
+        </Style>
     </Application.Styles>
 </Application>
 

@@ -1,0 +1,2 @@
+Configure Windows and Linux builds to use these real shared folders.
+Do not use symlinks; they are unreliable across operating systems and removable-drive filesystems.

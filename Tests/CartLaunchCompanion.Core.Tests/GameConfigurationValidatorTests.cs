@@ -45,6 +45,28 @@ public sealed class GameConfigurationValidatorTests
         Assert.True(result.IsValid);
     }
 
+    [Fact]
+    public void Validate_RejectsEnabledRetroAchievementsWithoutGameId()
+    {
+        var configuration = CreateValidSteamConfiguration();
+        configuration.Achievements.RetroAchievementsEnabled = true;
+
+        var result = _validator.Validate(configuration);
+
+        Assert.Contains(result.Errors, issue => issue.Path == "achievements.retroAchievementsGameId");
+    }
+
+    [Fact]
+    public void Validate_AcceptsMatchedRetroAchievementsGame()
+    {
+        var configuration = CreateValidSteamConfiguration();
+        configuration.Achievements.RetroAchievementsEnabled = true;
+        configuration.Achievements.RetroAchievementsGameId = 14402;
+        configuration.Achievements.RetroAchievementsRomHash = "8bd4a97783cda077c342173df0a9b51e";
+
+        Assert.True(_validator.Validate(configuration).IsValid);
+    }
+
     private static GameConfiguration CreateValidSteamConfiguration()
         => new()
         {

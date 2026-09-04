@@ -1,0 +1,22 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CartLaunchCompanion.Configurator.ExitConfirmationDialog"
+        Title="Exit Game Configurator"
+        Width="560" SizeToContent="Height"
+        CanResize="False" WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+  <Grid Margin="28" RowDefinitions="Auto,18,Auto">
+    <StackPanel Spacing="8">
+      <TextBlock Text="Exit Game Configurator?" FontSize="26" FontWeight="Bold"/>
+      <TextBlock Text="Would you like to save the current game configuration before exiting?"
+                 Classes="help" FontSize="14" TextWrapping="Wrap"/>
+    </StackPanel>
+    <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto,10,Auto" ColumnSpacing="10">
+      <Button Content="Cancel" Click="CancelClicked" MinWidth="100"/>
+      <Button Grid.Column="2" Content="Exit without saving" Click="ExitWithoutSavingClicked"
+              Classes="danger" MinWidth="160"/>
+      <Button Grid.Column="4" Content="Save and exit" Click="SaveAndExitClicked"
+              Classes="primary" MinWidth="150"/>
+    </Grid>
+  </Grid>
+</Window>

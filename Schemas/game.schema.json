@@ -28,6 +28,9 @@
     "artwork": {
       "$ref": "#/$defs/artwork"
     },
+    "achievements": {
+      "$ref": "#/$defs/achievements"
+    },
     "launch": {
       "$ref": "#/$defs/launch"
     },
@@ -181,6 +184,35 @@
         },
         "trailerUrl": {
           "type": "string"
+        }
+      }
+    },
+    "achievements": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "retroAchievementsEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Shows RetroAchievements progress for this emulated game when the local user has configured an account."
+        },
+        "retroAchievementsGameId": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Public RetroAchievements game ID. This is not a credential."
+        },
+        "retroAchievementsRomHash": {
+          "type": "string",
+          "pattern": "^$|^[a-fA-F0-9]{32}$",
+          "description": "Public 32-character RetroAchievements ROM hash used to verify the exact game revision."
+        },
+        "retroAchievementsTitle": {
+          "type": "string",
+          "description": "Title returned by RetroAchievements when the ROM was matched."
+        },
+        "retroAchievementsConsole": {
+          "type": "string",
+          "description": "System returned by RetroAchievements when the ROM was matched."
         }
       }
     },

@@ -22,6 +22,7 @@ public sealed partial class MainWindow : Window
     private readonly HostLauncherDetectionService _hostLauncherDetector = new();
     private readonly EmulatorLibraryService _emulatorLibrary = new();
     private readonly ProtonRuntimeDiscoveryService _protonRuntimeDiscovery = new();
+    private readonly RetroAchievementsRomHasher _retroAchievementsHasher = new();
     private readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
     private readonly HttpClient _downloadHttpClient = new() { Timeout = TimeSpan.FromMinutes(30) };
     private string? _gameJsonPath;
@@ -32,6 +33,11 @@ public sealed partial class MainWindow : Window
     private bool _usesSuggestedGameFolder;
     private bool _isNewConfiguration = true;
     private bool _applyingLinuxSuggestion;
+    private bool _allowClose;
+    private bool _exitPromptOpen;
+    private bool _versionGroupFollowsName = true;
+    private bool _synchronizingVersionGroup;
+    private int _busyDepth;
 
     public MainWindow()
     {
@@ -50,6 +56,8 @@ public sealed partial class MainWindow : Window
             _downloadHttpClient.Dispose();
         };
         Opened += StartupOpened;
+        Closing += MainWindowClosing;
+        SizeChanged += (_, _) => UpdateResponsiveNavigation();
     }
 
     private async void StartupOpened(object? sender, EventArgs e)
@@ -57,37 +65,98 @@ public sealed partial class MainWindow : Window
         if (_startupSetupShown) return;
         _startupSetupShown = true;
         FitWindowToWorkingArea();
-        _portablePaths = new PortablePathService().Discover(AppContext.BaseDirectory);
-        RefreshPlatformSuggestions();
-        RefreshLauncherSuggestions();
-        RefreshInstalledEmulators();
-        RefreshProtonVersions();
-        SuggestGameConfigurationFolder("New Game");
-        _ = await MetadataProviderSettings.LoadAsync(_portablePaths);
-        await LoadCollectionBrandingAsync();
-        await LoadExistingGamesAsync();
-        await LoadCollectionOrganizerAsync();
-        var settings = await ConfiguratorSettings.LoadAsync();
-        if (!settings.SetupCompleted)
-            await new ApiSetupDialog(settings).ShowDialog<bool>(this);
+        UpdateResponsiveNavigation();
+        UpdateNavigationButtons();
+        using var busy = BeginBusy("Loading this cart and its saved games…");
+        try
+        {
+            _portablePaths = new PortablePathService().Discover(AppContext.BaseDirectory);
+            SuggestGameConfigurationFolder("New Game");
+            await Task.WhenAll(
+                RefreshPlatformSuggestionsAsync(),
+                RefreshLauncherSuggestionsAsync(),
+                RefreshInstalledEmulatorsAsync(),
+                RefreshProtonVersionsAsync());
+            _ = await MetadataProviderSettings.LoadAsync(_portablePaths);
+            await LoadCollectionBrandingAsync();
+            await LoadExistingGamesAsync();
+            await LoadCollectionOrganizerAsync();
+            var settings = await ConfiguratorSettings.LoadAsync();
+            if (!settings.SetupCompleted)
+                await new ApiSetupDialog(settings).ShowDialog<bool>(this);
+        }
+        catch (Exception ex)
+        {
+            _viewModel.Status = $"The Configurator opened, but some cart information could not be loaded: {ex.Message}";
+        }
     }
 
     private void FitWindowToWorkingArea()
     {
-        var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
-        if (screen is null)
-            return;
+        // Let the operating system own maximized bounds. Applying a second,
+        // smaller MaxHeight here left a visible strip above the taskbar on
+        // high-DPI displays.
+        if (WindowState != WindowState.FullScreen)
+            WindowState = WindowState.Maximized;
+    }
 
-        // Screen bounds are physical pixels while Avalonia window dimensions
-        // are device-independent units. Account for Windows display scaling and
-        // leave a small margin so the title bar and footer remain reachable.
-        var scaling = Math.Max(1d, screen.Scaling);
-        var availableWidth = Math.Max(MinWidth, (screen.WorkingArea.Width / scaling) - 24d);
-        var availableHeight = Math.Max(MinHeight, (screen.WorkingArea.Height / scaling) - 24d);
-        MaxWidth = availableWidth;
-        MaxHeight = availableHeight;
-        Width = Math.Min(1280d, availableWidth);
-        Height = Math.Min(820d, availableHeight);
+    private void UpdateResponsiveNavigation()
+    {
+        if (EditorTabs is null)
+            return;
+        var compact = Bounds.Width < 980;
+        EditorTabs.Classes.Set("compact", compact);
+        GameDetailsNavLabel.IsVisible = !compact;
+        ArtworkNavLabel.IsVisible = !compact;
+        WindowsNavLabel.IsVisible = !compact;
+        LinuxNavLabel.IsVisible = !compact;
+        CollectionNavLabel.IsVisible = !compact;
+        BehaviorNavLabel.IsVisible = !compact;
+        ReviewNavLabel.IsVisible = !compact;
+    }
+
+    private void BackPageClicked(object? sender, RoutedEventArgs e)
+    {
+        if (EditorTabs.SelectedIndex > 0)
+            EditorTabs.SelectedIndex--;
+    }
+
+    private void NextPageClicked(object? sender, RoutedEventArgs e)
+    {
+        if (EditorTabs.SelectedIndex < EditorTabs.ItemCount - 1)
+            EditorTabs.SelectedIndex++;
+    }
+
+    private void UpdateNavigationButtons()
+    {
+        if (BackButton is null || NextButton is null || SaveButton is null)
+            return;
+        var index = Math.Max(0, EditorTabs.SelectedIndex);
+        var onReview = index == EditorTabs.ItemCount - 1;
+        BackButton.IsEnabled = index > 0;
+        NextButton.IsVisible = !onReview;
+        SaveButton.IsVisible = onReview;
+    }
+
+    private IDisposable BeginBusy(string message)
+    {
+        _busyDepth++;
+        _viewModel.BusyMessage = message;
+        _viewModel.IsBusy = true;
+        return new BusyLease(this);
+    }
+
+    private void EndBusy()
+    {
+        _busyDepth = Math.Max(0, _busyDepth - 1);
+        if (_busyDepth == 0)
+            _viewModel.IsBusy = false;
+    }
+
+    private sealed class BusyLease(MainWindow owner) : IDisposable
+    {
+        private MainWindow? _owner = owner;
+        public void Dispose() => Interlocked.Exchange(ref _owner, null)?.EndBusy();
     }
 
     private async void SettingsClicked(object? sender, RoutedEventArgs e)
@@ -106,9 +175,12 @@ public sealed partial class MainWindow : Window
         var match = await dialog.ShowDialog<SteamCatalogMatch?>(this);
         if (match is null) return;
 
+        using var busy = BeginBusy($"Loading metadata for {match.Name}…");
         _viewModel.Status = $"Loading metadata for {match.Name}…";
         var configuration = _viewModel.Configuration;
         configuration.Game.Name = match.Name;
+        if (_versionGroupFollowsName)
+            configuration.Game.VersionGroup = match.Name;
         if (match.AppId > 0)
             configuration.Artwork.SteamMetadataId = match.AppId.ToString();
         if (match.SteamGridDbGameId is not null)
@@ -124,8 +196,8 @@ public sealed partial class MainWindow : Window
 
         // Apply the selected match to the form before optional network enrichment.
         // Otherwise a metadata timeout leaves the updated model hidden behind stale bindings.
-        _viewModel.Configuration = GameConfigurationJson.Deserialize(
-            GameConfigurationJson.Serialize(configuration));
+        ReplaceConfiguration(GameConfigurationJson.Deserialize(
+            GameConfigurationJson.Serialize(configuration)));
         configuration = _viewModel.Configuration;
         SuggestGameConfigurationFolder(match.Name);
         _viewModel.RefreshPreview();
@@ -203,8 +275,47 @@ public sealed partial class MainWindow : Window
         _usesSuggestedGameFolder = false;
         _isNewConfiguration = true;
         _viewModel.SelectedExistingGame = null;
-        _viewModel.Reset();
+        _versionGroupFollowsName = true;
+        _synchronizingVersionGroup = true;
+        try { _viewModel.Reset(); }
+        finally { _synchronizingVersionGroup = false; }
         SuggestGameConfigurationFolder("New Game");
+    }
+
+    private void GameNameChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (_synchronizingVersionGroup || !_versionGroupFollowsName || sender is not TextBox nameBox)
+            return;
+
+        _synchronizingVersionGroup = true;
+        try
+        {
+            var name = nameBox.Text?.Trim() ?? "";
+            _viewModel.Configuration.Game.VersionGroup = name;
+            VersionGroupBox.Text = name;
+        }
+        finally
+        {
+            _synchronizingVersionGroup = false;
+        }
+    }
+
+    private void VersionGroupChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (_synchronizingVersionGroup || sender is not TextBox groupBox)
+            return;
+
+        _versionGroupFollowsName = string.Equals(
+            groupBox.Text?.Trim(),
+            GameNameBox.Text?.Trim(),
+            StringComparison.Ordinal);
+    }
+
+    private void ReplaceConfiguration(GameConfiguration configuration)
+    {
+        _synchronizingVersionGroup = true;
+        try { _viewModel.Configuration = configuration; }
+        finally { _synchronizingVersionGroup = false; }
     }
 
     private async void LauncherIdGuideClicked(object? sender, RoutedEventArgs e) =>
@@ -222,7 +333,9 @@ public sealed partial class MainWindow : Window
 
         var launcher = configuration.Launch.Windows.Launcher;
         _viewModel.Status = $"Searching this computer for {launcher} matches for {gameName}…";
-        var matches = await Task.Run(() => new InstalledLauncherDiscoveryService().Discover(gameName, launcher));
+        IReadOnlyList<InstalledLauncherMatch> matches;
+        using (BeginBusy($"Searching installed {launcher} library data…"))
+            matches = await Task.Run(() => new InstalledLauncherDiscoveryService().Discover(gameName, launcher));
         if (matches.Count == 0)
         {
             _viewModel.Status = $"No installed {launcher} match was found for {gameName}. Install or recognize the exact edition in its launcher, create a desktop shortcut when supported, then search again.";
@@ -302,7 +415,8 @@ public sealed partial class MainWindow : Window
             return;
         }
         await new EmulatorLibraryDialog(mediaRoot).ShowDialog<bool>(this);
-        RefreshInstalledEmulators();
+        using var busy = BeginBusy("Refreshing the portable emulator library…");
+        await RefreshInstalledEmulatorsAsync();
     }
 
     private void ApplyInstalledEmulatorClicked(object? sender, RoutedEventArgs e)
@@ -338,13 +452,16 @@ public sealed partial class MainWindow : Window
     private void FillLinuxFromWindowsClicked(object? sender, RoutedEventArgs e) =>
         ApplyLinuxSuggestionFromWindows();
 
-    private void RefreshProtonVersionsClicked(object? sender, RoutedEventArgs e) =>
-        RefreshProtonVersions();
+    private async void RefreshProtonVersionsClicked(object? sender, RoutedEventArgs e)
+    {
+        using var busy = BeginBusy("Checking installed Proton versions…");
+        await RefreshProtonVersionsAsync();
+    }
 
-    private void RefreshProtonVersions()
+    private async Task RefreshProtonVersionsAsync()
     {
         var selected = _viewModel.Configuration.Launch.Linux.CompatibilityTool;
-        var inventory = _protonRuntimeDiscovery.Discover();
+        var inventory = await Task.Run(_protonRuntimeDiscovery.Discover);
         _viewModel.ProtonSuggestions.Clear();
         _viewModel.ProtonSuggestions.Add("UMU-Proton");
         _viewModel.ProtonSuggestions.Add("GE-Proton");
@@ -433,33 +550,40 @@ public sealed partial class MainWindow : Window
         return true;
     }
 
-    private void RefreshInstalledEmulators()
+    private async Task RefreshInstalledEmulatorsAsync()
     {
         var selectedId = _viewModel.SelectedInstalledEmulator?.Definition.Id;
-        _viewModel.InstalledEmulators.Clear();
         var mediaRoot = GetMediaRoot();
-        if (mediaRoot is not null)
-            foreach (var emulator in _emulatorLibrary.Scan(mediaRoot)) _viewModel.InstalledEmulators.Add(emulator);
+        var installed = mediaRoot is null
+            ? []
+            : await Task.Run(() => _emulatorLibrary.Scan(mediaRoot).ToArray());
+        _viewModel.InstalledEmulators.Clear();
+        foreach (var emulator in installed)
+            _viewModel.InstalledEmulators.Add(emulator);
         _viewModel.SelectedInstalledEmulator = _viewModel.InstalledEmulators.FirstOrDefault(item => item.Definition.Id == selectedId)
             ?? _viewModel.InstalledEmulators.FirstOrDefault();
         _viewModel.NotifyInstalledEmulatorsChanged();
     }
 
-    private void RefreshPlatformSuggestions()
+    private async Task RefreshPlatformSuggestionsAsync()
     {
-        _viewModel.PlatformSuggestions.Clear();
         if (_portablePaths is null) return;
         var developmentAssets = Path.Combine(_portablePaths.Root, "Assets");
-        foreach (var platform in PlatformAssetCatalog.GetAvailablePlatformNames(_portablePaths.Assets, developmentAssets))
+        var platforms = await Task.Run(() =>
+            PlatformAssetCatalog.GetAvailablePlatformNames(_portablePaths.Assets, developmentAssets).ToArray());
+        _viewModel.PlatformSuggestions.Clear();
+        foreach (var platform in platforms)
             _viewModel.PlatformSuggestions.Add(platform);
     }
 
-    private void RefreshLauncherSuggestions()
+    private async Task RefreshLauncherSuggestionsAsync()
     {
-        _viewModel.WindowsLauncherKinds.Clear();
         if (_portablePaths is null) return;
         var developmentAssets = Path.Combine(_portablePaths.Root, "Assets");
-        foreach (var launcher in LauncherAssetCatalog.GetAvailableWindowsLaunchers(_portablePaths.Assets, developmentAssets))
+        var launchers = await Task.Run(() =>
+            LauncherAssetCatalog.GetAvailableWindowsLaunchers(_portablePaths.Assets, developmentAssets).ToArray());
+        _viewModel.WindowsLauncherKinds.Clear();
+        foreach (var launcher in launchers)
             _viewModel.WindowsLauncherKinds.Add(launcher);
 
         var selected = _viewModel.Configuration.Launch.Windows.Launcher;
@@ -498,7 +622,7 @@ public sealed partial class MainWindow : Window
         _usesSuggestedGameFolder = false;
         _isNewConfiguration = true;
         _viewModel.SelectedExistingGame = null;
-        _viewModel.Configuration = clone;
+        ReplaceConfiguration(clone);
         SuggestGameConfigurationFolder(clone.Game.Name);
         _viewModel.RefreshPreview();
         _viewModel.Status = "New platform copied from the previous game. Enter its platform label and update any platform-specific launch settings before saving.";
@@ -740,6 +864,8 @@ public sealed partial class MainWindow : Window
         _viewModel.Configuration = GameConfigurationJson.Deserialize(
             GameConfigurationJson.Serialize(configuration));
         _viewModel.RefreshPreview();
+        if (isRom)
+            await MatchRetroAchievementsAsync(StorageItemPathResolver.Resolve(files[0].Path));
         if (downloadedRetroArchCore is not null)
         {
             var validation = _validator.Validate(_viewModel.Configuration);
@@ -759,6 +885,108 @@ public sealed partial class MainWindow : Window
             _viewModel.Status = emulator == KnownEmulator.Unknown
                 ? _viewModel.PathStatus + " Enter this emulator's launch arguments manually."
                 : $"{_viewModel.PathStatus} Detected {EmulatorLaunchPresetCatalog.DisplayName(emulator)} and applied its default launch arguments where the field was empty.";
+        }
+    }
+
+    private async void MatchRetroAchievementsClicked(object? sender, RoutedEventArgs e)
+    {
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Choose the exact ROM revision to match with RetroAchievements",
+            AllowMultiple = false,
+            FileTypeFilter = [new FilePickerFileType("ROMs and game images") { Patterns = ["*.nes", "*.fds", "*.sfc", "*.smc", "*.gb", "*.gbc", "*.gba", "*.n64", "*.v64", "*.z64", "*.nds", "*.gen", "*.md", "*.sms", "*.gg", "*.a26", "*.a78", "*.lnx", "*.zip", "*.chd", "*.iso", "*.cso", "*.rvz", "*.pbp", "*"] }]
+        });
+        if (files.Count == 0) return;
+        await MatchRetroAchievementsAsync(StorageItemPathResolver.Resolve(files[0].Path));
+    }
+
+    private async void MatchRetroAchievementsHashClicked(object? sender, RoutedEventArgs e)
+    {
+        var hash = _viewModel.Configuration.Achievements.RetroAchievementsRomHash.Trim();
+        if (hash.Length != 32 || hash.Any(character => !Uri.IsHexDigit(character)))
+        {
+            _viewModel.RetroAchievementsStatus = "Paste the exact 32-character RetroAchievements hash shown by the emulator.";
+            return;
+        }
+        await FindRetroAchievementsMatchAsync(hash.ToLowerInvariant(), "emulator-provided RA hash");
+    }
+
+    private async Task MatchRetroAchievementsAsync(string romPath)
+    {
+        var platform = _viewModel.Configuration.Game.PlatformLabel.Trim();
+        if (string.IsNullOrWhiteSpace(platform))
+        {
+            _viewModel.RetroAchievementsStatus = "Choose this game's platform first so CLC can calculate the correct RetroAchievements hash.";
+            return;
+        }
+        using var busy = BeginBusy("Identifying this ROM with RetroAchievements…");
+        try
+        {
+            var hash = await _retroAchievementsHasher.HashAsync(romPath, platform);
+            if (!hash.Supported)
+            {
+                _viewModel.RetroAchievementsStatus = hash.Message;
+                return;
+            }
+            await FindRetroAchievementsMatchAsync(hash.Hash, hash.Method);
+        }
+        catch (Exception ex)
+        {
+            _viewModel.RetroAchievementsStatus = $"This ROM could not be hashed: {ex.Message}";
+        }
+    }
+
+    private async Task FindRetroAchievementsMatchAsync(string romHash, string hashMethod)
+    {
+        var platform = _viewModel.Configuration.Game.PlatformLabel.Trim();
+        if (string.IsNullOrWhiteSpace(platform))
+        {
+            _viewModel.RetroAchievementsStatus = "Choose this game's platform first so CLC can search the correct RetroAchievements system.";
+            return;
+        }
+
+        var settings = await ConfiguratorSettings.LoadAsync();
+        if (string.IsNullOrWhiteSpace(settings.RetroAchievementsUserName) || string.IsNullOrWhiteSpace(settings.RetroAchievementsWebApiKey))
+        {
+            _viewModel.RetroAchievementsStatus = "Add your RetroAchievements username and Web API key in Settings before matching this ROM.";
+            return;
+        }
+
+        using var busy = BeginBusy("Matching this ROM with RetroAchievements…");
+        try
+        {
+            var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "CartLaunchCompanion", "Configurator", "RetroAchievementsCache");
+            var match = await new RetroAchievementsClient(_httpClient).FindGameByHashAsync(
+                platform, romHash, settings.RetroAchievementsWebApiKey, cache);
+            var achievements = _viewModel.Configuration.Achievements;
+            achievements.RetroAchievementsRomHash = romHash;
+            if (match is null)
+            {
+                achievements.RetroAchievementsGameId = null;
+                achievements.RetroAchievementsTitle = "";
+                achievements.RetroAchievementsConsole = "";
+                achievements.RetroAchievementsEnabled = false;
+                _viewModel.RetroAchievementsStatus = $"No supported {platform} achievement set matched this {hashMethod} hash. The ROM revision may not be supported.";
+            }
+            else
+            {
+                achievements.RetroAchievementsGameId = match.GameId;
+                achievements.RetroAchievementsTitle = match.Title;
+                achievements.RetroAchievementsConsole = match.ConsoleName;
+                achievements.RetroAchievementsEnabled = true;
+                _viewModel.RetroAchievementsStatus = $"✓ Matched {match.Title} · {match.ConsoleName} · {match.AchievementCount} achievements · {match.Points} points";
+            }
+            _viewModel.Configuration = GameConfigurationJson.Deserialize(GameConfigurationJson.Serialize(_viewModel.Configuration));
+            _viewModel.RefreshPreview();
+        }
+        catch (HttpRequestException ex)
+        {
+            _viewModel.RetroAchievementsStatus = $"RetroAchievements could not be reached or rejected the saved key: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            _viewModel.RetroAchievementsStatus = $"This ROM could not be matched: {ex.Message}";
         }
     }
 
@@ -917,13 +1145,16 @@ public sealed partial class MainWindow : Window
         _viewModel.Status = "JSON preview refreshed.";
     }
 
-    private async void SaveClicked(object? sender, RoutedEventArgs e)
+    private async void SaveClicked(object? sender, RoutedEventArgs e) =>
+        await SaveConfigurationAsync();
+
+    private async Task<bool> SaveConfigurationAsync()
     {
         var validation = _validator.Validate(_viewModel.Configuration);
         if (!validation.IsValid)
         {
             ShowErrors(validation);
-            return;
+            return false;
         }
 
         if (string.IsNullOrWhiteSpace(_gameJsonPath))
@@ -937,7 +1168,7 @@ public sealed partial class MainWindow : Window
             if (folders.Count == 0)
             {
                 _viewModel.Status = "Save cancelled. Choose a game folder when you are ready.";
-                return;
+                return false;
             }
 
             SetGameFolder(StorageItemPathResolver.Resolve(folders[0].Path));
@@ -958,11 +1189,50 @@ public sealed partial class MainWindow : Window
             _viewModel.RefreshPreview();
             _viewModel.Status = "Saved successfully. This game folder is ready for Cart Launch Companion.";
             _viewModel.HasErrors = false;
+            return true;
         }
         catch (Exception ex)
         {
             _viewModel.Status = $"Could not save: {ex.Message}";
             _viewModel.HasErrors = true;
+            return false;
+        }
+    }
+
+    private async void ExitClicked(object? sender, RoutedEventArgs e) =>
+        await RequestExitAsync();
+
+    private async void MainWindowClosing(object? sender, WindowClosingEventArgs e)
+    {
+        if (_allowClose)
+            return;
+
+        e.Cancel = true;
+        await RequestExitAsync();
+    }
+
+    private async Task RequestExitAsync()
+    {
+        if (_exitPromptOpen || _busyDepth > 0)
+            return;
+
+        _exitPromptOpen = true;
+        try
+        {
+            var choice = await new ExitConfirmationDialog()
+                .ShowDialog<ConfiguratorExitChoice>(this);
+            if (choice == ConfiguratorExitChoice.Cancel)
+                return;
+            if (choice == ConfiguratorExitChoice.SaveAndExit &&
+                !await SaveConfigurationAsync())
+                return;
+
+            _allowClose = true;
+            Close();
+        }
+        finally
+        {
+            _exitPromptOpen = false;
         }
     }
 
@@ -1252,7 +1522,12 @@ public sealed partial class MainWindow : Window
 
     private async Task LoadGameConfigurationAsync(string path)
     {
-        _viewModel.Configuration = await GameConfigurationJson.LoadAsync(path);
+        var configuration = await GameConfigurationJson.LoadAsync(path);
+        _versionGroupFollowsName = string.IsNullOrWhiteSpace(configuration.Game.VersionGroup) ||
+            string.Equals(configuration.Game.VersionGroup.Trim(), configuration.Game.Name.Trim(), StringComparison.Ordinal);
+        if (_versionGroupFollowsName)
+            configuration.Game.VersionGroup = configuration.Game.Name.Trim();
+        ReplaceConfiguration(configuration);
         _gameJsonPath = path;
         _usesSuggestedGameFolder = false;
         _isNewConfiguration = false;
@@ -1328,6 +1603,7 @@ public sealed partial class MainWindow : Window
             return;
         }
 
+        using var busy = BeginBusy($"Refreshing metadata and artwork for {_viewModel.Configuration.Game.Name}…");
         var gameFolder = Path.GetDirectoryName(_gameJsonPath)!;
         var working = GameConfigurationJson.Deserialize(GameConfigurationJson.Serialize(_viewModel.Configuration));
         working.Artwork.DownloadMissingArtwork = true;
@@ -1508,6 +1784,7 @@ public sealed partial class MainWindow : Window
             return;
         }
 
+        using var busy = BeginBusy("Downloading and checking artwork and media…");
         var downloadButton = sender as Button;
         if (downloadButton is not null)
             downloadButton.IsEnabled = false;
@@ -1675,6 +1952,7 @@ public sealed partial class MainWindow : Window
 
     private async void EditorTabsChanged(object? sender, SelectionChangedEventArgs e)
     {
+        UpdateNavigationButtons();
         if (sender is TabControl { SelectedIndex: 6 })
             await RunArtworkAuditAsync();
     }
@@ -1684,6 +1962,7 @@ public sealed partial class MainWindow : Window
 
     private async Task RunArtworkAuditAsync()
     {
+        using var busy = BeginBusy("Checking artwork for every saved game…");
         _viewModel.ArtworkAuditResults.Clear();
         if (_portablePaths is null || !Directory.Exists(_portablePaths.Games))
         {

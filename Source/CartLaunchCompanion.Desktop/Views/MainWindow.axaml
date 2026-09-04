@@ -10,6 +10,7 @@
         d:DesignHeight="720"
         x:Class="CartLaunchCompanion.Desktop.Views.MainWindow"
         x:DataType="vm:MainViewModel"
+        ExtendClientAreaToDecorationsHint="True"
         Width="1280"
         Height="720"
         MinWidth="960"

@@ -26,6 +26,7 @@ public sealed class GameConfigurationValidator
         }
 
         ValidateBehavior(configuration.Behavior, result);
+        ValidateAchievements(configuration.Achievements, result);
         ValidateWindows(configuration.Launch.Windows, result);
         ValidateLinux(configuration.Launch.Linux, result);
 
@@ -39,6 +40,19 @@ public sealed class GameConfigurationValidator
         }
 
         return result;
+    }
+
+    private static void ValidateAchievements(
+        AchievementsConfiguration achievements,
+        ConfigurationValidationResult result)
+    {
+        if (achievements.RetroAchievementsEnabled && achievements.RetroAchievementsGameId is null or < 1)
+            AddError(result, "achievements.retroAchievementsGameId", "Enabled RetroAchievements display requires a valid game ID.");
+
+        if (!string.IsNullOrWhiteSpace(achievements.RetroAchievementsRomHash) &&
+            (achievements.RetroAchievementsRomHash.Length != 32 ||
+             achievements.RetroAchievementsRomHash.Any(character => !Uri.IsHexDigit(character))))
+            AddError(result, "achievements.retroAchievementsRomHash", "The RetroAchievements ROM hash must contain exactly 32 hexadecimal characters.");
     }
 
     private static void ValidateBehavior(

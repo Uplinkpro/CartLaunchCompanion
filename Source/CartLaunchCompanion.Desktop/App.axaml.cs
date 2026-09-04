@@ -101,7 +101,9 @@ public partial class App : Application
                         mainWindow.Hide();
                     }
                 },
-                VlcNativeTrailerControl.PrepareRuntimeAsync);
+                VlcNativeTrailerControl.PrepareRuntimeAsync,
+                new RetroAchievementsClient(metadataHttpClient),
+                metadataHttpClient);
 
             mainWindow = new MainWindow
             {

@@ -32,6 +32,9 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     private InstalledEmulatorOption? _selectedInstalledEmulator;
     private string _newShelfName = "";
     private string _collectionLayoutStatus = "Choose a shelf for each primary game, adjust its order, then save the layout.";
+    private bool _isBusy;
+    private string _busyMessage = "Working…";
+    private string _retroAchievementsStatus = "Locate a supported ROM to match it automatically, or enter a RetroAchievements game ID manually.";
 
     public GameConfiguration Configuration { get => _configuration; set { _configuration = value; Changed(); Changed(nameof(JsonPreview)); Changed(nameof(WindowsRequiredLauncher)); Changed(nameof(LinuxRequiredLauncher)); } }
     public string FilePath { get => _filePath; set { _filePath = value; Changed(); } }
@@ -117,6 +120,9 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     }
     public string NewShelfName { get => _newShelfName; set { _newShelfName = value; Changed(); } }
     public string CollectionLayoutStatus { get => _collectionLayoutStatus; set { _collectionLayoutStatus = value; Changed(); } }
+    public bool IsBusy { get => _isBusy; set { _isBusy = value; Changed(); } }
+    public string BusyMessage { get => _busyMessage; set { _busyMessage = value; Changed(); } }
+    public string RetroAchievementsStatus { get => _retroAchievementsStatus; set { _retroAchievementsStatus = value; Changed(); } }
     public bool HasExistingGames => ExistingGames.Count > 0;
     public LauncherKind[] LinuxLauncherKinds { get; } =
     [
@@ -137,7 +143,7 @@ public sealed class EditorViewModel : INotifyPropertyChanged
     public void NotifyExistingGamesChanged() => Changed(nameof(HasExistingGames));
     public void NotifyInstalledEmulatorsChanged() => Changed(nameof(HasInstalledEmulators));
     public void RefreshPreview() => JsonPreview = GameConfigurationJson.Serialize(Configuration);
-    public void Reset() { Configuration = CreateDefault(); FilePath = "No CLC game folder selected (normally CartLaunchCompanion/Games/Game Name)"; Status = "New configuration ready. Find the game on Steam to fill details and select its CLC folder automatically."; PathStatus = "Choose a CLC configuration folder inside CartLaunchCompanion/Games—not the Steam or Rockstar installation folder."; ArtworkPreview = null; CoverPreview = null; HeroPreview = null; BackgroundPreview = null; LogoPreview = null; IconPreview = null; ArtworkPreviewTitle = "No artwork selected yet"; RefreshPreview(); }
+    public void Reset() { Configuration = CreateDefault(); FilePath = "No CLC game folder selected (normally CartLaunchCompanion/Games/Game Name)"; Status = "New configuration ready. Find the game on Steam to fill details and select its CLC folder automatically."; PathStatus = "Choose a CLC configuration folder inside CartLaunchCompanion/Games—not the Steam or Rockstar installation folder."; RetroAchievementsStatus = "Locate a supported ROM to match it automatically, or enter a RetroAchievements game ID manually."; ArtworkPreview = null; CoverPreview = null; HeroPreview = null; BackgroundPreview = null; LogoPreview = null; IconPreview = null; ArtworkPreviewTitle = "No artwork selected yet"; RefreshPreview(); }
     private static GameConfiguration CreateDefault() { var c = new GameConfiguration(); c.Game.Id = GameIdentity.Create(); c.Launch.Linux.Enabled = false; return c; }
     private void Changed([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }

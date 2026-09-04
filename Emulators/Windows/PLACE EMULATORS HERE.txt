@@ -1,0 +1,2 @@
+Place portable Windows emulator files in the matching folder.
+Use portable builds rather than installers where available.

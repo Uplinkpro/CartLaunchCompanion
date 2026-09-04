@@ -14,6 +14,12 @@ public sealed class GameConfigurationJsonTests
                 Name = "Portal 2",
                 SteamDeckCompatibility = SteamDeckCompatibility.Verified
             },
+            Achievements =
+            {
+                RetroAchievementsEnabled = true,
+                RetroAchievementsGameId = 14402,
+                RetroAchievementsRomHash = "8bd4a97783cda077c342173df0a9b51e"
+            },
             Launch =
             {
                 Windows =
@@ -36,6 +42,7 @@ public sealed class GameConfigurationJsonTests
         Assert.Contains("\"preferredPlatform\": \"automatic\"", json);
         Assert.Contains("\"launcher\": \"steam\"", json);
         Assert.Contains("\"steamDeckCompatibility\": \"verified\"", json);
+        Assert.Contains("\"retroAchievementsGameId\": 14402", json);
         Assert.DoesNotContain("\"collection\": {", json);
         Assert.DoesNotContain("\"requiredLauncher\"", json);
     }

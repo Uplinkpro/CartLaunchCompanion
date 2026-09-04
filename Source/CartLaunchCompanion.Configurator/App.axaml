@@ -11,8 +11,18 @@
     <Style Selector="TextBlock.section"><Setter Property="FontSize" Value="20"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
     <Style Selector="TextBlock.label"><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Margin" Value="0,0,0,4"/></Style>
     <Style Selector="TextBlock.help"><Setter Property="Foreground" Value="#AAB2BE"/><Setter Property="FontSize" Value="12"/><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="Margin" Value="0,4,0,0"/></Style>
+    <Style Selector="WrapPanel.url-example"><Setter Property="Margin" Value="0,7,0,0"/></Style>
+    <Style Selector="WrapPanel.url-example TextBlock"><Setter Property="Foreground" Value="#AAB2BE"/><Setter Property="FontSize" Value="12"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
+    <Style Selector="Border.url-id"><Setter Property="Background" Value="#47305E"/><Setter Property="BorderBrush" Value="#C979F2"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="4"/><Setter Property="Padding" Value="4,1"/></Style>
+    <Style Selector="Border.url-id TextBlock"><Setter Property="Foreground" Value="#F3D6FF"/><Setter Property="FontWeight" Value="Bold"/></Style>
     <Style Selector="Border.required"><Setter Property="Background" Value="#173F35"/><Setter Property="CornerRadius" Value="10"/><Setter Property="Padding" Value="8,3"/></Style>
     <Style Selector="Border.optional"><Setter Property="Background" Value="#26313E"/><Setter Property="CornerRadius" Value="10"/><Setter Property="Padding" Value="8,3"/></Style>
     <Style Selector="Border.advanced"><Setter Property="Background" Value="#382C48"/><Setter Property="CornerRadius" Value="10"/><Setter Property="Padding" Value="8,3"/></Style>
+    <Style Selector="Button.primary"><Setter Property="Background" Value="#2F80ED"/><Setter Property="Foreground" Value="White"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
+    <Style Selector="Button.primary:pointerover"><Setter Property="Background" Value="#4592F4"/></Style>
+    <Style Selector="Button.primary:pressed"><Setter Property="Background" Value="#2469C6"/></Style>
+    <Style Selector="Button.danger"><Setter Property="Background" Value="#3A171B"/><Setter Property="BorderBrush" Value="#88434B"/></Style>
+    <Style Selector="Button.danger:pointerover"><Setter Property="Background" Value="#572027"/><Setter Property="BorderBrush" Value="#D75A66"/></Style>
+    <Style Selector="Button.danger:pressed"><Setter Property="Background" Value="#2B1014"/></Style>
   </Application.Styles>
 </Application>

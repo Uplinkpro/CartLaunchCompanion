@@ -1,0 +1,2 @@
+Place portable Linux emulator files in the matching folder.
+Use official x86_64 AppImages where available.
