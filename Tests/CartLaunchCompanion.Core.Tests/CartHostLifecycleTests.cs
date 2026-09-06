@@ -7,6 +7,29 @@ public sealed class CartHostLifecycleTests : IDisposable
     private readonly string _root = Path.Combine(Path.GetTempPath(), "CLC-HostLifecycle-" + Guid.NewGuid().ToString("N"));
 
     [Fact]
+    public async Task InstallRejectsRunningSourceAsDestination()
+    {
+        var runtime = Path.Combine(_root, "self-install");
+        var data = Path.Combine(_root, "data");
+        Directory.CreateDirectory(runtime);
+        var executable = OperatingSystem.IsWindows() ? "CLC-CartMonitor.exe" : "CLC-CartMonitor";
+        await File.WriteAllTextAsync(Path.Combine(runtime, executable), "host");
+        var plan = new CartHostInstallationPlan(
+            runtime,
+            data,
+            Path.Combine(runtime, executable),
+            Path.Combine(_root, "startup"),
+            Path.Combine(data, "settings.json"),
+            Path.Combine(data, "trusted-carts.json"),
+            Path.Combine(data, "Logs"));
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            new CartHostInstallationService().InstallFilesAsync(runtime, plan));
+
+        Assert.Contains("cannot repair its own running files", error.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task Revocation_ImmediatelyBlocksConnectedCartPreparationAndAutomaticLaunch()
     {
         var media = await CreateRuntimeCartAsync();

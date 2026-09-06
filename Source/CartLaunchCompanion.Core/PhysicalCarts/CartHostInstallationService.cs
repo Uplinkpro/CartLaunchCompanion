@@ -12,8 +12,11 @@ public sealed class CartHostInstallationService
         if (!Directory.Exists(source)) throw new DirectoryNotFoundException("The published CLC-Cart Monitor folder was not found.");
         var executable = Path.Combine(source, Path.GetFileName(plan.ExecutablePath));
         if (!File.Exists(executable)) throw new FileNotFoundException("The published CLC-Cart Monitor executable was not found.", executable);
-        if (Path.GetFullPath(plan.InstallDirectory).StartsWith(source + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("The host cannot install inside its source folder.");
+        var installDirectory = Path.TrimEndingDirectorySeparator(Path.GetFullPath(plan.InstallDirectory));
+        source = Path.TrimEndingDirectorySeparator(source);
+        if (installDirectory.Equals(source, StringComparison.OrdinalIgnoreCase) ||
+            installDirectory.StartsWith(source + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("CLC-Cart Monitor cannot repair its own running files. Open the Monitor from the connected cart, then choose Install or repair.");
 
         Directory.CreateDirectory(plan.InstallDirectory);
         var count = 0;
