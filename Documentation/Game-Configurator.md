@@ -18,7 +18,7 @@ The Linux page follows the same selected-launcher layout. Enabling Linux, or pre
 
 The Game Configurator is a separate desktop app for creating and editing Version 2 game folders without writing JSON by hand.
 
-On first launch, the online metadata setup appears before the editor. It provides official registration links for a Steam Web API key and an optional SteamGridDB API key. The setup can be reopened later with **Settings**. API keys are stored in Windows Credential Manager or the Linux desktop keyring and are never kept in `game.json` or plain-text settings files.
+On first launch, the online metadata setup appears before the editor. It provides official registration links for a Steam Web API key and an optional SteamGridDB API key, plus a simple public Exophase profile connection for cross-platform activity. The setup can be reopened later with **Settings**. API keys are stored in Windows Credential Manager or the Linux desktop keyring and are never kept in `game.json` or plain-text settings files. CLC never requests or stores an Exophase password or cookies.
 
 ## Start the configurator
 
@@ -31,7 +31,7 @@ dotnet run --project Source/CartLaunchCompanion.Configurator
 1. Enter the game name.
 2. Choose the Windows and/or Linux launcher.
 3. Enter the ID, executable, or launch address required by that launcher.
-4. Optionally assign the game to a Custom Series Collection shelf.
+4. Optionally group alternate versions of the title with **New Platform**.
 5. Add any optional metadata, artwork, and behavior settings.
 6. Open **Review & save**, then select **Validate and save game.json**.
 7. Choose the folder for this game.
@@ -56,11 +56,11 @@ Use **Open game.json** to edit an existing Version 2 configuration. Saving uses 
 
 ## Custom Series Collection placement
 
-Open **Series collection** to arrange every saved game visually. Drag cover cards between shelves or onto another card to reorder them. Shelves can be added, renamed, reordered, or removed; removing one safely returns its games to **Unassigned**. **Save collection layout** updates `Config/collection.json` and every affected `game.json` as one transaction, restoring earlier files if any write fails.
+Open **Series collection** to arrange the primary version of every saved game. Move games between shelves, reorder them, and add, rename, reorder, or remove shelves; removing one safely returns its games to **Unassigned**. **Save collection layout** updates `Config/collection.json` atomically and leaves every individual `game.json` unchanged.
 
-This step writes the game's `collection.shelf` and `collection.order` values. The collection-wide name, logo, accent color, and shelf definitions remain in `Config/collection.json`; start from `Config/collection.example.json`. Shelves without games are hidden automatically.
+Shelf placements, order, collection name, logo, accent color, and shelf definitions all remain in `Config/collection.json`; start from `Config/collection.example.json`. Keeping layout separate makes each game configuration reusable. Shelves without games are hidden automatically.
 
-The Series collection page also previews the collection-wide header logo. Use a transparent PNG at `1440 × 448` pixels; the launcher displays it at `360 × 112`. Keep important lettering and characters inside the centered `1320 × 360` safe area. The logo picker copies artwork into `Assets/Collections/<SeriesName>` and updates `Config/collection.json` without overwriting an existing logo file.
+The Series collection page also previews the collection-wide header logo. Use a transparent PNG at `1440 × 448` pixels; the launcher displays it at `360 × 112`. Keep important lettering and characters inside the centered `1320 × 360` safe area. The logo picker copies artwork into `System/Assets/Collections/<SeriesName>` and updates `Config/collection.json` without overwriting an existing logo file.
 
 ## Artwork sanity check
 

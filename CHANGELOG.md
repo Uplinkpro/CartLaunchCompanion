@@ -6,6 +6,38 @@ The project follows semantic versioning where practical.
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-09-06
+
+### Added
+
+- Added a redesigned game-details dashboard with modular library, platform, last-played, playtime, and achievement information
+- Added local playtime tracking for every supported launch method, with Steam activity import when available
+- Added public Exophase profile support for cross-platform playtime, last-played, achievement totals, and individual achievement entries
+- Added RetroAchievements identification and activity support for emulated games
+- Added grouped platform versions and a pre-details platform chooser that appears only when a title has multiple configured versions
+
+### Changed
+
+- Reworked the metadata page into a responsive hero, activity bar, achievements, artwork, and trailer layout with smoother page transitions
+- Platform labels now reflect the configured Windows, Linux, or emulated system instead of using a generic PC label
+- Direct executable and emulator libraries no longer show an unhelpful library module
+- Improved Steam-controller input-mode stability so controller prompts do not flicker while navigating
+- Updated the Configurator with public Exophase profile setup, version grouping, platform duplication, safer exit prompts, and a responsive navigation layout
+- Moved Series Collection shelf placement entirely into `Config/collection.json` so individual `game.json` files remain independent of launcher layout
+
+### Fixed
+
+- Prevented the platform chooser from flashing while opening single-platform games
+- Corrected Exophase public-player discovery, player-specific game matching, and individual award parsing
+- Corrected optional metadata modules so unavailable activity data hides cleanly instead of leaving empty placeholders
+
+### Validation
+
+- Refreshed repository screenshots from the current physical test cart
+- Passed all 329 automated Core and Desktop tests in the Release configuration
+- Built the complete solution with zero warnings and zero errors
+- Passed the release-package audit for the Windows, Linux, and combined portable distributions
+
 ## [2.7.0] - 2026-09-03
 
 ### Added

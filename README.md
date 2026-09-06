@@ -45,7 +45,7 @@ CLC is **not intended to replace Steam or organize every game installed across a
 
 > **The cart is the product.** CLC and its game definitions live in `Cart/`; installed game files live in the root-level `Games/` folder; shared emulators and game images can live in `Emulators/` and `Roms/`. Relative paths keep the cart usable when its drive letter or mount point changes.
 
-> **Current release:** [Version 2.7.0](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.7.0) is available for Windows, Linux, and SteamOS. The optional CLC-Cart Monitor adds trusted removable-media detection, verified local staging, automatic launch, and safe ejection.
+> **Current release:** [Version 2.8.0](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.8.0) is available for Windows, Linux, and SteamOS. The optional CLC-Cart Monitor adds trusted removable-media detection, verified local staging, automatic launch, and safe ejection.
 
 ## Preview
 
@@ -102,7 +102,8 @@ CLC is **not intended to replace Steam or organize every game installed across a
 - SteamGridDB artwork fallback
 - Delisted-game lookup through PCGamingWiki
 - Wikipedia description fallback
-- Steam Deck and gamepad-support badges
+- Steam Deck, platform, and gamepad-support badges
+- Local playtime plus Steam, Exophase, and RetroAchievements activity
 
 </td>
 </tr>
@@ -158,15 +159,15 @@ CLC is **not intended to replace Steam or organize every game installed across a
 
 ## Download
 
-Download [Cart Launch Companion 2.7.0](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.7.0), or browse [all GitHub releases](https://github.com/Uplinkpro/CartLaunchCompanion/releases).
+Download [Cart Launch Companion 2.8.0](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.8.0), or browse [all GitHub releases](https://github.com/Uplinkpro/CartLaunchCompanion/releases).
 
-Version 2.7.0 provides three packages:
+Version 2.8.0 provides three packages:
 
 | Package | Intended use |
 |---|---|
-| `CartLaunchCompanion-2.7.0-win-x64.zip` | Windows-only cart runtime |
-| `CartLaunchCompanion-2.7.0-linux-x64.tar.gz` | Linux or SteamOS cart runtime |
-| `CartLaunchCompanion-2.7.0-portable.zip` | Combined Windows and Linux cart runtime |
+| `CartLaunchCompanion-2.8.0-win-x64.zip` | Windows-only cart runtime |
+| `CartLaunchCompanion-2.8.0-linux-x64.tar.gz` | Linux or SteamOS cart runtime |
+| `CartLaunchCompanion-2.8.0-portable.zip` | Combined Windows and Linux cart runtime |
 
 Every package is self-contained. The correct .NET runtime is included, so end users do not need to install the .NET SDK or runtime. Published archives contain no source, test, or build folders. Verify downloads with the included `SHA256SUMS.txt`.
 
@@ -257,14 +258,16 @@ The included Game Configurator creates complete game folders without requiring u
 - Search Steam by title or exact App ID.
 - Match legacy and delisted games through fallback metadata sources.
 - Preview available artwork before saving.
+- Group versions of one title and configure each platform without duplicating metadata by hand.
 - Configure Windows and Linux launch methods independently.
 - Add an optional companion executable beside the primary executable.
-- Assign games to Custom Series Collection shelves and control their order.
+- Arrange games on Custom Series Collection shelves without adding layout data to each game file.
+- Connect a public Exophase profile and configure Steam or RetroAchievements activity sources.
 - See fullscreen CLI recipes for RetroArch, DuckStation, PCSX2, Dolphin, and RPCS3 directly in the launch form.
 - Validate the complete configuration before writing `game.json`.
 - Prepare configurations even when the game executable is not present yet.
 
-Steam and SteamGridDB keys are optional and are stored in Windows Credential Manager or the Linux desktop keyring. They are never written into `game.json` or plaintext configurator settings. PCGamingWiki and Wikipedia fallbacks require no user credentials.
+Steam and SteamGridDB keys are optional and are stored in Windows Credential Manager or the Linux desktop keyring. They are never written into `game.json` or plaintext configurator settings. Exophase support uses only a public profile address or player ID; CLC never requests an Exophase password or cookies. PCGamingWiki and Wikipedia fallbacks require no user credentials.
 
 See the [Game Configurator guide](Documentation/Game-Configurator.md) for the complete workflow.
 
@@ -359,18 +362,22 @@ Copy [`Config/collection.example.json`](Config/collection.example.json) to `Conf
 
 ```json
 {
-  "$schema": "../Schemas/collection.schema.json",
+  "$schema": "../System/Schemas/collection.schema.json",
   "formatVersion": 1,
   "enabled": true,
   "name": "The Grand Theft Auto Master Collection",
   "description": "Every era of Grand Theft Auto in one cart.",
-  "logo": "Assets/Collections/GrandTheftAuto/Logo.png",
+  "logo": "System/Assets/Collections/GrandTheftAuto/Logo.png",
   "accentColor": "#F2C94C",
   "defaultShelf": "",
   "shelves": [
     { "name": "The Topdown Era", "order": 10 },
     { "name": "The 3D Era", "order": 20 },
     { "name": "The HD Era", "order": 30 }
+  ],
+  "placements": [
+    { "configuration": "Games/Grand Theft Auto/game.json", "shelf": "The Topdown Era", "order": 10 },
+    { "configuration": "Games/Grand Theft Auto III/game.json", "shelf": "The 3D Era", "order": 10 }
   ]
 }
 ```
@@ -384,21 +391,13 @@ Copy [`Config/collection.example.json`](Config/collection.example.json) to `Conf
 | `accentColor` | Yes | Hex color used for collection accents. |
 | `defaultShelf` | No | Shelf for games without an assigned shelf. Leave blank for no heading. |
 | `shelves` | No | Defines shelf names and their display order. Only shelves containing games are shown. |
+| `placements` | No | Assigns saved game configurations to shelves and controls their order. |
 
-Collection artwork belongs under `Assets/Collections/<CollectionName>/`. Paths are relative to the Cart Launch Companion folder, so the collection remains portable.
+Collection artwork belongs under `System/Assets/Collections/<CollectionName>/`. Paths are relative to the Cart Launch Companion folder, so the collection remains portable.
 
-### 2. Assign each game to a shelf
+### 2. Arrange the shelves
 
-Add a `collection` object to each game's `game.json`:
-
-```json
-"collection": {
-  "shelf": "The 3D Era",
-  "order": 20
-}
-```
-
-The shelf name must match the name in `collection.json`. `order` controls the game's position within that shelf; increments of 10 leave room to insert games later. A shelf is automatically hidden when no games use it.
+Open **Series collection** in the Game Configurator to create shelves and place each saved configuration. **Save collection layout** writes those assignments to `Config/collection.json`; it does not modify the individual `game.json` files. This keeps game definitions reusable across collections. A shelf is automatically hidden when it has no placements.
 
 ### 3. Refresh the launcher
 
@@ -494,7 +493,7 @@ The [Emulator launch guide](Documentation/Emulator-Launch-Guide.md) documents th
 - DuckStation;
 - PCSX2;
 - Dolphin;
-- RPCS3.
+- RPCS3;
 - PPSSPP, Vita3K, and shadPS4;
 - Cemu, Azahar, melonDS, mGBA, Mesen, Snes9x, and Rosalie's Mupen GUI;
 - xemu and Xenia;
@@ -584,11 +583,12 @@ Cart Launch Companion is built with:
 - SDL3 controller input;
 - LibVLCSharp video playback;
 - Steam storefront services;
-- SteamGridDB, PCGamingWiki, and Wikipedia metadata fallbacks.
+- SteamGridDB, PCGamingWiki, and Wikipedia metadata fallbacks;
+- Steam, Exophase, and RetroAchievements activity integrations.
 
 ## Project status
 
-Version 2.7.0 is the current stable release. Reports are especially useful for:
+Version 2.8.0 is the current stable release. Reports are especially useful for:
 
 - physical Steam Deck and SteamOS hardware;
 - different controller models and hot-plug behavior;
@@ -601,7 +601,7 @@ Development priorities are tracked through [GitHub issues](https://github.com/Up
 
 ## Acknowledgements
 
-Thank you to the maintainers and communities behind .NET, Avalonia, SDL, VideoLAN, LibVLCSharp, SteamGridDB, PCGamingWiki, and Wikipedia—and to everyone who tests Cart Launch Companion, reports issues, and contributes improvements.
+Thank you to the maintainers and communities behind .NET, Avalonia, SDL, VideoLAN, LibVLCSharp, SteamGridDB, RetroAchievements, PCGamingWiki, Wikipedia, and Exophase—and to everyone who tests Cart Launch Companion, reports issues, and contributes improvements.
 
 ---
 
@@ -639,7 +639,7 @@ Commercial use, resale, paid distribution, monetized bundling, and commercial de
 
 Earlier releases and source revisions distributed under the MIT License remain governed by the license attached to those copies. The current license applies prospectively from the licensing-change revision onward.
 
-The project is not affiliated with or endorsed by Valve, Microsoft, Rockstar Games, Ubisoft, Epic Games, GOG, Amazon, VideoLAN, PCGamingWiki, Wikipedia, SteamGridDB, or any other storefront, publisher, or metadata provider. Third-party artwork, names, logos, and trademarks belong to their respective owners.
+The project is not affiliated with or endorsed by Valve, Microsoft, Rockstar Games, Ubisoft, Epic Games, GOG, Amazon, VideoLAN, PCGamingWiki, Wikipedia, SteamGridDB, RetroAchievements, Exophase, or any other storefront, publisher, or metadata provider. Third-party artwork, names, logos, and trademarks belong to their respective owners.
 
 ---
 
@@ -647,7 +647,7 @@ The project is not affiliated with or endorsed by Valve, Microsoft, Rockstar Gam
 
 ### Recycle a drive. Build a collection. Plug in and play.
 
-[Download 2.7.0](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.7.0)
+[Download 2.8.0](https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/v2.8.0)
 &nbsp;&nbsp;•&nbsp;&nbsp;
 [Documentation](#documentation)
 &nbsp;&nbsp;•&nbsp;&nbsp;
