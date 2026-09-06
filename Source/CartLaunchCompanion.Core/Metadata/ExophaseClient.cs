@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -55,9 +57,16 @@ public sealed partial class ExophaseClient(HttpClient httpClient)
         string title,
         string platform,
         string cacheDirectory,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool forceRefresh = false,
+        bool cacheOnly = false)
     {
-        var games = await GetGamesAsync(playerId, cacheDirectory, cancellationToken);
+        var games = await GetGamesAsync(
+            playerId,
+            cacheDirectory,
+            cancellationToken,
+            forceRefresh,
+            cacheOnly);
         var normalizedTitle = Normalize(title);
         if (normalizedTitle.Length == 0)
             return null;
@@ -79,7 +88,9 @@ public sealed partial class ExophaseClient(HttpClient httpClient)
     public async Task<IReadOnlyList<ExophaseGameProgress>> GetGamesAsync(
         string playerId,
         string cacheDirectory,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool forceRefresh = false,
+        bool cacheOnly = false)
     {
         if (!PlayerIdRegex().IsMatch(playerId.Trim()))
             return [];
@@ -87,7 +98,10 @@ public sealed partial class ExophaseClient(HttpClient httpClient)
         Directory.CreateDirectory(cacheDirectory);
         var cachePath = Path.Combine(cacheDirectory, $"player-{playerId.Trim()}.json");
         var cached = await ReadCacheAsync(cachePath, cancellationToken);
-        if (cached is not null && DateTimeOffset.UtcNow - cached.FetchedAt < CacheLifetime)
+        if (cacheOnly)
+            return cached?.Games ?? [];
+        if (!forceRefresh && cached is not null &&
+            DateTimeOffset.UtcNow - cached.FetchedAt < CacheLifetime)
             return cached.Games;
 
         try
@@ -98,8 +112,7 @@ public sealed partial class ExophaseClient(HttpClient httpClient)
                 var uri = new Uri(
                     $"https://api.exophase.com/public/player/{Uri.EscapeDataString(playerId.Trim())}/games" +
                     $"?page={page}&environment=&sort=1&showHidden=0");
-                using var request = CreateRequest(uri);
-                using var response = await httpClient.SendAsync(request, cancellationToken);
+                using var response = await SendPublicApiRequestAsync(uri, cancellationToken);
                 response.EnsureSuccessStatusCode();
 
                 await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -114,6 +127,10 @@ public sealed partial class ExophaseClient(HttpClient httpClient)
                 foreach (var game in pageGames.EnumerateArray())
                     if (ParseGame(game) is { } parsed)
                         games.Add(parsed);
+
+                // The public feed is undocumented and rate limited. Spacing
+                // its pages keeps large profiles from being rejected midway.
+                await Task.Delay(TimeSpan.FromMilliseconds(250), cancellationToken);
             }
 
             if (games.Count == 0)
@@ -126,8 +143,9 @@ public sealed partial class ExophaseClient(HttpClient httpClient)
                 cancellationToken);
             return games;
         }
-        catch when (!cancellationToken.IsCancellationRequested && cached is not null)
+        catch (Exception ex) when (!cancellationToken.IsCancellationRequested && cached is not null)
         {
+            Trace.WriteLine($"Exophase refresh kept cached data ({ex.GetType().Name}: {ex.Message}).");
             return cached.Games;
         }
     }
@@ -171,6 +189,40 @@ public sealed partial class ExophaseClient(HttpClient httpClient)
         request.Headers.AcceptLanguage.ParseAdd("en-US,en;q=0.9");
         request.Headers.Referrer = new Uri("https://www.exophase.com/");
         return request;
+    }
+
+    private async Task<HttpResponseMessage> SendPublicApiRequestAsync(
+        Uri uri,
+        CancellationToken cancellationToken)
+    {
+        var response = await SendApiAttemptAsync(uri, cancellationToken);
+        if (response.StatusCode != HttpStatusCode.Forbidden)
+            return response;
+
+        response.Dispose();
+
+        // Exophase currently rejects cold API requests from some networks. A
+        // visit to its public site establishes the same first-party session a
+        // normal browser receives, after which the public JSON feed may be read.
+        using (var warmupRequest = CreateRequest(new Uri("https://www.exophase.com/")))
+        using (var warmupResponse = await httpClient.SendAsync(warmupRequest, cancellationToken))
+        {
+            Trace.WriteLine($"Exophase API requested a site warm-up ({(int)warmupResponse.StatusCode}).");
+        }
+
+        return await SendApiAttemptAsync(uri, cancellationToken);
+    }
+
+    private async Task<HttpResponseMessage> SendApiAttemptAsync(
+        Uri uri,
+        CancellationToken cancellationToken)
+    {
+        using var request = CreateRequest(uri);
+        request.Headers.TryAddWithoutValidation("Origin", "https://www.exophase.com");
+        request.Headers.TryAddWithoutValidation("Sec-Fetch-Dest", "empty");
+        request.Headers.TryAddWithoutValidation("Sec-Fetch-Mode", "cors");
+        request.Headers.TryAddWithoutValidation("Sec-Fetch-Site", "same-site");
+        return await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
     }
 
     private static ExophaseGameProgress? ParseGame(JsonElement game)

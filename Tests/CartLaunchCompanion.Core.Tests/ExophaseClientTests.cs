@@ -85,6 +85,77 @@ public sealed class ExophaseClientTests : IDisposable
     }
 
     [Fact]
+    public async Task ForcedRefreshBypassesFreshCacheAndRequestsUncachedData()
+    {
+        var earned = 1;
+        var requests = 0;
+        using var http = CreateClient(request =>
+        {
+            requests++;
+            return request.RequestUri!.Query.Contains("page=1", StringComparison.Ordinal)
+                ? Json("""
+                    {"success":true,"games":[{"meta":{"title":"Test Game","platforms":[{"name":"Windows"}]},"earned_awards":EARNED,"total_awards":4,"percent":25}]}
+                    """.Replace("EARNED", earned.ToString()))
+                : Json("""{"success":true,"games":[]}""");
+        });
+        var client = new ExophaseClient(http);
+
+        var first = await client.GetGamesAsync("42", _cache, forceRefresh: true);
+        earned = 2;
+        var second = await client.GetGamesAsync("42", _cache, forceRefresh: true);
+
+        Assert.Equal(1, Assert.Single(first).EarnedAchievements);
+        Assert.Equal(2, Assert.Single(second).EarnedAchievements);
+        Assert.Equal(4, requests);
+    }
+
+    [Fact]
+    public async Task ForbiddenApiRequestWarmsPublicSiteAndRetriesOnce()
+    {
+        var apiAttempts = 0;
+        var siteWarmups = 0;
+        using var http = CreateClient(request =>
+        {
+            if (request.RequestUri!.Host.Equals("www.exophase.com", StringComparison.OrdinalIgnoreCase))
+            {
+                siteWarmups++;
+                return Html("<html></html>");
+            }
+
+            apiAttempts++;
+            if (apiAttempts == 1)
+                return new HttpResponseMessage(HttpStatusCode.Forbidden);
+
+            return request.RequestUri.Query.Contains("page=1", StringComparison.Ordinal)
+                ? Json("""{"success":true,"games":[{"meta":{"title":"Test Game","platforms":[]}}]}""")
+                : Json("""{"success":true,"games":[]}""");
+        });
+
+        var games = await new ExophaseClient(http).GetGamesAsync("42", _cache, forceRefresh: true);
+
+        Assert.Single(games);
+        Assert.Equal(1, siteWarmups);
+        Assert.Equal(3, apiAttempts);
+    }
+
+    [Fact]
+    public async Task CacheOnlyReadNeverMakesANetworkRequest()
+    {
+        var requests = 0;
+        using var http = CreateClient(_ =>
+        {
+            requests++;
+            return new HttpResponseMessage(HttpStatusCode.Forbidden);
+        });
+
+        var games = await new ExophaseClient(http).GetGamesAsync(
+            "42", _cache, cacheOnly: true);
+
+        Assert.Empty(games);
+        Assert.Equal(0, requests);
+    }
+
+    [Fact]
     public async Task ImportsBrowserGamesWhenOptionalNumbersAreNull()
     {
         var count = await ExophaseClient.ImportBrowserGamesAsync(

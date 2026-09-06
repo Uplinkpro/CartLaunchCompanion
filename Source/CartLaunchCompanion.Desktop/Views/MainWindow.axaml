@@ -58,7 +58,7 @@
          Steam Deck's 1280x800 display retains the intended 16:9 composition
          with true-black 40px letterbox bands instead of stretching the UI. -->
     <Viewbox Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-    <Grid Width="1280" Height="720" Background="#030406">
+    <Grid x:Name="RootGrid" Width="1280" Height="720" Background="#030406">
         <TransitioningContentControl x:Name="MainPages" />
 
         <!-- Keep the platform chooser outside the page transition host. An

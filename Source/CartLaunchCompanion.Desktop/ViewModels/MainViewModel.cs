@@ -45,6 +45,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private CancellationTokenSource? _retroAchievementsCancellation;
     private CancellationTokenSource? _steamStatsCancellation;
     private CancellationTokenSource? _exophaseCancellation;
+    private CancellationTokenSource? _exophaseSyncCancellation;
+
+    public event EventHandler? ExophaseBrowserSyncRequested;
     private CancellationTokenSource? _playtimeCancellation;
     private readonly List<GameCardViewModel> _allGameCards = [];
     private bool _metadataOpenedFromVersionPicker;
@@ -516,6 +519,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             SelectedGame = Games.FirstOrDefault();
             StatusMessage = BuildStatusMessage(result);
+            StartExophaseSync();
 
             OnPropertyChanged(nameof(HasGames));
             OnPropertyChanged(nameof(HasNoGames));
@@ -1296,6 +1300,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                         GameIdentity.Resolve(game.Entry.Configuration.Game),
                         duration,
                         DateTimeOffset.UtcNow);
+                    StartExophaseSync();
                 }
             }
 
@@ -1414,6 +1419,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         CollectionLogoImage?.Dispose();
         _metadataLoadingCancellation?.Cancel();
         _metadataLoadingCancellation?.Dispose();
+        _exophaseSyncCancellation?.Cancel();
+        _exophaseSyncCancellation?.Dispose();
         ClearMetadataModules();
         ClearRetroAchievements();
         _updateCancellation?.Cancel();
@@ -1700,6 +1707,70 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _ = LoadExophaseAsync(game, cancellation);
     }
 
+    private void StartExophaseSync()
+    {
+        if (_exophaseClient is null)
+            return;
+
+        // Exophase rejects direct background requests from Windows with a 403,
+        // while the same public feed works from its first-party browser origin.
+        // Let the view host that browser-backed refresh without blocking launch.
+        if (OperatingSystem.IsWindows())
+        {
+            ExophaseBrowserSyncRequested?.Invoke(this, EventArgs.Empty);
+            return;
+        }
+
+        _exophaseSyncCancellation?.Cancel();
+        _exophaseSyncCancellation?.Dispose();
+        var cancellation = new CancellationTokenSource();
+        _exophaseSyncCancellation = cancellation;
+        _ = RefreshExophaseCacheAsync(cancellation);
+    }
+
+    public void NotifyExophaseBrowserSyncCompleted()
+    {
+        if (IsMetadataVisible && SelectedGame is { } selected &&
+            !IsRetroAchievementsVisible && !IsSteamAchievementsVisible)
+        {
+            StartExophaseLoad(selected);
+        }
+    }
+
+    private async Task RefreshExophaseCacheAsync(CancellationTokenSource cancellation)
+    {
+        try
+        {
+            var playerId = await MetadataSecretStore.ReadAsync(
+                MetadataSecretStore.ExophasePlayerId,
+                cancellation.Token);
+            if (string.IsNullOrWhiteSpace(playerId))
+                return;
+
+            await _exophaseClient!.GetGamesAsync(
+                playerId,
+                _exophaseCacheDirectory,
+                cancellation.Token,
+                forceRefresh: true);
+
+            cancellation.Token.ThrowIfCancellationRequested();
+            if (IsMetadataVisible && SelectedGame is { } selected &&
+                !IsRetroAchievementsVisible && !IsSteamAchievementsVisible)
+            {
+                StartExophaseLoad(selected);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            // Exophase is an optional, undocumented public source. A failed
+            // refresh must never prevent the local library from opening.
+            Trace.WriteLine($"Exophase launch sync failed ({ex.GetType().Name}).");
+        }
+    }
+
     private async Task LoadExophaseAsync(
         GameCardViewModel game,
         CancellationTokenSource cancellation)
@@ -1717,7 +1788,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 game.Entry.Configuration.Game.Name,
                 game.PlatformDisplay,
                 _exophaseCacheDirectory,
-                cancellation.Token);
+                cancellation.Token,
+                cacheOnly: OperatingSystem.IsWindows());
             cancellation.Token.ThrowIfCancellationRequested();
             if (progress is null)
                 return;

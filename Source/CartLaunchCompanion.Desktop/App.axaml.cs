@@ -46,6 +46,10 @@ public partial class App : Application
             {
                 Timeout = TimeSpan.FromSeconds(8)
             };
+            var exophaseHttpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(30)
+            };
             var updateHttpClient = new HttpClient(new HttpClientHandler
             {
                 AllowAutoRedirect = false
@@ -104,7 +108,7 @@ public partial class App : Application
                 VlcNativeTrailerControl.PrepareRuntimeAsync,
                 new RetroAchievementsClient(metadataHttpClient),
                 metadataHttpClient,
-                exophaseClient: new ExophaseClient(metadataHttpClient));
+                exophaseClient: new ExophaseClient(exophaseHttpClient));
 
             mainWindow = new MainWindow
             {

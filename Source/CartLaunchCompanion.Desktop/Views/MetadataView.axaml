@@ -142,7 +142,7 @@
                         <Button Classes="metadata-action metadata-play"
                                 Command="{Binding ConfirmLaunchCommand}"
                                 AutomationProperties.Name="Launch selected game"
-                                Content="PLAY" />
+                                Content="Play" />
                         <Button Classes="metadata-action metadata-back"
                                 Command="{Binding ReturnHomeCommand}"
                                 AutomationProperties.Name="Return to game library"
