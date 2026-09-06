@@ -29,6 +29,7 @@ The project follows semantic versioning where practical.
 
 - Prevented the platform chooser from flashing while opening single-platform games
 - Corrected Exophase public-player discovery, player-specific game matching, and individual award parsing
+- Corrected RetroAchievements badge-path handling on Linux and SteamOS
 - Corrected optional metadata modules so unavailable activity data hides cleanly instead of leaving empty placeholders
 
 ### Validation

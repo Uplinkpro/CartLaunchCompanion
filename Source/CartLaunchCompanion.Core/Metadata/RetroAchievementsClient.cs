@@ -112,7 +112,11 @@ public sealed class RetroAchievementsClient(HttpClient httpClient)
     public static string ResolveBadgeUrl(string badgeName)
     {
         var value = badgeName.Trim();
-        if (Uri.TryCreate(value, UriKind.Absolute, out var absolute)) return absolute.ToString();
+        if (Uri.TryCreate(value, UriKind.Absolute, out var absolute) &&
+            (absolute.Scheme == Uri.UriSchemeHttp || absolute.Scheme == Uri.UriSchemeHttps))
+        {
+            return absolute.ToString();
+        }
         value = value.TrimStart('/');
         if (value.StartsWith("Badge/", StringComparison.OrdinalIgnoreCase)) value = value[6..];
         if (!Path.HasExtension(value)) value += ".png";

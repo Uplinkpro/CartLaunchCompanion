@@ -119,6 +119,9 @@ public sealed class RetroAchievementsTests : IDisposable
         Assert.Equal(
             "https://media.retroachievements.org/Badge/00011.png",
             RetroAchievementsClient.ResolveBadgeUrl("00011"));
+        Assert.Equal(
+            "https://cdn.example.test/badges/00013.png",
+            RetroAchievementsClient.ResolveBadgeUrl("https://cdn.example.test/badges/00013.png"));
     }
 
     public void Dispose()
