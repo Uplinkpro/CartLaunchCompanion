@@ -9,6 +9,7 @@ public sealed class CompletedGameLaunchSession : IGameLaunchSession
     }
 
     public bool CanMonitor => false;
+    public bool WasGameObserved => false;
 
     public Task WaitForExitAsync(
         CancellationToken cancellationToken = default)

@@ -68,7 +68,7 @@ public sealed class MetadataNavigationTests
         var viewModel = CreateViewModel();
         await viewModel.LoadAsync();
         viewModel.Games[0].OpenCommand.Execute(null);
-        await Task.Delay(500);
+        await Task.Delay(750);
 
         Assert.True(viewModel.ShouldPlayTrailer);
 

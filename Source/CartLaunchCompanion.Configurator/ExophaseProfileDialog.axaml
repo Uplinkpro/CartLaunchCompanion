@@ -1,0 +1,25 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CartLaunchCompanion.Configurator.ExophaseProfileDialog"
+        Title="Connect Exophase" Width="980" Height="700" MinWidth="620" MinHeight="440"
+        CanResize="True" WindowStartupLocation="CenterOwner">
+  <Grid RowDefinitions="Auto,12,*,12,Auto" Margin="20">
+    <StackPanel>
+      <TextBlock FontSize="24" FontWeight="Bold" Text="Connect your public Exophase profile"/>
+      <TextBlock Classes="help" Margin="0,5,0,0" TextWrapping="Wrap"
+                 Text="Complete any browser verification that appears. Once your public profile loads, CLC will find the player ID and close this window automatically."/>
+    </StackPanel>
+
+    <Border Grid.Row="2" Classes="card" Padding="0" ClipToBounds="True">
+      <NativeWebView x:Name="ProfileWebView"
+                     NavigationCompleted="ProfileNavigationCompleted"
+                     WebMessageReceived="ProfileWebMessageReceived"/>
+    </Border>
+
+    <Grid Grid.Row="4" ColumnDefinitions="*,Auto">
+      <TextBlock x:Name="ProfileStatusText" VerticalAlignment="Center" TextWrapping="Wrap"
+                 Foreground="#AAB2BE" Text="Opening the public profile…"/>
+      <Button Grid.Column="1" Content="Cancel" Click="CancelClicked"/>
+    </Grid>
+  </Grid>
+</Window>

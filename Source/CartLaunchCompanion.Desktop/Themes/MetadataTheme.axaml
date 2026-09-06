@@ -1,0 +1,255 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Styles.Resources>
+        <FontFamily x:Key="MetadataDeveloperFont">Segoe UI</FontFamily>
+        <FontFamily x:Key="MetadataDescriptionFont">Helvetica Neue, Helvetica, Arial, sans-serif</FontFamily>
+
+        <SolidColorBrush x:Key="MetadataPrimaryTextBrush" Color="#FFF4F6F8" />
+        <SolidColorBrush x:Key="MetadataSecondaryTextBrush" Color="#D8E2E7EA" />
+        <SolidColorBrush x:Key="MetadataMutedTextBrush" Color="#A8D8DEE3" />
+        <SolidColorBrush x:Key="MetadataValueBrush" Color="#FF52EA83" />
+        <SolidColorBrush x:Key="MetadataSurfaceBrush" Color="#D824272C" />
+        <SolidColorBrush x:Key="MetadataSurfaceStrongBrush" Color="#EC181A1E" />
+        <SolidColorBrush x:Key="MetadataSurfaceSoftBrush" Color="#B8202327" />
+        <SolidColorBrush x:Key="MetadataStatusStripBrush" Color="#FF303238" />
+        <SolidColorBrush x:Key="MetadataLowerSectionBrush" Color="#FF2B2D32" />
+        <SolidColorBrush x:Key="MetadataDividerBrush" Color="#2EFFFFFF" />
+        <SolidColorBrush x:Key="MetadataPlayBrush" Color="#FF079D55" />
+        <SolidColorBrush x:Key="MetadataPlayHoverBrush" Color="#FF0CB866" />
+        <SolidColorBrush x:Key="MetadataPlayPressedBrush" Color="#FF067A43" />
+        <SolidColorBrush x:Key="MetadataBackBrush" Color="#FFAE150D" />
+        <SolidColorBrush x:Key="MetadataBackHoverBrush" Color="#FFCE2118" />
+        <SolidColorBrush x:Key="MetadataBackPressedBrush" Color="#FF86110B" />
+        <SolidColorBrush x:Key="MetadataFocusBrush" Color="#FFFFFFFF" />
+        <SolidColorBrush x:Key="MetadataScreenBrush" Color="#FF000000" />
+    </Styles.Resources>
+
+    <Style Selector="Grid.metadata-content">
+        <Setter Property="Margin" Value="28,22,28,18" />
+    </Style>
+
+    <Style Selector="Image.metadata-logo">
+        <Setter Property="MaxWidth" Value="210" />
+        <Setter Property="MaxHeight" Value="88" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="Stretch" Value="Uniform" />
+    </Style>
+
+    <Style Selector="TextBlock.metadata-game-title">
+        <Setter Property="MaxWidth" Value="420" />
+        <Setter Property="MaxLines" Value="2" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        <Setter Property="FontFamily" Value="{StaticResource MetadataDeveloperFont}" />
+        <Setter Property="FontSize" Value="29" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{DynamicResource MetadataPrimaryTextBrush}" />
+    </Style>
+
+    <Style Selector="TextBlock.metadata-field-label">
+        <Setter Property="FontFamily" Value="{StaticResource MetadataDeveloperFont}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{DynamicResource MetadataPrimaryTextBrush}" />
+    </Style>
+
+    <Style Selector="TextBlock.metadata-field-value">
+        <Setter Property="FontFamily" Value="{StaticResource MetadataDeveloperFont}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{DynamicResource MetadataValueBrush}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style Selector="TextBlock.metadata-description">
+        <Setter Property="FontFamily" Value="{StaticResource MetadataDescriptionFont}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="LineHeight" Value="20" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Foreground" Value="{DynamicResource MetadataSecondaryTextBrush}" />
+    </Style>
+
+    <Style Selector="Border.metadata-capability">
+        <Setter Property="Height" Value="38" />
+        <Setter Property="MinWidth" Value="54" />
+        <Setter Property="Padding" Value="9,5" />
+        <Setter Property="Margin" Value="0,0,7,0" />
+        <Setter Property="Background" Value="{DynamicResource MetadataSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource MetadataDividerBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style Selector="TextBlock.metadata-capability-text">
+        <Setter Property="FontFamily" Value="{StaticResource MetadataDeveloperFont}" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{DynamicResource MetadataPrimaryTextBrush}" />
+    </Style>
+
+    <Style Selector="Button.metadata-action">
+        <Setter Property="MinWidth" Value="176" />
+        <Setter Property="Height" Value="52" />
+        <Setter Property="Padding" Value="22,0" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="5" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{DynamicResource MetadataPrimaryTextBrush}" />
+        <Setter Property="FontFamily" Value="{StaticResource MetadataDeveloperFont}" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+
+    <Style Selector="Button.metadata-action:focus-visible">
+        <Setter Property="BorderBrush" Value="{DynamicResource MetadataFocusBrush}" />
+        <Setter Property="BorderThickness" Value="3" />
+    </Style>
+
+    <Style Selector="Button.metadata-action.metadata-play">
+        <Setter Property="Background" Value="{DynamicResource MetadataPlayBrush}" />
+    </Style>
+
+    <Style Selector="Button.metadata-action.metadata-play:pointerover">
+        <Setter Property="Background" Value="{DynamicResource MetadataPlayHoverBrush}" />
+    </Style>
+
+    <Style Selector="Button.metadata-action.metadata-play:pressed">
+        <Setter Property="Background" Value="{DynamicResource MetadataPlayPressedBrush}" />
+    </Style>
+
+    <Style Selector="Button.metadata-action.metadata-back">
+        <Setter Property="Background" Value="{DynamicResource MetadataBackBrush}" />
+    </Style>
+
+    <Style Selector="Button.metadata-action.metadata-back:pointerover">
+        <Setter Property="Background" Value="{DynamicResource MetadataBackHoverBrush}" />
+    </Style>
+
+    <Style Selector="Button.metadata-action.metadata-back:pressed">
+        <Setter Property="Background" Value="{DynamicResource MetadataBackPressedBrush}" />
+    </Style>
+
+    <Style Selector="Border.metadata-cover-frame">
+        <Setter Property="Background" Value="{DynamicResource MetadataScreenBrush}" />
+        <Setter Property="ClipToBounds" Value="True" />
+    </Style>
+
+    <Style Selector="Border.metadata-status-strip">
+        <Setter Property="Background" Value="{DynamicResource MetadataStatusStripBrush}" />
+        <Setter Property="Padding" Value="30,13" />
+        <Setter Property="MinHeight" Value="58" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="ClipToBounds" Value="True" />
+    </Style>
+
+    <Style Selector="Border.metadata-status-item">
+        <Setter Property="MinWidth" Value="185" />
+        <Setter Property="Padding" Value="20,0" />
+        <Setter Property="BorderBrush" Value="{DynamicResource MetadataDividerBrush}" />
+        <Setter Property="BorderThickness" Value="0,0,1,0" />
+    </Style>
+
+    <Style Selector="ItemsControl > ContentPresenter:last-child Border.metadata-status-item">
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <Style Selector="Path.metadata-module-icon">
+        <Setter Property="Width" Value="22" />
+        <Setter Property="Height" Value="22" />
+        <Setter Property="Stretch" Value="Uniform" />
+        <Setter Property="Stroke" Value="{DynamicResource MetadataMutedTextBrush}" />
+        <Setter Property="StrokeThickness" Value="1.6" />
+        <Setter Property="StrokeLineCap" Value="Round" />
+        <Setter Property="StrokeJoin" Value="Round" />
+        <Setter Property="Fill" Value="Transparent" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="TextBlock.metadata-status-label">
+        <Setter Property="FontFamily" Value="{StaticResource MetadataDeveloperFont}" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{DynamicResource MetadataPrimaryTextBrush}" />
+    </Style>
+
+    <Style Selector="TextBlock.metadata-status-value">
+        <Setter Property="FontFamily" Value="{StaticResource MetadataDescriptionFont}" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{DynamicResource MetadataValueBrush}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style Selector="Border.metadata-lower-panel">
+        <Setter Property="Background" Value="{DynamicResource MetadataSurfaceSoftBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource MetadataDividerBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="16" />
+        <Setter Property="ClipToBounds" Value="True" />
+    </Style>
+
+    <Style Selector="TextBlock.metadata-panel-title">
+        <Setter Property="FontFamily" Value="{StaticResource MetadataDeveloperFont}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{DynamicResource MetadataPrimaryTextBrush}" />
+    </Style>
+
+    <Style Selector="TextBlock.metadata-panel-muted">
+        <Setter Property="FontFamily" Value="{StaticResource MetadataDescriptionFont}" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{DynamicResource MetadataMutedTextBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style Selector="ProgressBar.metadata-achievement-progress">
+        <Setter Property="Height" Value="8" />
+        <Setter Property="MinHeight" Value="8" />
+        <Setter Property="Foreground" Value="{DynamicResource MetadataValueBrush}" />
+    </Style>
+
+    <Style Selector="Grid.metadata-achievement-badge">
+        <Setter Property="Width" Value="185" />
+        <Setter Property="Height" Value="48" />
+        <Setter Property="Margin" Value="0,4,8,4" />
+    </Style>
+
+    <Style Selector="Border.metadata-achievement-image">
+        <Setter Property="Width" Value="40" />
+        <Setter Property="Height" Value="40" />
+        <Setter Property="Background" Value="{DynamicResource MetadataSurfaceStrongBrush}" />
+        <Setter Property="ClipToBounds" Value="True" />
+    </Style>
+
+    <Style Selector="TextBlock.metadata-achievement-title">
+        <Setter Property="FontFamily" Value="{StaticResource MetadataDeveloperFont}" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource MetadataPrimaryTextBrush}" />
+    </Style>
+
+    <Style Selector="TextBlock.metadata-achievement-detail">
+        <Setter Property="FontFamily" Value="{StaticResource MetadataDescriptionFont}" />
+        <Setter Property="FontSize" Value="9" />
+        <Setter Property="Foreground" Value="{DynamicResource MetadataMutedTextBrush}" />
+    </Style>
+
+    <Style Selector="Border.metadata-media-frame">
+        <Setter Property="Background" Value="{DynamicResource MetadataSurfaceSoftBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource MetadataDividerBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="ClipToBounds" Value="True" />
+    </Style>
+
+    <Style Selector="Border.metadata-trailer-frame">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+    </Style>
+
+    <Style Selector="TextBlock.metadata-trailer-error-title">
+        <Setter Property="FontFamily" Value="{StaticResource MetadataDeveloperFont}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{DynamicResource MetadataPrimaryTextBrush}" />
+    </Style>
+</Styles>

@@ -14,6 +14,8 @@ public sealed class ConfiguratorSettings
     public string RetroAchievementsUserName { get; set; } = "";
     [JsonIgnore]
     public string RetroAchievementsWebApiKey { get; set; } = "";
+    [JsonIgnore]
+    public string ExophasePlayerId { get; set; } = "";
     public bool SetupCompleted { get; set; }
 
     private static string FilePath => Path.Combine(
@@ -31,7 +33,8 @@ public sealed class ConfiguratorSettings
                 SteamWebApiKey = await MetadataSecretStore.ReadAsync(MetadataSecretStore.SteamWebApiKey),
                 SteamGridDbApiKey = await MetadataSecretStore.ReadAsync(MetadataSecretStore.SteamGridDbApiKey),
                 RetroAchievementsUserName = await MetadataSecretStore.ReadAsync(MetadataSecretStore.RetroAchievementsUserName),
-                RetroAchievementsWebApiKey = await MetadataSecretStore.ReadAsync(MetadataSecretStore.RetroAchievementsWebApiKey)
+                RetroAchievementsWebApiKey = await MetadataSecretStore.ReadAsync(MetadataSecretStore.RetroAchievementsWebApiKey),
+                ExophasePlayerId = await MetadataSecretStore.ReadAsync(MetadataSecretStore.ExophasePlayerId)
             };
         }
         try
@@ -42,6 +45,7 @@ public sealed class ConfiguratorSettings
             result.SteamGridDbApiKey = await MetadataSecretStore.ReadAsync(MetadataSecretStore.SteamGridDbApiKey);
             result.RetroAchievementsUserName = await MetadataSecretStore.ReadAsync(MetadataSecretStore.RetroAchievementsUserName);
             result.RetroAchievementsWebApiKey = await MetadataSecretStore.ReadAsync(MetadataSecretStore.RetroAchievementsWebApiKey);
+            result.ExophasePlayerId = await MetadataSecretStore.ReadAsync(MetadataSecretStore.ExophasePlayerId);
             return result;
         }
         catch { return new ConfiguratorSettings(); }
@@ -53,6 +57,7 @@ public sealed class ConfiguratorSettings
         await MetadataSecretStore.WriteAsync(MetadataSecretStore.SteamGridDbApiKey, SteamGridDbApiKey);
         await MetadataSecretStore.WriteAsync(MetadataSecretStore.RetroAchievementsUserName, RetroAchievementsUserName);
         await MetadataSecretStore.WriteAsync(MetadataSecretStore.RetroAchievementsWebApiKey, RetroAchievementsWebApiKey);
+        await MetadataSecretStore.WriteAsync(MetadataSecretStore.ExophasePlayerId, ExophasePlayerId);
         Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
         await File.WriteAllTextAsync(FilePath, JsonSerializer.Serialize(this));
     }

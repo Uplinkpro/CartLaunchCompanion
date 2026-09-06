@@ -22,21 +22,6 @@
         Icon="/Assets/AppIcon.png">
 
     <Window.Styles>
-        <Style Selector="Grid.page-transition.active.motion">
-            <Style.Animations>
-                <Animation Duration="0:0:0.24"
-                           IterationCount="1"
-                           Easing="CubicEaseOut">
-                    <KeyFrame Cue="0%">
-                        <Setter Property="Opacity" Value="0" />
-                    </KeyFrame>
-                    <KeyFrame Cue="100%">
-                        <Setter Property="Opacity" Value="1" />
-                    </KeyFrame>
-                </Animation>
-            </Style.Animations>
-        </Style>
-
         <Style Selector="Grid.exit-transition.active.motion">
             <Style.Animations>
                 <Animation Duration="0:0:0.18"
@@ -74,9 +59,15 @@
          with true-black 40px letterbox bands instead of stretching the UI. -->
     <Viewbox Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
     <Grid Width="1280" Height="720" Background="#030406">
-        <views:HomeView IsVisible="{Binding IsHomeVisible}" />
-        <views:VersionPickerView IsVisible="{Binding IsVersionPickerVisible}" />
-        <views:MetadataView IsVisible="{Binding IsMetadataVisible}" />
+        <TransitioningContentControl x:Name="MainPages" />
+
+        <!-- Keep the platform chooser outside the page transition host. An
+             interrupted cross-fade can retain an older outgoing presenter;
+             isolating this view guarantees it only exists onscreen while the
+             view model is explicitly asking for platform selection. -->
+        <views:VersionPickerView x:Name="VersionPickerPage"
+                                 IsVisible="{Binding IsVersionPickerVisible}"
+                                 ZIndex="400" />
 
         <Grid IsVisible="{Binding IsMetadataLoading}"
               Classes="metadata-loading"
@@ -188,15 +179,12 @@
             <Grid RowDefinitions="*,Auto,Auto"
                   Margin="42">
                 <Border Grid.Row="0"
-                        Classes="glass-panel"
+                        Classes="glass-panel exit-confirmation-panel"
                         Width="620"
                         Height="310"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        Padding="42"
-                        Background="#F0000000"
-                        BorderBrush="{Binding SelectedGame.AccentBrightColor}"
-                        BorderThickness="3">
+                        Padding="42">
                     <StackPanel HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Spacing="16">
@@ -211,10 +199,7 @@
                                    HorizontalAlignment="Center"
                                    FontSize="30" />
 
-                        <Border Width="180"
-                                Height="4"
-                                CornerRadius="2"
-                                Background="{Binding SelectedGame.AccentBrightColor}" />
+                        <Border Classes="exit-confirmation-divider" />
 
                         <TextBlock Classes="muted"
                                    Text="{Binding ExitInstruction}"
@@ -226,8 +211,6 @@
                 <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="14"
                       HorizontalAlignment="Center">
                     <Button Classes="action"
-                            BorderBrush="{Binding SelectedGame.AccentBrightColor}"
-                            BorderThickness="2"
                             AutomationProperties.Name="Cancel exit"
                             Command="{Binding CancelExitCommand}">
                         <StackPanel Orientation="Horizontal"
@@ -255,7 +238,6 @@
 
                     <Button Classes="action"
                             IsVisible="{Binding IsSafeEjectAvailable}"
-                            BorderBrush="{Binding SelectedGame.AccentBrightColor}" BorderThickness="2"
                             AutomationProperties.Name="Safely eject game cart"
                             Command="{Binding EjectCartCommand}">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">

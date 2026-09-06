@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="CartLaunchCompanion.Configurator.ApiSetupDialog"
-        Title="Online metadata setup" Width="700" Height="760" MinHeight="560"
+        Title="Online metadata setup" Width="760" Height="640" MinWidth="520" MinHeight="420"
         CanResize="True" WindowStartupLocation="CenterOwner">
   <Grid Margin="28" RowDefinitions="Auto,18,*,18,Auto">
     <StackPanel>
@@ -56,8 +56,23 @@
           <TextBlock x:Name="SteamGridDbKeyStatus" Classes="help" Margin="0,7,0,0"/>
         </StackPanel></Border>
 
+        <Border Classes="card"><StackPanel Spacing="10">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock FontSize="18" FontWeight="SemiBold" Text="Exophase"/>
+                <Border Classes="optional"><TextBlock FontSize="11" Text="Cross-platform fallback"/></Border>
+              </StackPanel>
+              <TextBlock Classes="help" Text="Adds achievement totals and playtime for public Epic, GOG, Xbox, PlayStation and other linked profiles." TextWrapping="Wrap"/>
+            </StackPanel>
+            <Button Grid.Column="1" Content="Connect Exophase" Click="ConnectExophaseClicked"/>
+          </Grid>
+          <TextBox x:Name="ExophaseProfileBox" PlaceholderText="Public Exophase profile URL or numeric player ID"/>
+          <TextBlock Classes="help" Text="Optional. Paste your public profile URL or username, then choose Connect Exophase. CLC handles the player ID automatically." TextWrapping="Wrap"/>
+        </StackPanel></Border>
+
         <StackPanel>
-          <TextBlock x:Name="StatusText" Foreground="#AAB2BE" Text="Use the buttons to open each service’s official key page."/>
+          <TextBlock x:Name="StatusText" Foreground="#AAB2BE" TextWrapping="Wrap" Text="Use the buttons to open each service’s official key page."/>
           <TextBlock Classes="help" Margin="0,8,0,0" Text="You can continue offline and add or change keys later in Settings."/>
         </StackPanel>
       </StackPanel>

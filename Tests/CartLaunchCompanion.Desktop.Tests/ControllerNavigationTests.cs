@@ -32,7 +32,7 @@ public sealed class ControllerNavigationTests : IDisposable
                 timestamp.AddMilliseconds(300)));
 
         Assert.True(viewModel.IsMetadataLoading);
-        await Task.Delay(500);
+        await Task.Delay(700);
 
         Assert.Equal("Game 2", viewModel.SelectedGame?.Name);
         Assert.True(viewModel.IsMetadataVisible);
@@ -54,7 +54,7 @@ public sealed class ControllerNavigationTests : IDisposable
                 InputDeviceKind.Controller,
                 timestamp));
 
-        await Task.Delay(500);
+        await Task.Delay(700);
 
         await viewModel.HandleInputAsync(
             new LauncherInputEvent(
@@ -138,6 +138,27 @@ public sealed class ControllerNavigationTests : IDisposable
                 timestamp.AddMilliseconds(30)));
 
         Assert.Equal("Game 2", viewModel.SelectedGame?.Name);
+    }
+
+    [Fact]
+    public async Task SteamInputKeyboardDuplicate_DoesNotReplaceControllerPrompts()
+    {
+        var viewModel = CreateViewModel(gameCount: 3);
+        await viewModel.LoadAsync();
+        var timestamp = DateTimeOffset.UtcNow;
+
+        await viewModel.HandleInputAsync(new LauncherInputEvent(
+            LauncherAction.NavigateRight,
+            InputDeviceKind.Controller,
+            timestamp));
+        await viewModel.HandleInputAsync(new LauncherInputEvent(
+            LauncherAction.NavigateRight,
+            InputDeviceKind.Keyboard,
+            timestamp.AddMilliseconds(20)));
+
+        Assert.Equal("Game 2", viewModel.SelectedGame?.Name);
+        Assert.Equal(InputDeviceKind.Controller, viewModel.LastInputDevice);
+        Assert.Equal("A", viewModel.ConfirmPrompt);
     }
 
     [Fact]

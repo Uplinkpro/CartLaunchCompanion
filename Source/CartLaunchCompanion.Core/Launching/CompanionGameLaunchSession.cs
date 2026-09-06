@@ -8,6 +8,7 @@ public sealed class CompanionGameLaunchSession(
     bool closeAfterGame) : IGameLaunchSession
 {
     public bool CanMonitor => inner.CanMonitor;
+    public bool WasGameObserved => inner.WasGameObserved;
 
     public async Task WaitForExitAsync(CancellationToken cancellationToken = default)
     {

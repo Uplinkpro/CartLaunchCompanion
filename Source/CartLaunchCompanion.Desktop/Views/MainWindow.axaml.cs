@@ -1,4 +1,6 @@
+using System.ComponentModel;
 using Avalonia.Controls;
+using Avalonia.Animation;
 using Avalonia.Input;
 using CartLaunchCompanion.Core.Input;
 using CartLaunchCompanion.Desktop.Input;
@@ -8,9 +10,22 @@ namespace CartLaunchCompanion.Desktop.Views;
 
 public partial class MainWindow : Window
 {
+    private readonly HomeView _homeView = new();
+    private readonly MetadataView _metadataView = new();
+    private MainViewModel? _pageViewModel;
+
     public MainWindow()
     {
         InitializeComponent();
+
+        MainPages.PageTransition =
+            CartLaunchCompanion.Desktop.Controls.AnimationPreferenceParser
+                .IsReducedMotionValue(
+                    Environment.GetEnvironmentVariable("CLC_REDUCE_MOTION"))
+                ? null
+                : new CrossFade(TimeSpan.FromMilliseconds(350));
+
+        DataContextChanged += OnDataContextChanged;
 
         AddHandler(
             KeyDownEvent,
@@ -25,6 +40,40 @@ public partial class MainWindow : Window
             Activated += (_, _) => Topmost = true;
             Deactivated += (_, _) => Topmost = false;
         }
+    }
+
+    private void OnDataContextChanged(object? sender, EventArgs e)
+    {
+        if (_pageViewModel is not null)
+            _pageViewModel.PropertyChanged -= OnPageViewModelPropertyChanged;
+
+        _pageViewModel = DataContext as MainViewModel;
+        _homeView.DataContext = _pageViewModel;
+        _metadataView.DataContext = _pageViewModel;
+
+        if (_pageViewModel is null)
+            return;
+
+        _pageViewModel.PropertyChanged += OnPageViewModelPropertyChanged;
+        ShowPage(_pageViewModel.ActivePageIndex);
+    }
+
+    private void OnPageViewModelPropertyChanged(
+        object? sender,
+        PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MainViewModel.ActivePageIndex) &&
+            sender is MainViewModel viewModel)
+            ShowPage(viewModel.ActivePageIndex);
+    }
+
+    private void ShowPage(int pageIndex)
+    {
+        MainPages.Content = pageIndex switch
+        {
+            2 => _metadataView,
+            _ => _homeView
+        };
     }
 
     private async void OnPreviewKeyDown(

@@ -103,7 +103,8 @@ public partial class App : Application
                 },
                 VlcNativeTrailerControl.PrepareRuntimeAsync,
                 new RetroAchievementsClient(metadataHttpClient),
-                metadataHttpClient);
+                metadataHttpClient,
+                exophaseClient: new ExophaseClient(metadataHttpClient));
 
             mainWindow = new MainWindow
             {

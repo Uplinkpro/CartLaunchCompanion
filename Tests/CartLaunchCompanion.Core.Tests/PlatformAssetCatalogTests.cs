@@ -33,6 +33,16 @@ public sealed class PlatformAssetCatalogTests : IDisposable
         Assert.Equal(["Empty", "GameCube"], PlatformAssetCatalog.GetAvailablePlatformNames(_root));
     }
 
+    [Theory]
+    [InlineData("GBA", "Game Boy Advance")]
+    [InlineData("PSP", "PlayStation Portable")]
+    [InlineData("PS2", "PlayStation 2")]
+    [InlineData("PC", "PC")]
+    public void ResolveDisplayName_ExpandsKnownPlatformAliases(string label, string expected)
+    {
+        Assert.Equal(expected, PlatformAssetCatalog.ResolveDisplayName(label));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root)) Directory.Delete(_root, true);

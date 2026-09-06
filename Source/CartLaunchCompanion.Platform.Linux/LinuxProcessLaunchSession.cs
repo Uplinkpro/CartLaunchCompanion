@@ -7,6 +7,7 @@ internal sealed class LinuxProcessLaunchSession(
     : IGameLaunchSession
 {
     public bool CanMonitor => true;
+    public bool WasGameObserved => true;
 
     public Task WaitForExitAsync(
         CancellationToken cancellationToken = default)

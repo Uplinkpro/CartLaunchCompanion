@@ -10,6 +10,7 @@ using CartLaunchCompanion.Core.Portable;
 using CartLaunchCompanion.Core.Updating;
 using CartLaunchCompanion.Core.PhysicalCarts;
 using CartLaunchCompanion.Core.Metadata;
+using CartLaunchCompanion.Core.Tracking;
 using CartLaunchCompanion.Desktop.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -29,7 +30,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly string? _trustedCartId;
     private readonly RetroAchievementsClient? _retroAchievementsClient;
     private readonly HttpClient? _metadataHttpClient;
+    private readonly SteamPlayerStatsClient? _steamPlayerStatsClient;
+    private readonly ExophaseClient? _exophaseClient;
+    private readonly GamePlaytimeStore _playtimeStore;
     private readonly string _retroAchievementsCacheDirectory;
+    private readonly string _exophaseCacheDirectory;
 
     private DateTimeOffset _lastInputAt = DateTimeOffset.MinValue;
     private LauncherAction _lastInputAction = LauncherAction.None;
@@ -38,6 +43,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private CancellationTokenSource? _updateCancellation;
     private CancellationTokenSource? _metadataLoadingCancellation;
     private CancellationTokenSource? _retroAchievementsCancellation;
+    private CancellationTokenSource? _steamStatsCancellation;
+    private CancellationTokenSource? _exophaseCancellation;
+    private CancellationTokenSource? _playtimeCancellation;
     private readonly List<GameCardViewModel> _allGameCards = [];
     private bool _metadataOpenedFromVersionPicker;
     private GameCardViewModel? _versionGroupRepresentative;
@@ -70,7 +78,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         Action<bool> setWindowVisible,
         Func<CancellationToken, Task>? prepareTrailerRuntime = null,
         RetroAchievementsClient? retroAchievementsClient = null,
-        HttpClient? metadataHttpClient = null)
+        HttpClient? metadataHttpClient = null,
+        GamePlaytimeStore? playtimeStore = null,
+        ExophaseClient? exophaseClient = null)
     {
         _libraryService = libraryService;
         _launchService = launchService;
@@ -82,9 +92,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _prepareTrailerRuntime = prepareTrailerRuntime ?? (_ => Task.CompletedTask);
         _retroAchievementsClient = retroAchievementsClient;
         _metadataHttpClient = metadataHttpClient;
+        _steamPlayerStatsClient = metadataHttpClient is null
+            ? null
+            : new SteamPlayerStatsClient(metadataHttpClient);
+        _exophaseClient = exophaseClient;
+        _playtimeStore = playtimeStore ?? new GamePlaytimeStore(
+            Path.Combine(_portablePaths.Config, "playtime.json"));
         _retroAchievementsCacheDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "CartLaunchCompanion", "Cache", "RetroAchievements");
+        _exophaseCacheDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "CartLaunchCompanion", "Cache", "Exophase");
         _trustedCartId = Environment.GetEnvironmentVariable("CLC_TRUSTED_CART_ID");
 
         ReloadCommand = new AsyncRelayCommand(LoadAsync);
@@ -133,6 +152,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public ObservableCollection<GameShelfViewModel> Shelves { get; } = [];
     public ObservableCollection<GameCardViewModel> VersionChoices { get; } = [];
     public ObservableCollection<RetroAchievementItemViewModel> RetroAchievementsRecent { get; } = [];
+    public ObservableCollection<MetadataModuleViewModel> MetadataModules { get; } = [];
 
     [ObservableProperty]
     public partial CollectionConfiguration Collection { get; set; } = new();
@@ -172,13 +192,40 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public partial bool IsHomeVisible { get; set; } = true;
 
     [ObservableProperty]
+    public partial int ActivePageIndex { get; set; }
+
+    [ObservableProperty]
     public partial bool IsMetadataVisible { get; set; }
 
     [ObservableProperty]
     public partial bool IsMetadataLoading { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasAchievementData))]
     public partial bool IsRetroAchievementsVisible { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasAchievementData))]
+    public partial bool IsSteamAchievementsVisible { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasAchievementData))]
+    public partial bool IsExophaseAchievementsVisible { get; set; }
+
+    [ObservableProperty]
+    public partial string SteamAchievementsProgress { get; set; } = "";
+
+    [ObservableProperty]
+    public partial double SteamAchievementsPercent { get; set; }
+
+    [ObservableProperty]
+    public partial string ExophaseAchievementsProgress { get; set; } = "";
+
+    [ObservableProperty]
+    public partial double ExophaseAchievementsPercent { get; set; }
+
+    public bool HasAchievementData =>
+        IsRetroAchievementsVisible || IsSteamAchievementsVisible || IsExophaseAchievementsVisible;
 
     [ObservableProperty]
     public partial bool IsRetroAchievementsLoading { get; set; }
@@ -197,6 +244,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     public partial string RetroAchievementsAward { get; set; } = "";
+
+    [ObservableProperty]
+    public partial double RetroAchievementsPercent { get; set; }
 
     [ObservableProperty]
     public partial GameCardViewModel? LoadingGame { get; set; }
@@ -364,7 +414,22 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     partial void OnIsMetadataVisibleChanged(bool value)
     {
+        if (value)
+            ActivePageIndex = 2;
+
         OnPropertyChanged(nameof(ShouldPlayTrailer));
+    }
+
+    partial void OnIsHomeVisibleChanged(bool value)
+    {
+        if (value)
+            ActivePageIndex = 0;
+    }
+
+    partial void OnIsVersionPickerVisibleChanged(bool value)
+    {
+        if (value)
+            ActivePageIndex = 1;
     }
 
     partial void OnIsTrailerPlaybackEnabledChanged(bool value)
@@ -505,13 +570,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public async Task HandleInputAsync(
         LauncherInputEvent input)
     {
-        LastInputDevice = input.Device;
-
         if (input.Device == InputDeviceKind.Controller)
             LastControllerAction = input.Action.ToString();
 
         if (ShouldDebounce(input))
             return;
+
+        // Steam Input can emit a keyboard event immediately after the matching
+        // SDL gamepad event. Only let accepted input change the visible prompt
+        // mode so that filtered duplicates cannot make the UI flicker.
+        LastInputDevice = input.Device;
 
         _lastInputAction = input.Action;
         _lastInputAt = input.Timestamp;
@@ -869,14 +937,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 : "This game is not launchable on the current platform.";
 
             IsMetadataVisible = true;
+            StartMetadataModulesLoad(game);
             StartRetroAchievementsLoad(game);
-            // Keep the loading layer above the page through its 240 ms entrance
-            // animation. The native trailer remains hidden until the overlay is
-            // gone and its surface has completed a real layout pass.
-            await Task.Delay(UseMotionEffects ? 260 : 30, transition.Token);
+            // Keep the animated loading layer above the complete page
+            // cross-fade. Exposing the transition host earlier can reveal its
+            // outgoing presenter for a frame, which looks like the platform
+            // chooser flashed for single-platform games.
+            await Task.Delay(UseMotionEffects ? 380 : 30, transition.Token);
             IsMetadataLoading = false;
             LoadingGame = null;
-            await Task.Delay(16, transition.Token);
+            // Give the revealed metadata view one layout pass before attaching
+            // the native video surface, preventing a blank first frame.
+            await Task.Delay(UseMotionEffects ? 30 : 1, transition.Token);
             IsTrailerPlaybackEnabled = true;
         }
         catch (OperationCanceledException)
@@ -927,6 +999,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
 
         _metadataLoadingCancellation?.Cancel();
+        ClearMetadataModules();
         ClearRetroAchievements();
 
         IsTrailerPlaybackEnabled = false;
@@ -1184,6 +1257,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             var result =
                 await _launchService.LaunchAsync(request);
+            var playtimeStartedAt = Stopwatch.GetTimestamp();
 
             MetadataStatus = result.Message;
 
@@ -1212,7 +1286,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 _setWindowVisible(false);
 
             if (session.CanMonitor)
+            {
                 await session.WaitForExitAsync();
+
+                if (session.WasGameObserved)
+                {
+                    var duration = Stopwatch.GetElapsedTime(playtimeStartedAt);
+                    await _playtimeStore.RecordSessionAsync(
+                        GameIdentity.Resolve(game.Entry.Configuration.Game),
+                        duration,
+                        DateTimeOffset.UtcNow);
+                }
+            }
 
             if (shouldHide &&
                 request.Behavior.RestoreLauncherAfterExit)
@@ -1300,6 +1385,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             ? normalized
             : Path.Combine(_portablePaths.Root, normalized);
 
+        if (!File.Exists(path))
+        {
+            var packagedPrefix = Path.Combine("System", "Assets") + Path.DirectorySeparatorChar;
+            if (normalized.StartsWith(packagedPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                var sourceRelative = normalized[packagedPrefix.Length..];
+                var sourceAssetPath = Path.Combine(_portablePaths.Root, "Assets", sourceRelative);
+                if (File.Exists(sourceAssetPath))
+                    path = sourceAssetPath;
+            }
+        }
+
         try
         {
             return File.Exists(path) ? new Bitmap(path) : null;
@@ -1317,6 +1414,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         CollectionLogoImage?.Dispose();
         _metadataLoadingCancellation?.Cancel();
         _metadataLoadingCancellation?.Dispose();
+        ClearMetadataModules();
         ClearRetroAchievements();
         _updateCancellation?.Cancel();
         _updateCancellation?.Dispose();
@@ -1329,7 +1427,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (!achievements.RetroAchievementsEnabled || achievements.RetroAchievementsGameId is not > 0)
             return;
 
-        IsRetroAchievementsVisible = true;
         IsRetroAchievementsLoading = true;
         RetroAchievementsStatus = "CHECKING RETROACHIEVEMENTS…";
         var cancellation = new CancellationTokenSource();
@@ -1364,9 +1461,24 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             RetroAchievementsProgress = $"{progress.EarnedAchievements} / {progress.TotalAchievements} UNLOCKED";
             RetroAchievementsPoints = $"{progress.EarnedPoints:N0} POINTS";
             RetroAchievementsAward = progress.Award;
+            RetroAchievementsPercent = progress.TotalAchievements > 0
+                ? progress.EarnedAchievements * 100d / progress.TotalAchievements
+                : 0d;
             RetroAchievementsStatus = progress.TotalAchievements > 0
                 ? "RETROACHIEVEMENTS"
                 : "NO ACHIEVEMENTS ARE AVAILABLE FOR THIS GAME";
+
+            if (progress.TotalAchievements > 0)
+            {
+                // Prefer the richer RetroAchievements presentation if both
+                // providers happen to be configured for the same title.
+                IsSteamAchievementsVisible = false;
+                IsExophaseAchievementsVisible = false;
+                IsRetroAchievementsVisible = true;
+                UpsertMetadataModule(CreateAchievementsModule(
+                    progress.EarnedAchievements,
+                    progress.TotalAchievements));
+            }
 
             var badgeTasks = progress.RecentAchievements.Select(item =>
                 CreateAchievementItemAsync(item, cancellation.Token));
@@ -1435,6 +1547,367 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         RetroAchievementsProgress = "";
         RetroAchievementsPoints = "";
         RetroAchievementsAward = "";
+        RetroAchievementsPercent = 0d;
+    }
+
+    private void StartMetadataModulesLoad(GameCardViewModel game)
+    {
+        ClearMetadataModules();
+        StartLocalPlaytimeLoad(game);
+
+        if (game.LauncherKind is not LauncherKind.Local and not LauncherKind.Custom &&
+            !string.Equals(game.Launcher, "Unavailable", StringComparison.OrdinalIgnoreCase))
+        {
+            UpsertMetadataModule(new MetadataModuleViewModel(
+                "library",
+                "LIBRARY",
+                game.Launcher,
+                MetadataModuleKind.Library,
+                10));
+        }
+
+        if (!string.Equals(
+                game.PlatformDisplay,
+                "Platform unavailable",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            UpsertMetadataModule(new MetadataModuleViewModel(
+                "platform",
+                "PLATFORM",
+                game.PlatformDisplay,
+                MetadataModuleKind.Platform,
+                20));
+        }
+
+        if (_steamPlayerStatsClient is null ||
+            !uint.TryParse(game.SteamAppId, out var appId))
+        {
+            StartExophaseLoad(game);
+            return;
+        }
+
+        var cancellation = new CancellationTokenSource();
+        _steamStatsCancellation = cancellation;
+        _ = LoadSteamPlayerStatsAsync(game, appId, cancellation);
+    }
+
+    private void StartLocalPlaytimeLoad(GameCardViewModel game)
+    {
+        var cancellation = new CancellationTokenSource();
+        _playtimeCancellation = cancellation;
+        _ = LoadLocalPlaytimeAsync(game, cancellation);
+    }
+
+    private async Task LoadLocalPlaytimeAsync(
+        GameCardViewModel game,
+        CancellationTokenSource cancellation)
+    {
+        try
+        {
+            var record = await _playtimeStore.GetAsync(
+                GameIdentity.Resolve(game.Entry.Configuration.Game),
+                cancellation.Token);
+            cancellation.Token.ThrowIfCancellationRequested();
+            if (record is null)
+                return;
+
+            UpsertPlaytimeModules(record);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"Local playtime could not be loaded: {ex.Message}");
+        }
+    }
+
+    private async Task LoadSteamPlayerStatsAsync(
+        GameCardViewModel game,
+        uint appId,
+        CancellationTokenSource cancellation)
+    {
+        try
+        {
+            var apiKey = await MetadataSecretStore.ReadAsync(
+                MetadataSecretStore.SteamWebApiKey,
+                cancellation.Token);
+            var steamAccountId = SteamLocalAccountResolver.ResolveMostRecentAccountId();
+            if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(steamAccountId))
+            {
+                StartExophaseLoad(game);
+                return;
+            }
+
+            var stats = await _steamPlayerStatsClient!.GetAsync(
+                apiKey,
+                steamAccountId,
+                appId,
+                cancellation.Token);
+            cancellation.Token.ThrowIfCancellationRequested();
+            if (stats is null)
+            {
+                StartExophaseLoad(game);
+                return;
+            }
+
+            var playtime = await _playtimeStore.ImportSteamAsync(
+                GameIdentity.Resolve(game.Entry.Configuration.Game),
+                stats.PlaytimeMinutes,
+                stats.LastPlayed,
+                cancellation.Token);
+            cancellation.Token.ThrowIfCancellationRequested();
+
+            UpsertPlaytimeModules(playtime);
+
+            if (stats.TotalAchievements is > 0 && stats.EarnedAchievements is { } earned)
+            {
+                if (!IsRetroAchievementsVisible)
+                {
+                    IsSteamAchievementsVisible = true;
+                    IsExophaseAchievementsVisible = false;
+                    SteamAchievementsProgress = $"{earned} / {stats.TotalAchievements.Value} UNLOCKED";
+                    SteamAchievementsPercent = earned * 100d / stats.TotalAchievements.Value;
+                }
+                UpsertMetadataModule(CreateAchievementsModule(earned, stats.TotalAchievements.Value));
+            }
+            else
+            {
+                StartExophaseLoad(game);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            // Do not log the request URI because Steam's API key is a query
+            // parameter on these official endpoints.
+            Trace.WriteLine($"Steam player modules could not be loaded ({ex.GetType().Name}).");
+            StartExophaseLoad(game);
+        }
+    }
+
+    private void StartExophaseLoad(GameCardViewModel game)
+    {
+        if (_exophaseClient is null || IsRetroAchievementsVisible || IsSteamAchievementsVisible)
+            return;
+
+        _exophaseCancellation?.Cancel();
+        _exophaseCancellation?.Dispose();
+        var cancellation = new CancellationTokenSource();
+        _exophaseCancellation = cancellation;
+        _ = LoadExophaseAsync(game, cancellation);
+    }
+
+    private async Task LoadExophaseAsync(
+        GameCardViewModel game,
+        CancellationTokenSource cancellation)
+    {
+        try
+        {
+            var playerId = await MetadataSecretStore.ReadAsync(
+                MetadataSecretStore.ExophasePlayerId,
+                cancellation.Token);
+            if (string.IsNullOrWhiteSpace(playerId))
+                return;
+
+            var progress = await _exophaseClient!.FindGameAsync(
+                playerId,
+                game.Entry.Configuration.Game.Name,
+                game.PlatformDisplay,
+                _exophaseCacheDirectory,
+                cancellation.Token);
+            cancellation.Token.ThrowIfCancellationRequested();
+            if (progress is null)
+                return;
+
+            if (progress.PlaytimeMinutes > 0)
+            {
+                UpsertMetadataModule(new MetadataModuleViewModel(
+                    "time-played",
+                    "TIME PLAYED",
+                    FormatPlaytime(progress.PlaytimeMinutes * 60L),
+                    MetadataModuleKind.TimePlayed,
+                    40));
+            }
+
+            if (progress.LastPlayed is { } lastPlayed)
+            {
+                UpsertMetadataModule(new MetadataModuleViewModel(
+                    "last-played",
+                    "LAST PLAYED",
+                    lastPlayed.ToLocalTime().ToString("MMM d, yyyy"),
+                    MetadataModuleKind.LastPlayed,
+                    30));
+            }
+
+            if (progress.TotalAchievements <= 0 ||
+                IsRetroAchievementsVisible || IsSteamAchievementsVisible)
+                return;
+
+            IsExophaseAchievementsVisible = true;
+            ExophaseAchievementsProgress =
+                $"{progress.EarnedAchievements} / {progress.TotalAchievements} UNLOCKED";
+            ExophaseAchievementsPercent = progress.CompletionPercent;
+            UpsertMetadataModule(CreateAchievementsModule(
+                progress.EarnedAchievements,
+                progress.TotalAchievements));
+
+            if (progress.RecentAchievements is { Count: > 0 })
+            {
+                var badgeTasks = progress.RecentAchievements.Select(item =>
+                    CreateExophaseAchievementItemAsync(item, cancellation.Token));
+                foreach (var item in await Task.WhenAll(badgeTasks))
+                    RetroAchievementsRecent.Add(item);
+                HasRetroAchievementsRecent = RetroAchievementsRecent.Count > 0;
+            }
+            else
+            {
+                RetroAchievementsStatus =
+                    "Reconnect Exophase in Configurator Settings to import earned achievement details.";
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"Exophase modules could not be loaded ({ex.GetType().Name}).");
+        }
+    }
+
+    private async Task<RetroAchievementItemViewModel> CreateExophaseAchievementItemAsync(
+        ExophaseAchievement achievement,
+        CancellationToken cancellationToken)
+    {
+        Bitmap? badge = null;
+        if (_metadataHttpClient is not null &&
+            TryResolveExophaseImageUrl(achievement.IconUrl, out var imageUrl))
+        {
+            try
+            {
+                var cacheName = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+                    System.Text.Encoding.UTF8.GetBytes(imageUrl))).ToLowerInvariant() + ".png";
+                var cachePath = Path.Combine(_exophaseCacheDirectory, "Badges", cacheName);
+                if (!File.Exists(cachePath))
+                {
+                    var bytes = await _metadataHttpClient.GetByteArrayAsync(imageUrl, cancellationToken);
+                    Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
+                    await File.WriteAllBytesAsync(cachePath, bytes, cancellationToken);
+                }
+                badge = new Bitmap(cachePath);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                Trace.WriteLine($"Exophase badge could not be loaded ({ex.GetType().Name}).");
+            }
+        }
+
+        var detail = achievement.EarnedAt is { } earnedAt
+            ? $"UNLOCKED {earnedAt.ToLocalTime():MMM d, yyyy}"
+            : "UNLOCKED";
+        return new RetroAchievementItemViewModel(
+            achievement.Title,
+            achievement.Description,
+            0,
+            false,
+            badge,
+            detail);
+    }
+
+    private static bool TryResolveExophaseImageUrl(string value, out string url)
+    {
+        url = "";
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        if (Uri.TryCreate(value, UriKind.Absolute, out var absolute) &&
+            absolute.Scheme is "https" or "http")
+        {
+            url = absolute.ToString();
+            return true;
+        }
+        if (Uri.TryCreate(new Uri("https://www.exophase.com/"), value, out var relative))
+        {
+            url = relative.ToString();
+            return true;
+        }
+        return false;
+    }
+
+    private static MetadataModuleViewModel CreateAchievementsModule(int earned, int total) =>
+        new(
+            "achievements",
+            "ACHIEVEMENTS",
+            $"{earned} / {total}",
+            MetadataModuleKind.Achievements,
+            50);
+
+    private void UpsertMetadataModule(MetadataModuleViewModel module)
+    {
+        var existing = MetadataModules.FirstOrDefault(item => item.Key == module.Key);
+        if (existing is not null)
+            MetadataModules.Remove(existing);
+
+        var index = 0;
+        while (index < MetadataModules.Count && MetadataModules[index].Order < module.Order)
+            index++;
+        MetadataModules.Insert(index, module);
+    }
+
+    private void ClearMetadataModules()
+    {
+        _playtimeCancellation?.Cancel();
+        _playtimeCancellation?.Dispose();
+        _playtimeCancellation = null;
+        _steamStatsCancellation?.Cancel();
+        _steamStatsCancellation?.Dispose();
+        _steamStatsCancellation = null;
+        _exophaseCancellation?.Cancel();
+        _exophaseCancellation?.Dispose();
+        _exophaseCancellation = null;
+        MetadataModules.Clear();
+        IsSteamAchievementsVisible = false;
+        SteamAchievementsProgress = "";
+        SteamAchievementsPercent = 0d;
+        IsExophaseAchievementsVisible = false;
+        ExophaseAchievementsProgress = "";
+        ExophaseAchievementsPercent = 0d;
+    }
+
+    private void UpsertPlaytimeModules(GamePlaytimeRecord record)
+    {
+        if (record.LastPlayed is { } lastPlayed)
+        {
+            UpsertMetadataModule(new MetadataModuleViewModel(
+                "last-played",
+                "LAST PLAYED",
+                lastPlayed.ToLocalTime().ToString("MMM d, yyyy"),
+                MetadataModuleKind.LastPlayed,
+                30));
+        }
+
+        if (record.TotalSeconds > 0)
+        {
+            UpsertMetadataModule(new MetadataModuleViewModel(
+                "time-played",
+                "TIME PLAYED",
+                FormatPlaytime(record.TotalSeconds),
+                MetadataModuleKind.TimePlayed,
+                40));
+        }
+    }
+
+    private static string FormatPlaytime(long seconds)
+    {
+        var minutes = Math.Max(1L, (seconds + 59L) / 60L);
+        if (minutes < 60)
+            return $"{minutes} min";
+
+        var hours = minutes / 60;
+        var remainingMinutes = minutes % 60;
+        return remainingMinutes == 0
+            ? $"{hours:N0}h"
+            : $"{hours:N0}h {remainingMinutes}m";
     }
 
     private sealed class UnavailableRuntimeUpdateService : IRuntimeUpdateService

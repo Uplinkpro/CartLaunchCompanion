@@ -8,19 +8,91 @@
   "accentColor": "#F2C94C",
   "defaultShelf": "",
   "shelves": [
-    { "name": "The Topdown Era", "order": 10 },
-    { "name": "The 3D Era", "order": 20 },
-    { "name": "The HD Era", "order": 30 }
+    {
+      "name": "The Topdown Era",
+      "order": 10
+    },
+    {
+      "name": "The 3D Era",
+      "order": 20
+    },
+    {
+      "name": "The HD Era",
+      "order": 30
+    }
   ],
   "placements": [
-    { "configuration": "Games/Grand Theft Auto/game.json", "shelf": "The Topdown Era", "order": 10 },
-    { "configuration": "Games/Grand Theft Auto London 1969/game.json", "shelf": "The Topdown Era", "order": 20 },
-    { "configuration": "Games/Grand Theft Auto London 1961/game.json", "shelf": "The Topdown Era", "order": 30 },
-    { "configuration": "Games/Grand Theft Auto II/game.json", "shelf": "The Topdown Era", "order": 40 },
-    { "configuration": "Games/Grand Theft Auto III - The Definitive Edition/game.json", "shelf": "The 3D Era", "order": 10 },
-    { "configuration": "Games/Grand Theft Auto Vice City - The Definitive Edition/game.json", "shelf": "The 3D Era", "order": 20 },
-    { "configuration": "Games/Grand Theft Auto San Andreas - The Definitive Edition/game.json", "shelf": "The 3D Era", "order": 30 },
-    { "configuration": "Games/Grand Theft Auto IV - The Complete Edition/game.json", "shelf": "The HD Era", "order": 10 },
-    { "configuration": "Games/Grand Theft Auto V Enhanced/game.json", "shelf": "The HD Era", "order": 20 }
+    {
+      "configuration": "Games/Grand Theft Auto - PC/game.json",
+      "shelf": "The Topdown Era",
+      "order": 10,
+      "gameId": "game-2628a83cf65847f99cecf62991aa8085"
+    },
+    {
+      "configuration": "Games/Grand Theft Auto London 1969- PC/game.json",
+      "shelf": "The Topdown Era",
+      "order": 20,
+      "gameId": "game-0eaf3a6ff06e4cca9fb4710fd9d23676"
+    },
+    {
+      "configuration": "Games/Grand Theft Auto London 1961- PC/game.json",
+      "shelf": "The Topdown Era",
+      "order": 30,
+      "gameId": "game-7f08b6054ce7418f8ab0c9509bebcbe6"
+    },
+    {
+      "configuration": "Games/Grand Theft Auto 2 - PC/game.json",
+      "shelf": "The Topdown Era",
+      "order": 40,
+      "gameId": "game-b138806592dc4e1e9a460a56ba8d74a7"
+    },
+    {
+      "configuration": "Games/Grand Theft Auto Advance - GBA/game.json",
+      "shelf": "The Topdown Era",
+      "order": 50,
+      "gameId": "game-89153e99f9674b88b3bd4ec339136887"
+    },
+    {
+      "configuration": "Games/Grand Theft Auto III – The Definitive Edition - PC/game.json",
+      "shelf": "The 3D Era",
+      "order": 10,
+      "gameId": "game-b81953cb8b224bd1a518fb7d6a435235"
+    },
+    {
+      "configuration": "Games/Grand Theft Auto Vice City – The Definitive Edition- PC/game.json",
+      "shelf": "The 3D Era",
+      "order": 20,
+      "gameId": "game-4261e8b130104622be8dae61d9a0478d"
+    },
+    {
+      "configuration": "Games/Grand Theft Auto San Andreas – The Definitive Edition- PC/game.json",
+      "shelf": "The 3D Era",
+      "order": 30,
+      "gameId": "game-0fb96b48346545a897641aa9e7a410d0"
+    },
+    {
+      "configuration": "Games/Grand Theft Auto Liberty City Stories- PSP/game.json",
+      "shelf": "The 3D Era",
+      "order": 40,
+      "gameId": "game-19ce96e63c9e437897e73e1aa34cf3ff"
+    },
+    {
+      "configuration": "Games/Grand Theft Auto Vice City Stories- PSP/game.json",
+      "shelf": "The 3D Era",
+      "order": 50,
+      "gameId": "game-fdcb57667b4145c5881cbe67ea931ffd"
+    },
+    {
+      "configuration": "Games/Grand Theft Auto IV The Complete Edition- PC/game.json",
+      "shelf": "The HD Era",
+      "order": 10,
+      "gameId": "game-f074aee3791f4c6a99276191422557bb"
+    },
+    {
+      "configuration": "Games/Grand Theft Auto V Enhanced - PC/game.json",
+      "shelf": "The HD Era",
+      "order": 20,
+      "gameId": "game-c12eccc7cfa84cc0b1d88aea7759f0e7"
+    }
   ]
 }

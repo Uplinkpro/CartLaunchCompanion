@@ -27,6 +27,25 @@ public static class PlatformAssetCatalog
         ["wiiu"] = "wiiu"
     };
 
+    private static readonly IReadOnlyDictionary<string, string> KnownDisplayNames =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["playstation"] = "PlayStation",
+            ["playstation2"] = "PlayStation 2",
+            ["playstation3"] = "PlayStation 3",
+            ["playstation4"] = "PlayStation 4",
+            ["playstation5"] = "PlayStation 5",
+            ["playstationportable"] = "PlayStation Portable",
+            ["playstationvita"] = "PlayStation Vita",
+            ["gameboy"] = "Game Boy",
+            ["gameboycolor"] = "Game Boy Color",
+            ["gameboyadvance"] = "Game Boy Advance",
+            ["gamecube"] = "GameCube",
+            ["supernintendo"] = "Super Nintendo",
+            ["switch"] = "Nintendo Switch",
+            ["wiiu"] = "Wii U"
+        };
+
     public static string? ResolveAsset(string assetsRoot, string platformLabel, string fileName)
     {
         if (string.IsNullOrWhiteSpace(assetsRoot) || string.IsNullOrWhiteSpace(platformLabel) ||
@@ -61,6 +80,34 @@ public static class PlatformAssetCatalog
                 names.Add(Path.GetFileName(directory));
         }
         return names.ToArray();
+    }
+
+    public static string ResolveDisplayName(string platformLabel, params string[] assetRoots)
+    {
+        if (string.IsNullOrWhiteSpace(platformLabel))
+            return "Emulator";
+
+        var requested = Normalize(platformLabel);
+        var canonical = Aliases.GetValueOrDefault(requested, requested);
+        foreach (var assetsRoot in assetRoots.Where(root => !string.IsNullOrWhiteSpace(root)))
+        {
+            var platformsRoot = Path.Combine(assetsRoot, "Platforms");
+            if (!Directory.Exists(platformsRoot))
+                continue;
+
+            string[] directories;
+            try { directories = Directory.GetDirectories(platformsRoot, "*", SearchOption.TopDirectoryOnly); }
+            catch { continue; }
+
+            var directory = directories.FirstOrDefault(path =>
+                Normalize(Path.GetFileName(path)) == requested)
+                ?? directories.FirstOrDefault(path =>
+                    Normalize(Path.GetFileName(path)) == canonical);
+            if (directory is not null)
+                return Path.GetFileName(directory);
+        }
+
+        return KnownDisplayNames.GetValueOrDefault(canonical, platformLabel.Trim());
     }
 
     public static string Normalize(string value) =>

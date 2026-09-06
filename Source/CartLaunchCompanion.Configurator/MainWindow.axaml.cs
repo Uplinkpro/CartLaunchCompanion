@@ -83,7 +83,7 @@ public sealed partial class MainWindow : Window
             await LoadCollectionOrganizerAsync();
             var settings = await ConfiguratorSettings.LoadAsync();
             if (!settings.SetupCompleted)
-                await new ApiSetupDialog(settings).ShowDialog<bool>(this);
+                await new ApiSetupDialog(settings, GetCartGameTitles()).ShowDialog<bool>(this);
         }
         catch (Exception ex)
         {
@@ -162,8 +162,15 @@ public sealed partial class MainWindow : Window
     private async void SettingsClicked(object? sender, RoutedEventArgs e)
     {
         var settings = await ConfiguratorSettings.LoadAsync();
-        await new ApiSetupDialog(settings).ShowDialog<bool>(this);
+        await new ApiSetupDialog(settings, GetCartGameTitles()).ShowDialog<bool>(this);
     }
+
+    private string[] GetCartGameTitles() => _viewModel.ExistingGames
+        .Select(game => game.Name)
+        .Append(_viewModel.Configuration.Game.Name)
+        .Where(name => !string.IsNullOrWhiteSpace(name))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
 
     private async void FindOnSteamClicked(object? sender, RoutedEventArgs e)
     {
@@ -309,6 +316,16 @@ public sealed partial class MainWindow : Window
             groupBox.Text?.Trim(),
             GameNameBox.Text?.Trim(),
             StringComparison.Ordinal);
+    }
+
+    private void RetroAchievementsGameIdChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (sender is not TextBox gameIdBox)
+            return;
+
+        var enabled = int.TryParse(gameIdBox.Text?.Trim(), out var gameId) && gameId > 0;
+        _viewModel.Configuration.Achievements.RetroAchievementsEnabled = enabled;
+        RetroAchievementsEnabledToggle.IsChecked = enabled;
     }
 
     private void ReplaceConfiguration(GameConfiguration configuration)

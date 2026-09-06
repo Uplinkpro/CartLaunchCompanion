@@ -9,6 +9,7 @@ internal sealed class LinuxNamedProcessLaunchSession(
     : IGameLaunchSession
 {
     public bool CanMonitor => true;
+    public bool WasGameObserved { get; private set; }
 
     public async Task WaitForExitAsync(
         CancellationToken cancellationToken = default)
@@ -28,7 +29,10 @@ internal sealed class LinuxNamedProcessLaunchSession(
             processes = Process.GetProcessesByName(normalizedName);
 
             if (processes.Length > 0)
+            {
+                WasGameObserved = true;
                 break;
+            }
 
             await Task.Delay(
                 TimeSpan.FromSeconds(Math.Max(1, pollSeconds)),

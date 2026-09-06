@@ -9,6 +9,7 @@ internal sealed class WindowsNamedProcessLaunchSession(
     : IGameLaunchSession
 {
     public bool CanMonitor => true;
+    public bool WasGameObserved { get; private set; }
 
     public async Task WaitForExitAsync(
         CancellationToken cancellationToken = default)
@@ -24,7 +25,10 @@ internal sealed class WindowsNamedProcessLaunchSession(
             cancellationToken.ThrowIfCancellationRequested();
 
             if (IsProcessRunning(normalizedName))
+            {
+                WasGameObserved = true;
                 break;
+            }
 
             await Task.Delay(
                 TimeSpan.FromSeconds(Math.Max(1, pollSeconds)),

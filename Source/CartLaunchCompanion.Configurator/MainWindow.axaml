@@ -105,13 +105,13 @@
                     <TextBlock FontSize="18" FontWeight="SemiBold" Text="RetroAchievements"/>
                     <TextBlock Classes="help" Text="Optional for emulated games. CLC identifies supported cartridge ROMs by their exact revision; your emulator remains responsible for unlocking achievements." TextWrapping="Wrap"/>
                   </StackPanel>
-                  <ToggleSwitch Grid.Column="1" IsChecked="{Binding Configuration.Achievements.RetroAchievementsEnabled}" OnContent="Shown" OffContent="Hidden"/>
+                  <ToggleSwitch x:Name="RetroAchievementsEnabledToggle" Grid.Column="1" IsChecked="{Binding Configuration.Achievements.RetroAchievementsEnabled}" OnContent="Shown" OffContent="Hidden"/>
                 </Grid>
                 <Grid ColumnDefinitions="*,16,*">
                   <local:LabeledField Label="Game ID" Description="Optional fallback. Enter the public RetroAchievements game ID when a disc or compressed container cannot be hashed by CLC.">
                     <local:LabeledField.FieldContent>
                       <StackPanel>
-                        <TextBox Text="{Binding Configuration.Achievements.RetroAchievementsGameId}" PlaceholderText="Paste the number, such as 11240"/>
+                        <TextBox Text="{Binding Configuration.Achievements.RetroAchievementsGameId}" TextChanged="RetroAchievementsGameIdChanged" PlaceholderText="Paste the number, such as 11240"/>
                         <WrapPanel Classes="url-example">
                           <TextBlock Text="Example: https://retroachievements.org/game/"/>
                           <Border Classes="url-id"><TextBlock Text="11240"/></Border>

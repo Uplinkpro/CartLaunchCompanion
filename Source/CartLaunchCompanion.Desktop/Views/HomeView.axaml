@@ -72,7 +72,6 @@
     <Grid Background="#030406">
         <!-- A seamless frosted atmosphere inherited from the selected game. -->
         <Image Source="{Binding SelectedGame.BackgroundImage}"
-               IsVisible="{Binding IsHomeVisible}"
                Stretch="UniformToFill"
                Opacity="0.30"
                Margin="-34">
@@ -101,7 +100,7 @@
             </Image.OpacityMask>
         </Image>
         <Border Background="#08080B10" />
-        <Border IsVisible="{Binding IsHomeVisible}">
+        <Border>
             <Border.Background>
                 <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
                     <GradientStop Color="#00000000" Offset="0.000" />
@@ -129,11 +128,7 @@
         </Border>
 
         <!-- Home: browse only. -->
-        <Grid IsVisible="{Binding IsHomeVisible}"
-              Classes="page-transition"
-              Classes.active="{Binding IsHomeVisible}"
-              Classes.motion="{Binding UseMotionEffects}"
-              RowDefinitions="*,Auto"
+        <Grid RowDefinitions="*,Auto"
               Margin="32">
 
             <Grid Grid.Row="0"

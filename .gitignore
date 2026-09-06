@@ -77,6 +77,7 @@ Settings.json
 RecentGames.json
 UserSettings.json
 Config/metadata.json
+Config/playtime.json
 
 ###############################################################################
 # Ignore personal game library

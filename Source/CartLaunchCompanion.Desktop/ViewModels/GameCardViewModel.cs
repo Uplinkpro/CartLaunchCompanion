@@ -44,6 +44,7 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
         BackgroundImage = background;
         HeroImage = hero;
         LogoImage = TryLoadBitmap(entry.LogoPath);
+        IconImage = TryLoadBitmap(entry.IconPath);
         LauncherLogoImage = TryLoadBitmap(
             entry.LaunchTarget?.Launcher == LauncherKind.Custom &&
             entry.LaunchTarget.RequiredLauncher is null
@@ -83,7 +84,11 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
     public string Name => Entry.Configuration.Game.Name;
     public string VersionGroup => Entry.Configuration.Game.VersionGroup;
     public string PlatformLabel => Entry.Configuration.Game.PlatformLabel;
-    public string PlatformDisplay => string.IsNullOrWhiteSpace(PlatformLabel) ? Launcher : PlatformLabel;
+    public string PlatformDisplay => IsPcPlatformLabel(PlatformLabel)
+        ? ResolveRuntimePlatformDisplay()
+        : !string.IsNullOrWhiteSpace(PlatformLabel)
+            ? ResolveConfiguredPlatformDisplay()
+            : IsEmulatedGame ? "Emulator" : ResolveRuntimePlatformDisplay();
     public bool IsPrimaryVersion => Entry.Configuration.Game.PrimaryVersion;
     public bool HasMultipleVersions => Versions.Count > 1;
     public string Description => Entry.Configuration.Game.Description;
@@ -154,6 +159,10 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
         LauncherKind != LauncherKind.Local && LauncherLogoImage is not null;
     public bool UsesCartLaunchBranding => !UsesLauncherBranding;
 
+    private bool IsEmulatedGame =>
+        Entry.LaunchTarget?.Launcher == LauncherKind.Custom &&
+        Entry.LaunchTarget.RequiredLauncher is null;
+
     public LauncherTheme Theme =>
         LauncherThemeCatalog.Get(LauncherKind);
 
@@ -169,6 +178,7 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
     public Bitmap? HeroImage { get; }
     public Bitmap? BackgroundImage { get; }
     public Bitmap? LogoImage { get; }
+    public Bitmap? IconImage { get; }
     public Bitmap? LauncherLogoImage { get; }
     public Bitmap? LauncherBannerImage { get; }
     public Bitmap? CurrentScreenshotImage
@@ -186,12 +196,19 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
     public bool HasHeroOnly => BackgroundImage is null && HeroImage is not null;
     public bool HasLogo => LogoImage is not null;
     public bool HasNoLogo => LogoImage is null;
+    public bool HasIcon => IconImage is not null;
+    public bool HasNoIcon => IconImage is null;
     public bool HasTrailer => Entry.TrailerPath is not null;
     public string? TrailerSource => Entry.TrailerSource;
     public bool HasTrailerSource => !string.IsNullOrWhiteSpace(TrailerSource);
     public bool HasNoTrailerSource => !HasTrailerSource;
     public bool HasScreenshots => CurrentScreenshotImage is not null;
     public bool IsLaunchable => Entry.IsLaunchable;
+    public string SteamAppId =>
+        !string.IsNullOrWhiteSpace(Entry.Configuration.Launch.Windows.SteamId)
+            ? Entry.Configuration.Launch.Windows.SteamId.Trim()
+            : Entry.Configuration.Launch.Linux.SteamId.Trim();
+    public bool HasSteamAppId => uint.TryParse(SteamAppId, out _);
 
 
     public bool IsSelected
@@ -275,6 +292,7 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
         BackgroundImage?.Dispose();
         if (!ReferenceEquals(HeroImage, BackgroundImage)) HeroImage?.Dispose();
         LogoImage?.Dispose();
+        IconImage?.Dispose();
         LauncherLogoImage?.Dispose();
         LauncherBannerImage?.Dispose();
         foreach (var screenshot in _screenshotImages)
@@ -326,9 +344,7 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
             : LauncherAssetCatalog.FolderName(entry.LaunchTarget?.BrandingLauncher ?? LauncherKind.Local);
 
         return Path.Combine(
-            portableRoot.FullName,
-            "System",
-            "Assets",
+            ResolveAssetsRoot(portableRoot.FullName),
             "Launchers",
             launcherFolder,
             fileName);
@@ -344,10 +360,69 @@ public sealed class GameCardViewModel : ViewModelBase, IDisposable
         if (portableRoot is null)
             return null;
 
-        var assetsRoot = Path.Combine(portableRoot.FullName, "System", "Assets");
+        var assetsRoot = ResolveAssetsRoot(portableRoot.FullName);
         return PlatformAssetCatalog.ResolveAsset(
             assetsRoot,
             entry.Configuration.Game.PlatformLabel,
             fileName);
     }
+
+    private static string ResolveAssetsRoot(string portableRoot)
+    {
+        var packagedAssets = Path.Combine(portableRoot, "System", "Assets");
+        if (Directory.Exists(packagedAssets))
+            return packagedAssets;
+
+        // Development checkouts keep source assets at the repository root.
+        return Path.Combine(portableRoot, "Assets");
+    }
+
+    private string ResolveRuntimePlatformDisplay()
+    {
+        var windows = HasConfiguredWindowsLaunch(Entry.Configuration.Launch.Windows);
+        var linux = HasConfiguredLinuxLaunch(Entry.Configuration.Launch.Linux);
+
+        return (windows, linux) switch
+        {
+            (true, true) => "Windows + Linux",
+            (true, false) => "Windows",
+            (false, true) => "Linux",
+            _ => "Platform unavailable"
+        };
+    }
+
+    private string ResolveConfiguredPlatformDisplay()
+    {
+        var gamesFolder = Directory.GetParent(Entry.FolderPath);
+        var portableRoot = gamesFolder?.Parent;
+        if (portableRoot is null)
+            return PlatformAssetCatalog.ResolveDisplayName(PlatformLabel);
+
+        return PlatformAssetCatalog.ResolveDisplayName(
+            PlatformLabel,
+            ResolveAssetsRoot(portableRoot.FullName));
+    }
+
+    private static bool HasConfiguredWindowsLaunch(WindowsLaunchConfiguration launch) =>
+        launch.Enabled &&
+        (!string.IsNullOrWhiteSpace(launch.SteamId) ||
+         !string.IsNullOrWhiteSpace(launch.XboxAppId) ||
+         !string.IsNullOrWhiteSpace(launch.EpicAppName) ||
+         !string.IsNullOrWhiteSpace(launch.GogGameId) ||
+         !string.IsNullOrWhiteSpace(launch.UbisoftGameId) ||
+         !string.IsNullOrWhiteSpace(launch.RockstarGameId) ||
+         !string.IsNullOrWhiteSpace(launch.AmazonGameId) ||
+         !string.IsNullOrWhiteSpace(launch.Executable) ||
+         !string.IsNullOrWhiteSpace(launch.Uri));
+
+    private static bool HasConfiguredLinuxLaunch(LinuxLaunchConfiguration launch) =>
+        launch.Enabled &&
+        (!string.IsNullOrWhiteSpace(launch.SteamId) ||
+         !string.IsNullOrWhiteSpace(launch.HeroicGameId) ||
+         !string.IsNullOrWhiteSpace(launch.FlatpakAppId) ||
+         !string.IsNullOrWhiteSpace(launch.Executable) ||
+         !string.IsNullOrWhiteSpace(launch.Uri));
+
+    private static bool IsPcPlatformLabel(string label) =>
+        PlatformAssetCatalog.Normalize(label) is "pc" or "computer";
 }
