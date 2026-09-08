@@ -21,7 +21,14 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
     private double _progress;
     public CartPackageDialog() { InitializeComponent(); DataContext = this; }
     public CartPackageDialog(string sourceRoot)
-    { _sourceRoot = Path.GetFullPath(sourceRoot); InitializeComponent(); DataContext = this; ValidateSource(); }
+    {
+        _sourceRoot = Path.GetFullPath(sourceRoot);
+        InitializeComponent();
+        DataContext = this;
+        DestinationRoot = FindExistingCartMediaRoot(_sourceRoot) ?? "";
+        ValidateSource();
+        ValidateDestination();
+    }
     public string SourceRoot { get => _sourceRoot; set { _sourceRoot = value; Changed(); } }
     public string SourceStatus { get => _sourceStatus; set { _sourceStatus = value; Changed(); } }
     public string DestinationRoot { get => _destinationRoot; set { _destinationRoot = value; Changed(); } }
@@ -36,7 +43,7 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
     {
         var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = "Choose removable-media root", AllowMultiple = false });
         if (folders.Count == 0) return;
-        DestinationRoot = StorageItemPathResolver.Resolve(folders[0].Path);
+        DestinationRoot = NormalizeExistingCartMediaRoot(StorageItemPathResolver.Resolve(folders[0].Path));
         ValidateDestination();
     }
 
@@ -62,8 +69,6 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
         CreateButton.IsEnabled = false;
         CreateButton.Content = "Create portable cart";
         if (!ValidateSource() || string.IsNullOrWhiteSpace(DestinationRoot)) return;
-        if (string.IsNullOrWhiteSpace(CartName) || CartName.Trim().Length > 80)
-        { DestinationStatus = "Enter a cart name between 1 and 80 characters."; return; }
         try
         {
             var source = Path.GetFullPath(SourceRoot); var destination = Path.GetFullPath(DestinationRoot);
@@ -77,6 +82,8 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
                 CreateButton.IsEnabled = true;
                 return;
             }
+            if (string.IsNullOrWhiteSpace(CartName) || CartName.Trim().Length > 80)
+            { DestinationStatus = "Enter a cart name between 1 and 80 characters."; return; }
             var required = Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories).Sum(path => new FileInfo(path).Length);
             var root = Path.GetPathRoot(destination);
             if (!string.IsNullOrWhiteSpace(root) && Directory.Exists(root))
@@ -89,6 +96,25 @@ public sealed partial class CartPackageDialog : Window, INotifyPropertyChanged
             CreateButton.IsEnabled = true;
         }
         catch (Exception ex) { DestinationStatus = "Destination is not usable: " + ex.Message; }
+    }
+
+    private static string NormalizeExistingCartMediaRoot(string selectedPath)
+    {
+        var selected = Path.TrimEndingDirectorySeparator(Path.GetFullPath(selectedPath));
+        return FindExistingCartMediaRoot(selected) ?? selected;
+    }
+
+    private static string? FindExistingCartMediaRoot(string selectedPath)
+    {
+        var selected = Path.TrimEndingDirectorySeparator(Path.GetFullPath(selectedPath));
+        for (var current = new DirectoryInfo(selected); current is not null; current = current.Parent)
+        {
+            var cart = Path.Combine(current.FullName, "Cart");
+            if (Directory.Exists(Path.Combine(cart, "System")) &&
+                Directory.Exists(Path.Combine(cart, "Games")))
+                return Path.TrimEndingDirectorySeparator(current.FullName);
+        }
+        return null;
     }
 
     private async void CreateClicked(object? sender, RoutedEventArgs e)

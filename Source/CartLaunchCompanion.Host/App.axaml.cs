@@ -30,11 +30,11 @@ public sealed partial class App : Application
             if (background)
             {
                 desktop.ShutdownMode = Avalonia.Controls.ShutdownMode.OnExplicitShutdown;
-                window.Opened += async (_, _) =>
+                window.EnableBackgroundMode();
+                Dispatcher.UIThread.Post(async () =>
                 {
-                    window.Hide();
                     await window.StartBackgroundMonitoringAsync();
-                };
+                });
             }
             else
             {

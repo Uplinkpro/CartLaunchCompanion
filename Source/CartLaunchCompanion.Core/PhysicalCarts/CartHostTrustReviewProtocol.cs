@@ -11,6 +11,8 @@ public static class CartHostTrustReviewProtocol
 {
     public const string PipeName = "CartLaunchCompanion.Host.TrustReview.v1";
     public const int MaximumMessageBytes = 4096;
+    private static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan ReviewPreparationTimeout = TimeSpan.FromMinutes(2);
     private static readonly JsonSerializerOptions JsonOptions = new()
     { UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow, MaxDepth = 4 };
 
@@ -19,11 +21,20 @@ public static class CartHostTrustReviewProtocol
         var root = Path.GetFullPath(mediaRoot);
         if (root.Length > 1024) return new(false, "The media root is too long.");
         await using var pipe = new NamedPipeClientStream(".", pipeName ?? PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(TimeSpan.FromSeconds(3));
-        await pipe.ConnectAsync(timeout.Token);
-        await WriteAsync(pipe, new CartHostTrustReviewRequest(1, "review-trust", root), timeout.Token);
-        return await ReadAsync<CartHostTrustReviewResponse>(pipe, timeout.Token);
+        using (var connectionTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+        {
+            connectionTimeout.CancelAfter(ConnectionTimeout);
+            await pipe.ConnectAsync(connectionTimeout.Token);
+        }
+
+        // Inspecting and hashing a portable runtime can take considerably longer than
+        // connecting to the already-running Monitor, especially on removable media.
+        // Keep the short connection timeout, but do not misreport a healthy review as
+        // failed merely because runtime preparation took more than three seconds.
+        using var preparationTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        preparationTimeout.CancelAfter(ReviewPreparationTimeout);
+        await WriteAsync(pipe, new CartHostTrustReviewRequest(1, "review-trust", root), preparationTimeout.Token);
+        return await ReadAsync<CartHostTrustReviewResponse>(pipe, preparationTimeout.Token);
     }
 
     internal static async Task WriteAsync<T>(Stream stream, T value, CancellationToken cancellationToken)

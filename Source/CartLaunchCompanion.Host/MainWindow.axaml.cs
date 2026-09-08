@@ -32,6 +32,8 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private readonly UnpreparedCartDetector _unpreparedCartDetector = new(new SystemMountRootProvider());
     private readonly CartHostEjectServer _ejectServer;
     private readonly CartHostTrustReviewServer _trustReviewServer;
+    private bool _runInBackground;
+    private bool _allowClose;
 
     public MainWindow()
     {
@@ -45,6 +47,12 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         _trustReviewServer = new CartHostTrustReviewServer(HandleTrustReviewRequestAsync);
         _trustReviewServer.Start();
         Opened += async (_, _) => await RefreshTrustAsync();
+        Closing += (_, args) =>
+        {
+            if (!_runInBackground || _allowClose) return;
+            args.Cancel = true;
+            Hide();
+        };
         Closed += async (_, _) =>
         {
             if (_monitor is not null) await _monitor.DisposeAsync();
@@ -69,6 +77,8 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     public ConnectedCartItem? SelectedConnectedCart { get => _selectedConnectedCart; set { _selectedConnectedCart = value; Changed(); } }
     public string Status { get => _status; set { _status = value; Changed(); } }
     public new event PropertyChangedEventHandler? PropertyChanged;
+
+    public void EnableBackgroundMode() => _runInBackground = true;
 
     private async void InstallClicked(object? sender, RoutedEventArgs e)
     {
@@ -247,6 +257,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             });
             if (cleanupProcess is null) throw new InvalidOperationException("The cleanup component did not start.");
             Status = "Automatic startup was removed. Selected local data was removed. Close this window to finish removing CLC-Cart Monitor; connected carts were not modified.";
+            _allowClose = true;
             Close();
         }
         catch (Exception ex) { Status = "Uninstall stopped safely: " + ex.Message; }
@@ -435,16 +446,32 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     {
         try
         {
-            var report = await new PhysicalCartReadinessService().InspectAsync(request.MediaRoot);
-            if (!report.IsReady || report.Identity is null)
-                return new(false, "The selected cart did not pass CLC-Cart Monitor readiness validation.");
+            void ShowReviewProgress()
+            {
+                Status = "Checking the cart before trust review…";
+                Show();
+                Activate();
+            }
+
+            if (Dispatcher.UIThread.CheckAccess()) ShowReviewProgress();
+            else await Dispatcher.UIThread.InvokeAsync(ShowReviewProgress);
+
+            // Acknowledge the handoff immediately. Runtime inspection can take a while
+            // on removable media and belongs in the visible Monitor, not inside the
+            // Configurator's request/response timeout.
             Dispatcher.UIThread.Post(async () =>
             {
-                await ScanMountedCartsAsync();
-                SelectedConnectedCart = ConnectedCarts.FirstOrDefault(item =>
-                    Path.GetFullPath(item.MediaRoot).Equals(Path.GetFullPath(request.MediaRoot), StringComparison.OrdinalIgnoreCase));
-                Show(); Activate();
-                await ReviewAndTrustAsync(request.MediaRoot);
+                try
+                {
+                    await ScanMountedCartsAsync();
+                    SelectedConnectedCart = ConnectedCarts.FirstOrDefault(item =>
+                        Path.GetFullPath(item.MediaRoot).Equals(Path.GetFullPath(request.MediaRoot), StringComparison.OrdinalIgnoreCase));
+                    await ReviewAndTrustAsync(request.MediaRoot);
+                }
+                catch (Exception ex)
+                {
+                    Status = "The trust review could not be opened: " + ex.Message;
+                }
             });
             return new(true, "The cart is open in CLC-Cart Monitor for explicit trust confirmation.");
         }

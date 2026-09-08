@@ -23,6 +23,23 @@ public sealed class CartHostTrustReviewProtocolTests
         Assert.Equal(Path.GetFullPath(Path.GetTempPath()), received.MediaRoot);
     }
 
+    [Fact]
+    public async Task Review_AllowsRuntimeInspectionToOutlastConnectionTimeout()
+    {
+        var pipeName = "CLC.Review.Slow.Tests." + Guid.NewGuid().ToString("N");
+        await using var server = new CartHostTrustReviewServer(async _ =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(3.2));
+            return new CartHostTrustReviewResponse(true, "review prepared");
+        }, pipeName);
+        server.Start();
+
+        var response = await CartHostTrustReviewProtocol.RequestAsync(Path.GetTempPath(), pipeName);
+
+        Assert.True(response.Accepted);
+        Assert.Equal("review prepared", response.Message);
+    }
+
     [Theory]
     [InlineData(0, "review-trust")]
     [InlineData(2, "review-trust")]
