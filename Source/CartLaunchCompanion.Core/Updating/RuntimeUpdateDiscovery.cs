@@ -5,7 +5,8 @@ public sealed record RuntimeUpdateAvailability(
     Uri ManifestUri,
     Uri PayloadUri,
     long PayloadBytes,
-    string ReleasePage);
+    string ReleasePage,
+    string Summary);
 
 public sealed record PreparedRuntimeUpdate(
     string Version,

@@ -24,6 +24,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly PortablePaths _portablePaths;
     private readonly PlatformKind _platform;
     private readonly IRuntimeUpdateService _updateService;
+    private readonly UpdateReminderStore _updateReminderStore;
     private readonly Action _exitApplication;
     private readonly Action<bool> _setWindowVisible;
     private readonly Func<CancellationToken, Task> _prepareTrailerRuntime;
@@ -90,6 +91,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _portablePaths = portablePaths;
         _platform = platform;
         _updateService = updateService;
+        _updateReminderStore = new UpdateReminderStore(
+            Path.Combine(_portablePaths.Root, ".cartlaunch"));
         _exitApplication = exitApplication;
         _setWindowVisible = setWindowVisible;
         _prepareTrailerRuntime = prepareTrailerRuntime ?? (_ => Task.CompletedTask);
@@ -148,6 +151,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         CheckForUpdatesCommand = new AsyncRelayCommand(CheckForUpdatesAsync, () => !IsUpdateBusy);
         OpenAvailableUpdateCommand = new RelayCommand(OpenAvailableUpdate, () => _availableUpdate is not null && !IsUpdateBusy);
         InstallUpdateCommand = new AsyncRelayCommand(InstallUpdateAsync, () => _availableUpdate is not null && !IsUpdateBusy);
+        RemindOnNextVersionCommand = new AsyncRelayCommand(RemindOnNextVersionAsync, () => _availableUpdate is not null && !IsUpdateBusy);
         CloseUpdateCommand = new RelayCommand(CloseUpdate, () => !IsUpdateBusy);
     }
 
@@ -273,6 +277,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public partial string UpdateMessage { get; set; } = "Check for a newer signed release.";
 
     [ObservableProperty]
+    public partial string UpdateVersionText { get; set; } = "";
+
+    [ObservableProperty]
+    public partial string UpdateSummary { get; set; } = "";
+
+    [ObservableProperty]
     public partial string UpdateActionText { get; set; } = "CHECK FOR UPDATES";
 
     [ObservableProperty]
@@ -383,6 +393,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public IAsyncRelayCommand CheckForUpdatesCommand { get; }
     public IRelayCommand OpenAvailableUpdateCommand { get; }
     public IAsyncRelayCommand InstallUpdateCommand { get; }
+    public IAsyncRelayCommand RemindOnNextVersionCommand { get; }
     public IRelayCommand CloseUpdateCommand { get; }
 
     partial void OnIsUpdateBusyChanged(bool value)
@@ -390,6 +401,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         CheckForUpdatesCommand.NotifyCanExecuteChanged();
         OpenAvailableUpdateCommand.NotifyCanExecuteChanged();
         InstallUpdateCommand.NotifyCanExecuteChanged();
+        RemindOnNextVersionCommand.NotifyCanExecuteChanged();
         CloseUpdateCommand.NotifyCanExecuteChanged();
     }
 
@@ -595,6 +607,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             if (input.Action == LauncherAction.Back && !IsUpdateBusy)
                 CloseUpdate();
+            else if (input.Action == LauncherAction.Trailer && !IsUpdateBusy && _availableUpdate is not null)
+                await RemindOnNextVersionAsync();
             else if (input.Action == LauncherAction.Confirm && !IsUpdateBusy)
             {
                 if (_availableUpdate is null)
@@ -1042,6 +1056,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         IsUpdateBusy = true;
         UpdateTitle = "CHECKING FOR UPDATES";
         UpdateMessage = "Contacting the official Cart Launch Companion release channel…";
+        UpdateVersionText = "";
+        UpdateSummary = "";
         UpdateProgress = 0;
         _availableUpdate = null;
         OnPropertyChanged(nameof(HasAvailableUpdate));
@@ -1051,7 +1067,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             var platform = GetUpdatePlatform();
             var current = typeof(MainViewModel).Assembly.GetName().Version ?? new Version(0, 0);
             _availableUpdate = await _updateService.CheckAsync(current, platform);
-            if (_availableUpdate is null)
+            if (_availableUpdate is not null && _updateReminderStore.IsSkipped(_availableUpdate.Version))
+            {
+                UpdateTitle = "REMINDER SAVED";
+                UpdateMessage = $"Version {_availableUpdate.Version} is hidden. CLC will notify you when the next version is available.";
+                UpdateActionText = "CHECK AGAIN";
+                _availableUpdate = null;
+            }
+            else if (_availableUpdate is null)
             {
                 UpdateTitle = "YOU'RE UP TO DATE";
                 UpdateMessage = $"Cart Launch Companion {current.ToString(3)} is the newest signed release.";
@@ -1059,9 +1082,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
             else
             {
-                UpdateTitle = $"VERSION {_availableUpdate.Version} AVAILABLE";
-                UpdateMessage = $"A signed {FormatBytes(_availableUpdate.PayloadBytes)} update is ready. Your games, artwork, and configuration will not be changed.";
-                UpdateActionText = "DOWNLOAD AND RESTART";
+                PopulateAvailableUpdateDetails(current, _availableUpdate);
             }
             OnPropertyChanged(nameof(HasAvailableUpdate));
         }
@@ -1089,6 +1110,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             var current = typeof(MainViewModel).Assembly.GetName().Version ?? new Version(0, 0);
             _availableUpdate = await _updateService.CheckAsync(current, GetUpdatePlatform());
+            if (_availableUpdate is not null && _updateReminderStore.IsSkipped(_availableUpdate.Version))
+                _availableUpdate = null;
             OnPropertyChanged(nameof(HasAvailableUpdate));
             OpenAvailableUpdateCommand.NotifyCanExecuteChanged();
             InstallUpdateCommand.NotifyCanExecuteChanged();
@@ -1104,9 +1127,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (_availableUpdate is null || IsUpdateBusy)
             return;
 
-        UpdateTitle = $"VERSION {_availableUpdate.Version} AVAILABLE";
-        UpdateMessage = $"A signed {FormatBytes(_availableUpdate.PayloadBytes)} update is ready. Your games, artwork, and configuration will not be changed.";
-        UpdateActionText = "DOWNLOAD AND RESTART";
+        var current = typeof(MainViewModel).Assembly.GetName().Version ?? new Version(0, 0);
+        PopulateAvailableUpdateDetails(current, _availableUpdate);
         UpdateProgress = 0;
         IsUpdateVisible = true;
     }
@@ -1145,6 +1167,39 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             _updateCancellation = null;
             IsUpdateBusy = false;
         }
+    }
+
+    private async Task RemindOnNextVersionAsync()
+    {
+        if (_availableUpdate is null || IsUpdateBusy)
+            return;
+
+        try
+        {
+            var skippedVersion = _availableUpdate.Version;
+            await _updateReminderStore.SkipAsync(skippedVersion);
+            _availableUpdate = null;
+            OnPropertyChanged(nameof(HasAvailableUpdate));
+            OpenAvailableUpdateCommand.NotifyCanExecuteChanged();
+            InstallUpdateCommand.NotifyCanExecuteChanged();
+            RemindOnNextVersionCommand.NotifyCanExecuteChanged();
+            IsUpdateVisible = false;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Trace.WriteLine($"Update reminder could not be saved: {ex.Message}");
+            UpdateTitle = "REMINDER NOT SAVED";
+            UpdateMessage = "CLC could not save this choice to the cart. The update has not started.";
+        }
+    }
+
+    private void PopulateAvailableUpdateDetails(Version current, RuntimeUpdateAvailability update)
+    {
+        UpdateTitle = "UPDATE AVAILABLE";
+        UpdateVersionText = $"INSTALLED {current.ToString(3)}  →  UPDATE {update.Version}";
+        UpdateSummary = update.Summary;
+        UpdateMessage = $"Signed download: {FormatBytes(update.PayloadBytes)}. Your games, artwork, and configuration will not be changed.";
+        UpdateActionText = "DOWNLOAD AND UPDATE";
     }
 
     private void StartMaintenanceUpdater(PreparedRuntimeUpdate prepared)

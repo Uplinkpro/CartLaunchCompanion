@@ -118,7 +118,7 @@
         <Grid IsVisible="{Binding IsUpdateVisible}" ZIndex="600">
             <Border Background="#D8030406" />
             <Grid RowDefinitions="*,Auto" Margin="42">
-            <Border Grid.Row="0" Width="650" MinHeight="270" Padding="42"
+            <Border Grid.Row="0" MaxWidth="760" MinHeight="330" Padding="42" Margin="24"
                     HorizontalAlignment="Center" VerticalAlignment="Center"
                     CornerRadius="14" Background="#FA0B0D11"
                     BorderBrush="#C08AFF" BorderThickness="3">
@@ -129,20 +129,36 @@
                     <TextBlock Text="{Binding UpdateTitle}" Foreground="White"
                                FontSize="28" FontWeight="Bold" TextAlignment="Center"
                                HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding UpdateVersionText}" Foreground="#66E38A"
+                               FontSize="16" FontWeight="SemiBold" TextAlignment="Center"
+                               HorizontalAlignment="Center" IsVisible="{Binding HasAvailableUpdate}" />
+                    <Border Height="1" Background="#32FFFFFF" IsVisible="{Binding HasAvailableUpdate}" />
+                    <TextBlock Text="WHAT'S NEW" Foreground="#C08AFF"
+                               FontSize="11" FontWeight="Bold" LetterSpacing="2"
+                               IsVisible="{Binding HasAvailableUpdate}" />
+                    <TextBlock Text="{Binding UpdateSummary}" Foreground="White"
+                               FontSize="15" TextWrapping="Wrap" MaxWidth="650"
+                               IsVisible="{Binding HasAvailableUpdate}" />
                     <TextBlock Text="{Binding UpdateMessage}" Foreground="#CFFFFFFF"
                                FontSize="15" TextWrapping="Wrap" TextAlignment="Center"
-                               MaxWidth="540" HorizontalAlignment="Center" />
+                               MaxWidth="650" HorizontalAlignment="Center" />
                     <ProgressBar Minimum="0" Maximum="100" Height="8"
                                  Value="{Binding UpdateProgress}"
                                  IsVisible="{Binding IsUpdateBusy}" />
                 </StackPanel>
             </Border>
             <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="14"
-                        IsVisible="{Binding ShowOnScreenActionButtons}">
+                        IsVisible="{Binding !IsUpdateBusy}">
                 <Button Classes="action" Command="{Binding InstallUpdateCommand}" IsVisible="{Binding HasAvailableUpdate}">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <controls:ButtonPromptBadge Label="{Binding ConfirmPrompt}" BadgeColor="#2E9B32" />
                         <TextBlock Text="{Binding UpdateActionText}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Classes="action" Command="{Binding RemindOnNextVersionCommand}" IsVisible="{Binding HasAvailableUpdate}">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <controls:ButtonPromptBadge Label="X" BadgeColor="#52606D" />
+                        <TextBlock Text="REMIND ME NEXT VERSION" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
                 <Button Classes="action" Command="{Binding CheckForUpdatesCommand}" IsVisible="{Binding !HasAvailableUpdate}">
@@ -154,7 +170,7 @@
                 <Button Classes="action" Command="{Binding CloseUpdateCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <controls:ButtonPromptBadge Label="{Binding BackPrompt}" BadgeColor="#C83B40" />
-                        <TextBlock Text="CLOSE" VerticalAlignment="Center" />
+                        <TextBlock Text="EXIT" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
             </StackPanel>

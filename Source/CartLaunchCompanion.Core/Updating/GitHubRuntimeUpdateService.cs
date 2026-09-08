@@ -55,7 +55,10 @@ public sealed class GitHubRuntimeUpdateService(HttpClient httpClient) : IRuntime
 
         return new RuntimeUpdateAvailability(
             releaseVersion.ToString(), manifestUri, payloadUri, payloadBytes,
-            root.GetProperty("html_url").GetString() ?? "");
+            root.GetProperty("html_url").GetString() ?? "",
+            CreateReleaseSummary(root.TryGetProperty("body", out var releaseBody)
+                ? releaseBody.GetString()
+                : null));
     }
 
     public async Task<PreparedRuntimeUpdate> DownloadAndPrepareAsync(
@@ -188,6 +191,59 @@ public sealed class GitHubRuntimeUpdateService(HttpClient httpClient) : IRuntime
 
     private static bool TryParseVersion(string value, out Version version) =>
         Version.TryParse(value.Trim().TrimStart('v', 'V').Split('-', 2)[0], out version!);
+
+    internal static string CreateReleaseSummary(string? releaseBody)
+    {
+        const string fallback = "Maintenance, reliability, and compatibility improvements.";
+        if (string.IsNullOrWhiteSpace(releaseBody))
+            return fallback;
+
+        var changes = releaseBody
+            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(line => line.StartsWith("- ", StringComparison.Ordinal) ||
+                           line.StartsWith("* ", StringComparison.Ordinal))
+            .Select(line => line[2..].Trim())
+            .Where(line => line.Length > 0 &&
+                           !line.StartsWith("Full Changelog", StringComparison.OrdinalIgnoreCase))
+            .Take(3)
+            .Select(SimplifyReleaseNote)
+            .ToArray();
+
+        return changes.Length == 0
+            ? fallback
+            : string.Join(Environment.NewLine, changes.Select(change => $"• {change}"));
+    }
+
+    private static string SimplifyReleaseNote(string value)
+    {
+        var result = value;
+        var searchFrom = 0;
+        while (searchFrom < result.Length)
+        {
+            var labelStart = result.IndexOf('[', searchFrom);
+            if (labelStart < 0)
+                break;
+            var labelEnd = result.IndexOf("](", labelStart, StringComparison.Ordinal);
+            if (labelEnd < 0)
+                break;
+            var targetEnd = result.IndexOf(')', labelEnd + 2);
+            if (targetEnd < 0)
+                break;
+
+            var label = result[(labelStart + 1)..labelEnd];
+            result = string.Concat(result.AsSpan(0, labelStart), label, result.AsSpan(targetEnd + 1));
+            searchFrom = labelStart + label.Length;
+        }
+
+        var attribution = result.IndexOf(" by @", StringComparison.OrdinalIgnoreCase);
+        if (attribution >= 0)
+            result = result[..attribution];
+
+        const int maximumLength = 180;
+        return result.Length <= maximumLength
+            ? result
+            : result[..(maximumLength - 1)].TrimEnd() + "…";
+    }
 
     private static void ValidatePlatform(string platform)
     {

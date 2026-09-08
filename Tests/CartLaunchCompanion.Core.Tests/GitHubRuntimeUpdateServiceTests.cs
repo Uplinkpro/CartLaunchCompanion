@@ -17,8 +17,23 @@ public sealed class GitHubRuntimeUpdateServiceTests
         Assert.NotNull(update);
         Assert.Equal("2.3.0", update.Version);
         Assert.Equal(42_000_000, update.PayloadBytes);
+        Assert.Contains("Safer updates", update.Summary);
         Assert.EndsWith("update-win-x64.json", update.ManifestUri.AbsoluteUri);
         Assert.EndsWith("runtime-win-x64.zip", update.PayloadUri.AbsoluteUri);
+    }
+
+    [Fact]
+    public void ReleaseSummaryUsesThreeReadableChangeItems()
+    {
+        var summary = GitHubRuntimeUpdateService.CreateReleaseSummary("""
+            ## What's Changed
+            - First improvement
+            - [Second improvement](https://example.com/change)
+            - Third improvement
+            - Fourth improvement
+            """);
+
+        Assert.Equal($"• First improvement{Environment.NewLine}• Second improvement{Environment.NewLine}• Third improvement", summary);
     }
 
     [Fact]
@@ -108,6 +123,7 @@ public sealed class GitHubRuntimeUpdateServiceTests
         {
           "tag_name":"{{tag}}",
           "html_url":"https://github.com/Uplinkpro/CartLaunchCompanion/releases/tag/{{tag}}",
+          "body":"## What's Changed\n- Safer updates\n- Clearer controls",
           "assets":[
             {"name":"update-win-x64.json","size":100,"browser_download_url":"https://github.com/Uplinkpro/CartLaunchCompanion/releases/download/{{tag}}/update-win-x64.json"},
             {"name":"runtime-win-x64.zip","size":{{size}},"browser_download_url":"https://github.com/Uplinkpro/CartLaunchCompanion/releases/download/{{tag}}/runtime-win-x64.zip"},

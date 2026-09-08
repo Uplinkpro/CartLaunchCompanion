@@ -6,6 +6,15 @@ The project follows semantic versioning where practical.
 
 ## [Unreleased]
 
+### Added
+
+- Update details now show the installed and target versions plus a concise summary of the release changes
+- Added explicit Download and Update, Remind Me Next Version, and Exit choices to the update screen
+
+### Changed
+
+- Dismissing an update until the next version now persists on the cart and suppresses only that specific release
+
 ## [2.8.1] - 2026-09-08
 
 ### Changed
