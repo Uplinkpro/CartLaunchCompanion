@@ -6,6 +6,28 @@ The project follows semantic versioning where practical.
 
 ## [Unreleased]
 
+## [2.8.1] - 2026-09-08
+
+### Changed
+
+- Exophase activity is refreshed when a game launches so achievement and playtime information stays current
+- Physical-cart trust requests now open CLC-Cart Monitor immediately while verified runtime inspection continues visibly
+
+### Fixed
+
+- Prevented CLC-Cart Monitor repair from replacing runtime files while its previous process still had them open
+- Corrected physical-cart preparation so a removable-media root, its existing `Cart` folder, or a folder inside that cart resolves to the proper media root
+- Existing carts can now be inspected and prepared without re-entering a cart name or replacing their existing identity
+- Prevented long runtime inspection from being reported as a failed trust handoff after the short connection timeout
+- Corrected background Monitor startup so its first trust window is not immediately hidden
+- Closing the Cart Monitor window now returns it to the background without disposing its removable-media watcher
+- Restored automatic launch after a trusted cart is removed and reinserted
+
+### Validation
+
+- Verified trust, removal detection, reinsertion detection, and automatic launch on the Windows physical test cart
+- Passed the complete automated test suite and release-package audit
+
 ## [2.8.0] - 2026-09-06
 
 ### Added
