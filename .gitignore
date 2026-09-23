@@ -78,6 +78,14 @@ RecentGames.json
 UserSettings.json
 Config/metadata.json
 Config/playtime.json
+Config/emulator-registry.json
+Config/emulator-registry.json.lock
+
+# Managed emulator packages and personal emulator data live on the cart.
+Emulators/Windows/*/
+Emulators/Linux/*/
+Emulators/Windows/.*.lock
+Emulators/Linux/.*.lock
 
 ###############################################################################
 # Ignore personal game library

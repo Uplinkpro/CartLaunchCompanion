@@ -1,0 +1,273 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- Matches the Configurator palette without changing existing application styles. -->
+  <Styles.Resources>
+    <SolidColorBrush x:Key="WindowBackgroundBrush">#0B0D10</SolidColorBrush>
+    <SolidColorBrush x:Key="ChromeBrush">#10141A</SolidColorBrush>
+    <SolidColorBrush x:Key="SurfaceBrush">#15191F</SolidColorBrush>
+    <SolidColorBrush x:Key="SurfaceBorderBrush">#2A313B</SolidColorBrush>
+    <SolidColorBrush x:Key="MutedTextBrush">#AAB2BE</SolidColorBrush>
+      <SolidColorBrush x:Key="ActionHoverBrush">#253140</SolidColorBrush>
+    <SolidColorBrush x:Key="ActionPressedBrush">#10141A</SolidColorBrush>
+    <SolidColorBrush x:Key="FocusBrush">#4592F4</SolidColorBrush>
+    <SolidColorBrush x:Key="PrimaryActionBrush">#246BC0</SolidColorBrush>
+    <SolidColorBrush x:Key="PrimaryActionHoverBrush">#2F7DD8</SolidColorBrush>
+    <SolidColorBrush x:Key="PrimaryActionPressedBrush">#1C579E</SolidColorBrush>
+    <SolidColorBrush x:Key="ElevatedSurfaceBrush">#1B2028</SolidColorBrush>
+    <SolidColorBrush x:Key="AccentSoftBrush">#182B43</SolidColorBrush>
+    <SolidColorBrush x:Key="PositiveBrush">#6FD0A5</SolidColorBrush>
+    <SolidColorBrush x:Key="DangerBrush">#A63D47</SolidColorBrush>
+    <SolidColorBrush x:Key="DangerHoverBrush">#C14A56</SolidColorBrush>
+  </Styles.Resources>
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{DynamicResource WindowBackgroundBrush}" />
+    <Setter Property="FontFamily" Value="Inter" />
+  </Style>
+  <Style Selector="Border.titleBar">
+    <Setter Property="Background" Value="{DynamicResource ChromeBrush}" />
+  </Style>
+  <Style Selector="Border.shell">
+    <Setter Property="Padding" Value="18" />
+  </Style>
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="18" />
+  </Style>
+  <Style Selector="StackPanel.intro">
+    <Setter Property="Spacing" Value="8" />
+  </Style>
+  <Style Selector="TextBlock.heading">
+    <Setter Property="FontSize" Value="26" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector="TextBlock.displayHeading">
+    <Setter Property="FontSize" Value="32" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector="TextBlock.eyebrow">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+    <Setter Property="LetterSpacing" Value="1.2" />
+  </Style>
+  <Style Selector="TextBlock.help">
+    <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector="Grid.library">
+    <Setter Property="RowSpacing" Value="16" />
+  </Style>
+  <Style Selector="Grid.libraryHeader">
+    <Setter Property="ColumnSpacing" Value="16" />
+  </Style>
+  <Style Selector="TextBlock.section">
+    <Setter Property="FontSize" Value="20" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="TextBlock.location">
+    <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    <Setter Property="MaxLines" Value="1" />
+  </Style>
+  <Style Selector="Border.notice">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+    <Setter Property="Padding" Value="12" />
+    <Setter Property="CornerRadius" Value="10" />
+  </Style>
+  <Style Selector="TableView">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+  </Style>
+  <Style Selector="TableViewCell">
+    <Setter Property="ToolTip.Tip" Value="{Binding Content, RelativeSource={RelativeSource Self}}" />
+  </Style>
+  <Style Selector="TableViewRow">
+    <Setter Property="Height" Value="48" />
+  </Style>
+  <Style Selector="Button.secondary">
+    <Setter Property="MinHeight" Value="44" />
+    <Setter Property="Padding" Value="16,8" />
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+  <Style Selector="Button.secondary:pointerover">
+    <Setter Property="Background" Value="{DynamicResource ActionHoverBrush}" />
+  </Style>
+  <Style Selector="Button.secondary:pressed">
+    <Setter Property="Background" Value="{DynamicResource ActionPressedBrush}" />
+  </Style>
+  <Style Selector="Button.secondary:focus-visible">
+    <Setter Property="BorderBrush" Value="{DynamicResource FocusBrush}" />
+  </Style>
+  <Style Selector="Button.secondary:disabled">
+    <Setter Property="Opacity" Value="0.5" />
+  </Style>
+  <Style Selector="Button.primary">
+    <Setter Property="MinHeight" Value="44" />
+    <Setter Property="Padding" Value="16,8" />
+    <Setter Property="Background" Value="{DynamicResource PrimaryActionBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource FocusBrush}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+  <Style Selector="Button.primary:pointerover">
+    <Setter Property="Background" Value="{DynamicResource PrimaryActionHoverBrush}" />
+  </Style>
+  <Style Selector="Button.primary:pressed">
+    <Setter Property="Background" Value="{DynamicResource PrimaryActionPressedBrush}" />
+  </Style>
+  <Style Selector="Button.primary:disabled">
+    <Setter Property="Opacity" Value="0.55" />
+  </Style>
+  <Style Selector="Button.danger">
+    <Setter Property="MinHeight" Value="44" />
+    <Setter Property="Padding" Value="16,8" />
+    <Setter Property="Background" Value="{DynamicResource DangerBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource DangerHoverBrush}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+  <Style Selector="Button.danger:pointerover"><Setter Property="Background" Value="{DynamicResource DangerHoverBrush}" /></Style>
+  <Style Selector="Button.danger:focus-visible"><Setter Property="BorderBrush" Value="{DynamicResource FocusBrush}" /></Style>
+  <Style Selector="Button.danger:disabled"><Setter Property="Opacity" Value="0.5" /></Style>
+  <Style Selector="StackPanel.releaseContent">
+    <Setter Property="Spacing" Value="16" />
+    <Setter Property="MaxWidth" Value="1100" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+  </Style>
+  <Style Selector="ComboBox">
+    <Setter Property="MinHeight" Value="44" />
+  </Style>
+  <Style Selector="StackPanel.platformChoices">
+    <Setter Property="Spacing" Value="4" />
+  </Style>
+  <Style Selector="StackPanel.platformChoices > RadioButton">
+    <Setter Property="MinHeight" Value="36" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.releaseResult">
+    <Setter Property="Margin" Value="0,0,0,12" />
+  </Style>
+  <Style Selector="Border.attributionCard">
+    <Setter Property="Margin" Value="0,0,0,12" />
+  </Style>
+  <Style Selector="WrapPanel.linkButtons">
+    <Setter Property="Orientation" Value="Horizontal" />
+  </Style>
+  <Style Selector="WrapPanel.linkButtons > Button">
+    <Setter Property="Margin" Value="0,0,8,8" />
+  </Style>
+  <Style Selector="WrapPanel.headerActions > Button">
+    <Setter Property="Margin" Value="8,0,0,8" />
+  </Style>
+  <Style Selector="Border.navigationPanel">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="10" />
+  </Style>
+  <Style Selector="StackPanel.panelHeading">
+    <Setter Property="Margin" Value="10,8,10,14" />
+    <Setter Property="Spacing" Value="4" />
+  </Style>
+  <Style Selector="ListBox.emulatorList">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="ListBox.emulatorList > ListBoxItem">
+    <Setter Property="MinHeight" Value="72" />
+    <Setter Property="Padding" Value="12" />
+    <Setter Property="Margin" Value="0,0,0,6" />
+    <Setter Property="CornerRadius" Value="9" />
+  </Style>
+  <Style Selector="ListBox.emulatorList > ListBoxItem:selected">
+    <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+  </Style>
+  <Style Selector="ListBox.emulatorList > ListBoxItem:pointerover">
+    <Setter Property="Background" Value="{DynamicResource ActionHoverBrush}" />
+  </Style>
+  <Style Selector="Grid.emulatorRow">
+    <Setter Property="RowSpacing" Value="5" />
+    <Setter Property="ColumnSpacing" Value="8" />
+  </Style>
+  <Style Selector="Border.statusPill">
+    <Setter Property="Background" Value="{DynamicResource ElevatedSurfaceBrush}" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="8,3" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="TextBlock.statusText">
+    <Setter Property="FontSize" Value="10" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="{DynamicResource PositiveBrush}" />
+  </Style>
+  <Style Selector="Border.workspacePanel">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="24" />
+  </Style>
+  <Style Selector="StackPanel.workspaceTitle">
+    <Setter Property="Spacing" Value="6" />
+    <Setter Property="Margin" Value="0,0,0,20" />
+  </Style>
+  <Style Selector="Grid.workspaceTitle">
+    <Setter Property="Margin" Value="0,0,0,20" />
+    <Setter Property="ColumnSpacing" Value="24" />
+  </Style>
+  <Style Selector="Border.emulatorMark">
+    <Setter Property="Width" Value="160" />
+    <Setter Property="Height" Value="160" />
+    <Setter Property="Padding" Value="14" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Background" Value="{DynamicResource ElevatedSurfaceBrush}" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+  </Style>
+  <Style Selector="Grid.factsGrid">
+    <Setter Property="ColumnSpacing" Value="12" />
+    <Setter Property="Margin" Value="0,0,0,16" />
+  </Style>
+  <Style Selector="StackPanel.fact">
+    <Setter Property="Background" Value="{DynamicResource ElevatedSurfaceBrush}" />
+    <Setter Property="Spacing" Value="5" />
+    <Setter Property="Margin" Value="0" />
+  </Style>
+  <Style Selector="Border.nextStepCard">
+    <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource FocusBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Padding" Value="20" />
+    <Setter Property="Margin" Value="0,0,0,16" />
+  </Style>
+  <Style Selector="StackPanel.actionStack">
+    <Setter Property="Spacing" Value="8" />
+    <Setter Property="Margin" Value="20,0,0,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="MinWidth" Value="240" />
+  </Style>
+  <Style Selector="StackPanel.actionStack > Button">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Height" Value="52" />
+    <Setter Property="Padding" Value="16,0" />
+  </Style>
+  <Style Selector="Border.workflowCard">
+    <Setter Property="Background" Value="{DynamicResource ElevatedSurfaceBrush}" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Padding" Value="18" />
+  </Style>
+  <Style Selector="Border.inputChip">
+    <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="8,4" />
+    <Setter Property="Margin" Value="0,0,6,6" />
+  </Style>
+</Styles>

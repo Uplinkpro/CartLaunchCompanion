@@ -1,4 +1,4 @@
-﻿<Window xmlns="https://github.com/avaloniaui"
+<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:CartLaunchCompanion.Desktop.ViewModels"
         xmlns:views="using:CartLaunchCompanion.Desktop.Views"
@@ -114,6 +114,8 @@
                            HorizontalAlignment="Center" />
             </StackPanel>
         </Grid>
+
+        <views:EmulatorUpdateView IsVisible="{Binding IsEmulatorUpdateVisible}" ZIndex="650" />
 
         <Grid IsVisible="{Binding IsUpdateVisible}" ZIndex="600">
             <Border Background="#D8030406" />

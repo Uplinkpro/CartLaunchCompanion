@@ -1,0 +1,95 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:CartLaunchCompanion.EmulatorCompanion"
+        xmlns:models="using:CartLaunchCompanion.Core.Emulators"
+        x:Class="CartLaunchCompanion.EmulatorCompanion.Pcsx2SetupWindow"
+        x:DataType="local:Pcsx2SetupViewModel"
+        Title="Set up PCSX2" Icon="/Assets/AppIcon.png"
+        Width="680" Height="560" MinWidth="480" MinHeight="400"
+        WindowState="FullScreen"
+        WindowStartupLocation="CenterOwner">
+  <Border Classes="shell">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Classes="releaseContent">
+        <TextBlock Classes="heading" Text="Set up PCSX2" />
+        <TextBlock Classes="help" Text="Complete the essentials once, then keep the settings and saves on your cart." />
+
+        <StackPanel Classes="intro">
+          <TextBlock Text="Installed platform" />
+          <ComboBox ItemsSource="{Binding PlatformChoices}" SelectedItem="{Binding SelectedChoice, Mode=TwoWay}" HorizontalAlignment="Stretch">
+            <ComboBox.ItemTemplate><DataTemplate x:DataType="local:Pcsx2SetupChoice">
+              <TextBlock Text="{Binding DisplayName}" />
+            </DataTemplate></ComboBox.ItemTemplate>
+          </ComboBox>
+        </StackPanel>
+
+        <Border Classes="card">
+          <StackPanel Classes="intro">
+            <TextBlock Classes="section" Text="{Binding State}" />
+            <TextBlock Classes="help" Text="{Binding BiosStatus}" />
+            <TextBlock Classes="help" Text="{Binding SettingsStatus}" />
+            <TextBlock Classes="help" Text="{Binding Message}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+
+        <TextBlock Classes="section" Text="1. Add your PlayStation 2 BIOS" />
+        <TextBlock Classes="help" Text="Choose a BIOS dumped from a console you own. It is copied into this portable PCSX2 installation." TextWrapping="Wrap" />
+        <Button Classes="primary" Content="Choose BIOS files" IsEnabled="{Binding HasInstallation}" Click="ImportBiosClicked" />
+        <TextBlock Classes="location" Text="{Binding BiosFolder}" ToolTip.Tip="{Binding BiosFolder}" />
+
+        <TextBlock Classes="section" Text="2. Choose how games should look and run" />
+        <TextBlock Classes="help" Text="Start with one simple preset. PCSX2 translates it into its own settings, and you can adjust the details below if you want." TextWrapping="Wrap" />
+        <Grid ColumnDefinitions="*,12,*" RowDefinitions="Auto,Auto,Auto">
+          <StackPanel Grid.Row="0" Grid.Column="0" Classes="intro">
+            <TextBlock Text="Preset" />
+            <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile, Mode=TwoWay}">
+              <ComboBox.ItemTemplate><DataTemplate x:DataType="models:SimpleEmulationPreset"><TextBlock Text="{Binding DisplayName}" /></DataTemplate></ComboBox.ItemTemplate>
+            </ComboBox>
+          </StackPanel>
+          <StackPanel Grid.Row="0" Grid.Column="2" Classes="intro">
+            <TextBlock Text="Internal resolution" />
+            <ComboBox ItemsSource="{Binding ResolutionOptions}" SelectedItem="{Binding SelectedResolution, Mode=TwoWay}">
+              <ComboBox.ItemTemplate><DataTemplate x:DataType="local:Pcsx2ResolutionOption"><TextBlock Text="{Binding DisplayName}" /></DataTemplate></ComboBox.ItemTemplate>
+            </ComboBox>
+          </StackPanel>
+          <StackPanel Grid.Row="1" Grid.Column="0" Classes="intro">
+            <TextBlock Text="Renderer" />
+            <ComboBox ItemsSource="{Binding RendererOptions}" SelectedItem="{Binding SelectedRenderer, Mode=TwoWay}">
+              <ComboBox.ItemTemplate><DataTemplate x:DataType="local:Pcsx2RendererOption"><TextBlock Text="{Binding DisplayName}" /></DataTemplate></ComboBox.ItemTemplate>
+            </ComboBox>
+          </StackPanel>
+          <StackPanel Grid.Row="1" Grid.Column="2" Classes="intro">
+            <TextBlock Text="Aspect ratio" />
+            <ComboBox ItemsSource="{Binding AspectOptions}" SelectedItem="{Binding SelectedAspect, Mode=TwoWay}">
+              <ComboBox.ItemTemplate><DataTemplate x:DataType="local:Pcsx2AspectOption"><TextBlock Text="{Binding DisplayName}" /></DataTemplate></ComboBox.ItemTemplate>
+            </ComboBox>
+          </StackPanel>
+          <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="16">
+            <CheckBox Content="Start fullscreen" IsChecked="{Binding StartFullscreen}" />
+            <CheckBox Content="VSync" IsChecked="{Binding Vsync}" />
+            <CheckBox Content="Widescreen patches" IsChecked="{Binding WidescreenPatches}" />
+          </StackPanel>
+        </Grid>
+        <TextBlock Classes="help" Text="{Binding ProfileDescription}" TextWrapping="Wrap" />
+        <Button Classes="secondary" Content="Review setting changes" IsEnabled="{Binding CanApplyConfiguration}" Click="PreviewConfigurationClicked" />
+        <ItemsControl ItemsSource="{Binding PreviewChanges}" IsVisible="{Binding HasPreview}">
+          <ItemsControl.ItemTemplate><DataTemplate><TextBlock Classes="help" Text="{Binding}" TextWrapping="Wrap" /></DataTemplate></ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Classes="primary" Content="{Binding ApplyActionLabel}" IsEnabled="{Binding CanApplyConfiguration}" Click="ApplyConfigurationClicked" />
+          <Button Classes="secondary" Content="Restore previous settings" IsEnabled="{Binding CanRestoreConfiguration}" Click="RestoreConfigurationClicked" />
+        </StackPanel>
+
+        <TextBlock Classes="section" Text="3. Launch and verify PCSX2" />
+        <TextBlock Classes="help" Text="The library controller profile from the main screen is translated into PCSX2 automatically." TextWrapping="Wrap" />
+        <Button Classes="primary" Content="{Binding LaunchActionLabel}" IsEnabled="{Binding CanLaunch}" Click="LaunchClicked" />
+        <TextBlock Classes="help" Text="When both platforms are installed, the same preset applies to both. The library controller is verified once on Windows and once on Linux because connected devices can differ." TextWrapping="Wrap" />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+          <Button Classes="secondary" Content="Refresh status" Click="RefreshClicked" />
+          <Button Classes="secondary" Content="Close" Click="CloseClicked" />
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+  </Border>
+</Window>

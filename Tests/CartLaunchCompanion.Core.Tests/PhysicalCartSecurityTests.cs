@@ -286,8 +286,10 @@ public sealed class PhysicalCartSecurityTests : IDisposable
         Assert.False(Directory.Exists(sessions) && Directory.EnumerateFileSystemEntries(sessions).Any());
     }
 
-    [Fact]
-    public void RestrictedLaunch_UsesFixedExecutableStructuredCartRootAndSanitizedEnvironment()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RestrictedLaunch_UsesFixedExecutableStructuredCartRootAndSanitizedEnvironment(bool checkForUpdates)
     {
         var session = Path.Combine(_root, "session");
         var cart = Path.Combine(_root, "media", "Cart");
@@ -299,10 +301,10 @@ public sealed class PhysicalCartSecurityTests : IDisposable
         Environment.SetEnvironmentVariable("DOTNET_STARTUP_HOOKS", "untrusted-hook");
         try
         {
-            var start = new PreparedCartLaunchService().CreateStartInfo(prepared);
+            var start = new PreparedCartLaunchService().CreateStartInfo(prepared, checkForUpdates);
             Assert.Equal(executable, start.FileName);
             Assert.False(start.UseShellExecute);
-            Assert.Equal(["--cart-root", cart], start.ArgumentList);
+            Assert.Equal(checkForUpdates ? ["--cart-root", cart, "--check-for-updates"] : new[] { "--cart-root", cart }, start.ArgumentList);
             Assert.False(start.Environment.ContainsKey("DOTNET_STARTUP_HOOKS"));
             Assert.Equal(prepared.CartId, start.Environment["CLC_TRUSTED_CART_ID"]);
             Assert.Equal(prepared.RuntimeFingerprint, start.Environment["CLC_RUNTIME_FINGERPRINT"]);
@@ -375,6 +377,27 @@ public sealed class PhysicalCartSecurityTests : IDisposable
     }
 
     [Fact]
+    public async Task SetupMonitor_ExistingCartStaysSilentUntilReinserted()
+    {
+        var media = await CreateRuntimeCartAsync("runtime");
+        var mounts = new MutableMounts();
+        mounts.Set(media);
+        await using var monitor = new UnpreparedCartMonitor(
+            new UnpreparedCartDetector(mounts), TimeSpan.FromMilliseconds(15));
+        var inserted = 0;
+        monitor.CandidateInserted += (_, _) => Interlocked.Increment(ref inserted);
+        monitor.Start();
+        await Task.Delay(150);
+        Assert.Equal(0, Volatile.Read(ref inserted));
+        mounts.Set();
+        await Task.Delay(100);
+        mounts.Set(media);
+        await WaitUntilAsync(() => Volatile.Read(ref inserted) == 1);
+        await Task.Delay(60);
+        Assert.Equal(1, Volatile.Read(ref inserted));
+    }
+
+    [Fact]
     public async Task Monitor_ReportsInsertionAndRemovalExactlyOnce()
     {
         var media = Path.Combine(_root, "dynamic");
@@ -399,6 +422,49 @@ public sealed class PhysicalCartSecurityTests : IDisposable
         await WaitUntilAsync(() => Volatile.Read(ref removed) == 1);
         await Task.Delay(60);
         Assert.Equal(1, removed);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Monitor_StartReturnsWhileDriveProbeIsBlocked(bool unprepared)
+    {
+        using var mounts = new BlockingMounts();
+        var returned = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var physical = new PhysicalCartMonitor(new MountedCartDetector(mounts, new CartIdentityService()));
+        var setup = new UnpreparedCartMonitor(new UnpreparedCartDetector(mounts));
+        var caller = new Thread(() =>
+        {
+            if (unprepared) setup.Start(); else physical.Start();
+            returned.TrySetResult();
+        }) { IsBackground = true };
+        caller.Start();
+        try
+        {
+            await mounts.Entered.Task.WaitAsync(TimeSpan.FromSeconds(3));
+            await returned.Task.WaitAsync(TimeSpan.FromSeconds(1));
+            Assert.False(mounts.Release.IsSet);
+        }
+        finally
+        {
+            mounts.Release.Set();
+            caller.Join(TimeSpan.FromSeconds(3));
+            await physical.DisposeAsync();
+            await setup.DisposeAsync();
+        }
+    }
+
+    private sealed class BlockingMounts : IMountRootProvider, IDisposable
+    {
+        public TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public ManualResetEventSlim Release { get; } = new();
+        public IEnumerable<string> GetMountedRoots()
+        {
+            Entered.TrySetResult();
+            Release.Wait(TimeSpan.FromSeconds(5));
+            return [];
+        }
+        public void Dispose() => Release.Dispose();
     }
 
     private async Task<string> CreateRuntimeCartAsync(string content)

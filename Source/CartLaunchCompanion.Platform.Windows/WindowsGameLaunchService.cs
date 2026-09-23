@@ -1,4 +1,5 @@
 using CartLaunchCompanion.Core.Configuration;
+using CartLaunchCompanion.Core.Emulators;
 using CartLaunchCompanion.Core.Launching;
 using CartLaunchCompanion.Core.Platform;
 using CartLaunchCompanion.Core.Portable;
@@ -366,7 +367,9 @@ public sealed class WindowsGameLaunchService : IGameLaunchService
             WorkingDirectory = ResolveWorkingDirectory(request)
         };
 
-        AddArguments(startInfo, request.Target.Arguments);
+        var arguments = PpssppPortablePaths.AddLaunchArguments(request.Target.Executable,
+            PlatformKind.Windows, CommandLineArgumentParser.Parse(request.Target.Arguments));
+        foreach (var argument in arguments) startInfo.ArgumentList.Add(argument);
 
         var process = Process.Start(startInfo);
 

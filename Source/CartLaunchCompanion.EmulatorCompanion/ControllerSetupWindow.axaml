@@ -1,0 +1,66 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:CartLaunchCompanion.EmulatorCompanion"
+        x:Class="CartLaunchCompanion.EmulatorCompanion.ControllerSetupWindow"
+        x:DataType="local:ControllerSetupViewModel"
+        Title="Set up library controller" Icon="/Assets/AppIcon.png"
+        Width="680" Height="620" MinWidth="520" MinHeight="420"
+        WindowState="FullScreen"
+        WindowStartupLocation="CenterOwner">
+  <Border Classes="shell">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Classes="releaseContent">
+        <StackPanel Classes="intro">
+          <TextBlock Classes="eyebrow" Text="DIRECT CONTROLLER SETUP" />
+          <TextBlock Classes="displayHeading" Text="Set up library controllers" />
+          <TextBlock Classes="help" Text="Test each connected controller once, then Emulator Companion translates it for every supported emulator. Steam Input is not required." />
+          <TextBlock Classes="help" Text="{Binding SetupScope}" />
+        </StackPanel>
+        <StackPanel Classes="intro">
+          <TextBlock Classes="eyebrow" Text="PLAYER SLOT" />
+          <ComboBox ItemsSource="{Binding PlayerChoices}" SelectedItem="{Binding SelectedPlayer, Mode=TwoWay}">
+            <ComboBox.ItemTemplate><DataTemplate x:DataType="local:ControllerPlayerChoice"><TextBlock Text="{Binding DisplayName}" /></DataTemplate></ComboBox.ItemTemplate>
+          </ComboBox>
+          <TextBlock Classes="help" Text="{Binding SelectedPlayer.Description}" />
+        </StackPanel>
+        <Border Classes="nextStepCard">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Classes="intro">
+              <TextBlock Classes="eyebrow" Text="DETECTED CONTROLLER" />
+              <TextBlock Classes="section" Text="{Binding ControllerName}" />
+              <TextBlock Classes="help" Text="{Binding ControllerDetails}" />
+            </StackPanel>
+            <Border Grid.Column="1" Classes="statusPill" VerticalAlignment="Center">
+              <TextBlock Classes="statusText" Text="SDL DIRECT" />
+            </Border>
+          </Grid>
+        </Border>
+        <StackPanel Classes="intro">
+          <TextBlock Classes="eyebrow" Text="FACE BUTTON BEHAVIOR" />
+          <ComboBox ItemsSource="{Binding FaceButtonChoices}" SelectedItem="{Binding SelectedFaceButtons, Mode=TwoWay}" IsEnabled="{Binding HasController}">
+            <ComboBox.ItemTemplate><DataTemplate x:DataType="local:FaceButtonChoice"><TextBlock Text="{Binding DisplayName}" /></DataTemplate></ComboBox.ItemTemplate>
+          </ComboBox>
+          <TextBlock Classes="help" Text="{Binding SelectedFaceButtons.Description}" />
+        </StackPanel>
+        <Border Classes="workflowCard">
+          <StackPanel Classes="intro">
+            <TextBlock Classes="eyebrow" Text="INPUT TEST" />
+            <TextBlock Classes="section" Text="{Binding Prompt}" />
+            <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" Height="10" />
+            <TextBlock Classes="help" Text="{Binding ProgressText}" />
+            <ItemsControl ItemsSource="{Binding VerifiedLabels}">
+              <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate><DataTemplate><Border Classes="inputChip"><TextBlock Text="{Binding}" /></Border></DataTemplate></ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+        <TextBlock Classes="help" Text="{Binding Message}" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Classes="primary" Content="Start input test" IsEnabled="{Binding CanStart}" Click="StartClicked" />
+          <Button Classes="primary" Content="{Binding SaveActionLabel}" IsEnabled="{Binding CanSave}" Click="SaveClicked" />
+          <Button Classes="secondary" Content="Close" Click="CloseClicked" />
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+  </Border>
+</Window>

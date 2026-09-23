@@ -1,0 +1,75 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:CartLaunchCompanion.EmulatorCompanion"
+        xmlns:models="using:CartLaunchCompanion.Core.Emulators"
+        x:Class="CartLaunchCompanion.EmulatorCompanion.ReleaseDetailsWindow"
+        x:DataType="local:ReleaseDetailsViewModel"
+        Title="{Binding Title}" Icon="/Assets/AppIcon.png"
+        Width="680" Height="560" MinWidth="480" MinHeight="320"
+        WindowState="FullScreen"
+        WindowStartupLocation="CenterOwner">
+  <Border Classes="shell">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Classes="releaseContent">
+        <TextBlock Classes="heading" Text="{Binding Title}" />
+        <Grid ColumnDefinitions="*,*" Classes="libraryHeader">
+          <StackPanel Classes="intro">
+            <TextBlock Text="Platform" />
+            <StackPanel Classes="platformChoices" IsEnabled="{Binding CanSelect}">
+              <RadioButton GroupName="TargetPlatform" Content="Windows x64" IsChecked="{Binding IsWindowsSelected, Mode=TwoWay}"
+                           AutomationProperties.Name="Install Windows build" />
+              <RadioButton GroupName="TargetPlatform" Content="Linux x64" IsChecked="{Binding IsLinuxSelected, Mode=TwoWay}"
+                           AutomationProperties.Name="Install Linux build" />
+              <RadioButton GroupName="TargetPlatform" Content="Both" IsChecked="{Binding IsBothSelected, Mode=TwoWay}"
+                           AutomationProperties.Name="Install Windows and Linux builds" />
+            </StackPanel>
+            <TextBlock Classes="help" Text="Linux targets SteamOS, Bazzite, ChimeraOS, and CachyOS." />
+          </StackPanel>
+          <StackPanel Grid.Column="1" Classes="intro">
+            <TextBlock Text="Release channel" />
+            <ComboBox IsEnabled="{Binding CanSelect}" ItemsSource="{Binding Channels}" SelectedItem="{Binding SelectedChannel, Mode=TwoWay}"
+                      HorizontalAlignment="Stretch" AutomationProperties.Name="Release channel">
+              <ComboBox.ItemTemplate><DataTemplate x:DataType="models:EmulatorReleaseChannel">
+                <TextBlock Text="{Binding DisplayName}" />
+              </DataTemplate></ComboBox.ItemTemplate>
+            </ComboBox>
+          </StackPanel>
+        </Grid>
+        <TextBlock Classes="help" Text="{Binding ChannelDescription}" />
+        <Button Classes="primary" Content="1. Check for available release" IsEnabled="{Binding CanCheck}" Click="CheckClicked" />
+        <Border Classes="nextStepCard" IsVisible="{Binding IsBusy}">
+          <StackPanel Classes="intro">
+            <TextBlock Classes="eyebrow" Text="PLEASE WAIT" />
+            <TextBlock Classes="section" Text="{Binding BusyHeading}" />
+            <TextBlock Classes="help" Text="{Binding Message}" />
+            <ProgressBar IsIndeterminate="True" Height="10" />
+            <TextBlock Classes="help" Text="Keep Emulator Companion open. This can take several minutes for large emulator packages." />
+          </StackPanel>
+        </Border>
+        <TextBlock Classes="help" Text="{Binding Message}" IsVisible="{Binding !IsBusy}" />
+        <!-- Bounded to the two supported platforms; each result retains its own status and release link. -->
+        <ItemsControl ItemsSource="{Binding Results}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="local:ReleasePlatformResult">
+              <Border Classes="card releaseResult">
+                <StackPanel Classes="intro">
+                  <TextBlock Classes="section" Text="{Binding Heading}" />
+                  <TextBlock Classes="help" Text="{Binding Message}" />
+                  <TextBlock Classes="help" Text="{Binding PackageName}" IsVisible="{Binding HasRelease}" />
+                  <TextBlock Classes="help" Text="{Binding PackageDetails}" IsVisible="{Binding HasRelease}" />
+                  <TextBlock Classes="help" Text="{Binding ChecksumStatus}" IsVisible="{Binding HasRelease}" />
+                  <Button Classes="secondary" Content="View release notes" Tag="{Binding ReleasePage}"
+                          IsVisible="{Binding HasRelease}" Click="ReleaseNotesClicked" />
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Classes="help" Text="{Binding InstallLocation}" />
+        <Button Classes="primary" Content="{Binding InstallActionLabel}"
+                IsEnabled="{Binding CanInstall}" Click="InstallClicked" />
+        <Button Classes="secondary" Content="Close" Click="CloseClicked" HorizontalAlignment="Right" />
+      </StackPanel>
+    </ScrollViewer>
+  </Border>
+</Window>

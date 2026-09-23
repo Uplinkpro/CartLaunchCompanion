@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 2,
+  "emulators": [
+    {
+      "id": "ppsspp",
+      "displayName": "PPSSPP",
+      "systemIds": ["psp"],
+      "attribution": {
+        "websiteUrl": "https://www.ppsspp.org/",
+        "repositoryUrl": "https://github.com/hrydgard/ppsspp",
+        "license": "GPL-2.0-or-later",
+        "licenseUrl": "https://github.com/hrydgard/ppsspp/blob/master/LICENSE.TXT",
+        "credits": "Created by Henrik Rydgard, with additional code by PPSSPP contributors. See the upstream Credits screen and license notices.",
+        "brandingSourceUrl": "https://github.com/hrydgard/ppsspp/blob/master/icons/icon-512.svg"
+      },
+      "defaultChannelId": "stable",
+      "releaseChannels": [
+        {
+          "id": "stable",
+          "displayName": "Stable",
+          "description": "Official stable PPSSPP releases. This integration supports the portable Windows x64 ZIP and Linux x86-64 AppImage for SteamOS, Bazzite, ChimeraOS, and CachyOS.",
+          "isStable": true,
+          "supportedPlatforms": ["windows", "linux"],
+          "source": {
+            "kind": "gitHubReleases",
+            "url": "https://github.com/hrydgard/ppsspp",
+            "prereleases": "exclude",
+            "tagPrefix": "v"
+          }
+        }
+      ]
+    },
+    {
+      "id": "duckstation",
+      "displayName": "DuckStation",
+      "systemIds": ["ps1"],
+      "attribution": {
+        "websiteUrl": "https://www.duckstation.org/",
+        "repositoryUrl": "https://github.com/stenzek/duckstation",
+        "license": "CC-BY-NC-ND-4.0",
+        "licenseUrl": "https://github.com/stenzek/duckstation/blob/master/LICENSE",
+        "credits": "Created by Stenzek with contributions from the DuckStation project contributors.",
+        "brandingSourceUrl": "https://github.com/stenzek/duckstation/blob/master/scripts/appimage/org.duckstation.DuckStation.png"
+      },
+      "defaultChannelId": "stable",
+      "releaseChannels": [
+        {
+          "id": "stable",
+          "displayName": "Stable",
+          "description": "The official DuckStation rolling release after additional testing. Portable Windows x64 and Linux x64 AppImage builds for SteamOS, Bazzite, ChimeraOS, and CachyOS are supported.",
+          "isStable": true,
+          "supportedPlatforms": ["windows", "linux"],
+          "source": {
+            "kind": "gitHubReleases",
+            "url": "https://github.com/stenzek/duckstation",
+            "prereleases": "exclude",
+            "tag": "latest"
+          }
+        },
+        {
+          "id": "preview",
+          "displayName": "Preview",
+          "description": "Official DuckStation builds produced from recent project changes with minimal testing. Portable Windows x64 and Linux x64 AppImage builds for SteamOS, Bazzite, ChimeraOS, and CachyOS are supported.",
+          "isStable": false,
+          "supportedPlatforms": ["windows", "linux"],
+          "source": {
+            "kind": "gitHubReleases",
+            "url": "https://github.com/stenzek/duckstation",
+            "prereleases": "only",
+            "tag": "preview"
+          }
+        }
+      ]
+    },
+    {
+      "id": "pcsx2",
+      "displayName": "PCSX2",
+      "systemIds": ["ps2"],
+      "attribution": {
+        "websiteUrl": "https://pcsx2.net/",
+        "repositoryUrl": "https://github.com/PCSX2/pcsx2",
+        "license": "GPL-3.0-or-later",
+        "licenseUrl": "https://github.com/PCSX2/pcsx2/blob/master/COPYING.GPLv3",
+        "credits": "Created and maintained by the PCSX2 project contributors.",
+        "brandingSourceUrl": "https://github.com/PCSX2/pcsx2/blob/master/bin/resources/icons/AppIconLarge.png"
+      },
+      "defaultChannelId": "stable",
+      "releaseChannels": [
+        {
+          "id": "stable",
+          "displayName": "Stable",
+          "description": "Official stable PCSX2 builds for Windows x64 and Linux gaming systems.",
+          "isStable": true,
+          "supportedPlatforms": ["windows", "linux"],
+          "source": {
+            "kind": "gitHubReleases",
+            "url": "https://github.com/PCSX2/pcsx2",
+            "prereleases": "exclude",
+            "tagPrefix": "v"
+          }
+        },
+        {
+          "id": "nightly",
+          "displayName": "Nightly",
+          "description": "Official frequently updated PCSX2 development builds for Windows x64 and Linux gaming systems.",
+          "isStable": false,
+          "supportedPlatforms": ["windows", "linux"],
+          "source": {
+            "kind": "gitHubReleases",
+            "url": "https://github.com/PCSX2/pcsx2",
+            "prereleases": "only",
+            "tagPrefix": "v"
+          }
+        }
+      ]
+    },
+    {
+      "id": "rpcs3",
+      "displayName": "RPCS3",
+      "systemIds": ["ps3"],
+      "attribution": {
+        "websiteUrl": "https://rpcs3.net/",
+        "repositoryUrl": "https://github.com/RPCS3/rpcs3",
+        "license": "GPL-2.0-or-later",
+        "licenseUrl": "https://github.com/RPCS3/rpcs3/blob/master/LICENSE",
+        "credits": "Created and maintained by the RPCS3 project contributors.",
+        "brandingSourceUrl": "https://github.com/RPCS3/rpcs3/blob/master/rpcs3/rpcs3.ico"
+      },
+      "defaultChannelId": "rolling",
+      "releaseChannels": [
+        {
+          "id": "rolling",
+          "displayName": "Rolling",
+          "description": "RPCS3 publishes rolling development builds rather than stable releases. Official Windows x64 and Linux gaming-system packages are supported.",
+          "isStable": false,
+          "supportedPlatforms": ["windows", "linux"],
+          "source": {
+            "kind": "projectWebsite",
+            "url": "https://rpcs3.net/download",
+            "prereleases": "any"
+          }
+        }
+      ]
+    },
+    {
+      "id": "shadps4",
+      "displayName": "shadPS4",
+      "systemIds": ["ps4"],
+      "attribution": {
+        "websiteUrl": "https://shadps4.net/",
+        "repositoryUrl": "https://github.com/shadps4-emu/shadPS4",
+        "license": "GPL-2.0-or-later",
+        "licenseUrl": "https://github.com/shadps4-emu/shadPS4/blob/main/LICENSE",
+        "credits": "Created and maintained by the shadPS4 project contributors.",
+        "brandingSourceUrl": "https://github.com/shadps4-emu/shadPS4/blob/main/src/resources/shadps4.png"
+      },
+      "defaultChannelId": "stable",
+      "releaseChannels": [
+        {
+          "id": "stable",
+          "displayName": "Stable",
+          "description": "Official shadPS4 stable SDL builds for Windows x64 and Linux gaming systems.",
+          "isStable": true,
+          "supportedPlatforms": ["windows", "linux"],
+          "source": {
+            "kind": "gitHubReleases",
+            "url": "https://github.com/shadps4-emu/shadPS4",
+            "prereleases": "exclude"
+          }
+        },
+        {
+          "id": "nightly",
+          "displayName": "Nightly",
+          "description": "Official shadPS4 development SDL builds for Windows x64 and Linux gaming systems.",
+          "isStable": false,
+          "supportedPlatforms": ["windows", "linux"],
+          "source": {
+            "kind": "gitHubReleases",
+            "url": "https://github.com/shadps4-emu/shadPS4",
+            "prereleases": "only"
+          }
+        }
+      ]
+    }
+  ]
+}

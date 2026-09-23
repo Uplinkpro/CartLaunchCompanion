@@ -116,7 +116,7 @@ public sealed class PhysicalCartMonitor(
     public event EventHandler<DetectedPhysicalCart>? CartInserted;
     public event EventHandler<string>? CartRemoved;
 
-    public void Start() => _loop ??= MonitorAsync(_stop.Token);
+    public void Start() => _loop ??= Task.Run(() => MonitorAsync(_stop.Token));
     public Task IgnoreUntilRemovedAsync(string mediaRoot, CancellationToken cancellationToken = default) =>
         detector.IgnoreUntilRemovedAsync(mediaRoot, cancellationToken);
     public void RestoreRoot(string mediaRoot) => detector.RestoreRoot(mediaRoot);

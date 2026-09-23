@@ -8,7 +8,7 @@ using CartLaunchCompanion.Desktop.ViewModels;
 
 namespace CartLaunchCompanion.Desktop.Tests;
 
-public sealed class MetadataNavigationTests
+public sealed partial class MetadataNavigationTests
 {
     [Fact]
     public async Task OpenCommand_MovesFromHomeToMetadata()
@@ -83,14 +83,15 @@ public sealed class MetadataNavigationTests
 
     private static MainViewModel CreateViewModel(
         IGameLaunchService? launchService = null,
-        Action<bool>? setVisible = null)
+        Action<bool>? setVisible = null,
+        CartLaunchCompanion.Core.Emulators.IEmulatorLaunchUpdates? emulatorUpdates = null)
         => new(
             new StubLibraryService(),
             launchService ?? new StubLaunchService(),
             PortablePaths.FromRoot(Path.GetTempPath()),
             PlatformKind.Windows,
             () => { },
-            setVisible ?? (_ => { }));
+            setVisible ?? (_ => { }), emulatorUpdates);
 
     private sealed class StubLaunchService
         : IGameLaunchService

@@ -30,7 +30,11 @@ public sealed class CartPackageCreatorTests
             Assert.True(Directory.Exists(Path.Combine(media, "Emulators", "Windows", "PCSX2")));
             Assert.True(Directory.Exists(Path.Combine(media, "Emulators", "Linux", "PPSSPP")));
             Assert.True(Directory.Exists(Path.Combine(media, "Emulators", "Shared", "BIOS")));
+            Assert.True(Directory.Exists(Path.Combine(media, "Emulators", "Shared", "TexturePacks", "PCSX2")));
+            Assert.True(Directory.Exists(Path.Combine(media, "Emulators", "Shared", "Saves", "PPSSPP")));
             Assert.True(Directory.Exists(Path.Combine(media, "Roms", "PlayStation 2")));
+            Assert.True(File.Exists(Path.Combine(media, "Roms", "PlayStation 3", GameContentLayout.GuideFileName)));
+            Assert.True(File.Exists(Path.Combine(media, "Roms", "PlayStation 4", GameContentLayout.GuideFileName)));
             var identities = new CartIdentityService();
             var identity = await identities.SaveNewAsync(media, identities.Create("Test Cart"));
             Assert.Equal(identity.Identity.CartId, (await identities.LoadAsync(media)).Identity.CartId);

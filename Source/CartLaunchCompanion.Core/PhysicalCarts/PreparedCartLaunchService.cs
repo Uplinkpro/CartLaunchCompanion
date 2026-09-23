@@ -40,7 +40,7 @@ public sealed class PreparedCartLaunchService
     private static readonly string[] DangerousEnvironmentPrefixes =
     ["DOTNET_", "CORECLR_", "COMPlus_", "LD_", "DYLD_", "MONO_", "GTK_", "QT_PLUGIN_PATH", "PYTHON", "PERL", "RUBY"];
 
-    public ProcessStartInfo CreateStartInfo(PreparedCartRuntime prepared)
+    public ProcessStartInfo CreateStartInfo(PreparedCartRuntime prepared, bool checkForUpdates = false)
     {
         ArgumentNullException.ThrowIfNull(prepared);
         var session = Path.TrimEndingDirectorySeparator(Path.GetFullPath(prepared.SessionRoot));
@@ -67,6 +67,7 @@ public sealed class PreparedCartLaunchService
         };
         start.ArgumentList.Add("--cart-root");
         start.ArgumentList.Add(cartRoot);
+        if (checkForUpdates) start.ArgumentList.Add("--check-for-updates");
         foreach (var key in start.Environment.Keys.ToArray())
             if (DangerousEnvironmentPrefixes.Any(prefix => key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
                 start.Environment.Remove(key);
@@ -75,9 +76,9 @@ public sealed class PreparedCartLaunchService
         return start;
     }
 
-    public PreparedCartLaunchSession Start(PreparedCartRuntime prepared)
+    public PreparedCartLaunchSession Start(PreparedCartRuntime prepared, bool checkForUpdates = false)
     {
-        var process = Process.Start(CreateStartInfo(prepared))
+        var process = Process.Start(CreateStartInfo(prepared, checkForUpdates))
             ?? throw new InvalidOperationException("The verified Cart Launch Companion process did not start.");
         return new(process, prepared);
     }

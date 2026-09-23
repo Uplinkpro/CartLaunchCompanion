@@ -17,6 +17,10 @@
                     Value="avares://Avalonia.Fonts.Inter/Assets#Inter" />
         </Style>
 
+        <Style Selector="WrapPanel.home-actions > Button">
+            <Setter Property="Margin" Value="7" />
+        </Style>
+
         <Style Selector="Button.action">
             <Setter Property="MinWidth" Value="188" />
             <Setter Property="Height" Value="52" />

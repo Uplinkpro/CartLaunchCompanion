@@ -1,0 +1,48 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:CartLaunchCompanion.EmulatorCompanion"
+        x:Class="CartLaunchCompanion.EmulatorCompanion.UpdateSettingsWindow"
+        x:DataType="local:UpdateSettingsViewModel"
+        Title="Update settings" Icon="/Assets/AppIcon.png"
+        Width="640" Height="650" MinWidth="480" MinHeight="320" WindowState="FullScreen" WindowStartupLocation="CenterOwner">
+  <Border Classes="shell">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Classes="releaseContent">
+        <TextBlock Classes="heading" Text="Update settings" />
+        <TextBlock Classes="help" Text="Applies to this emulator library on Windows and Linux. PPSSPP Stable is currently supported." />
+        <CheckBox IsChecked="{Binding CheckBeforeLaunch, Mode=TwoWay}" IsEnabled="{Binding CanEdit}">
+          <TextBlock Classes="help" Text="Check for emulator updates before game launch" />
+        </CheckBox>
+        <StackPanel Classes="intro">
+          <TextBlock Text="Check frequency" />
+          <ComboBox ItemsSource="{Binding Intervals}" SelectedItem="{Binding SelectedInterval, Mode=TwoWay}"
+                    IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" AutomationProperties.Name="Update check frequency">
+            <ComboBox.ItemTemplate><DataTemplate x:DataType="local:UpdateIntervalOption">
+              <TextBlock Text="{Binding Label}" />
+            </DataTemplate></ComboBox.ItemTemplate>
+          </ComboBox>
+          <TextBlock Classes="help" Text="Checks happen when you launch a game, at most this often. Updates always require your choice." />
+        </StackPanel>
+        <Button Classes="secondary" Content="Save preferences" IsEnabled="{Binding CanSave}" Click="SaveClicked" />
+        <Border Classes="card">
+          <StackPanel Classes="releaseContent">
+            <TextBlock Classes="section" Text="Skipped PPSSPP versions" />
+            <TextBlock Classes="help" Text="Clearing a skipped version allows it to be offered again. This does not download or install anything." />
+            <StackPanel Classes="intro">
+              <TextBlock Text="Windows" />
+              <TextBlock Classes="help" Text="{Binding WindowsStatus}" />
+              <Button Classes="secondary" Content="Clear Windows skip" IsEnabled="{Binding CanClearWindows}" Click="ClearWindowsClicked" />
+            </StackPanel>
+            <StackPanel Classes="intro">
+              <TextBlock Text="Linux" />
+              <TextBlock Classes="help" Text="{Binding LinuxStatus}" />
+              <Button Classes="secondary" Content="Clear Linux skip" IsEnabled="{Binding CanClearLinux}" Click="ClearLinuxClicked" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+        <TextBlock Classes="help" Text="{Binding Message}" />
+        <Button Classes="secondary" Content="Close" Click="CloseClicked" HorizontalAlignment="Right" />
+      </StackPanel>
+    </ScrollViewer>
+  </Border>
+</Window>

@@ -1,0 +1,70 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:CartLaunchCompanion.EmulatorCompanion"
+        xmlns:models="using:CartLaunchCompanion.Core.Emulators"
+        x:Class="CartLaunchCompanion.EmulatorCompanion.PortableSetupWindow"
+        x:DataType="local:PortableSetupViewModel"
+        Title="{Binding Title}" Icon="/Assets/AppIcon.png"
+        Width="760" Height="660" MinWidth="560" MinHeight="440"
+        WindowState="FullScreen"
+        WindowStartupLocation="CenterOwner">
+  <Border Classes="shell">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Classes="releaseContent">
+        <StackPanel Classes="intro">
+          <TextBlock Classes="eyebrow" Text="GUIDED SETUP" />
+          <TextBlock Classes="displayHeading" Text="{Binding Title}" />
+          <TextBlock Classes="help" Text="Choose one simple preset. Emulator Companion handles the known portable paths and settings." />
+        </StackPanel>
+        <Border Classes="nextStepCard">
+          <StackPanel Classes="intro">
+            <TextBlock Classes="eyebrow" Text="REQUIRED" />
+            <TextBlock Classes="section" Text="{Binding Requirement}" />
+            <TextBlock Classes="help" Text="{Binding AutomationSummary}" />
+          </StackPanel>
+        </Border>
+        <Grid ColumnDefinitions="*,16,*">
+          <StackPanel Classes="intro">
+            <TextBlock Classes="eyebrow" Text="1  TARGET" />
+            <ComboBox ItemsSource="{Binding PlatformChoices}" SelectedItem="{Binding SelectedPlatform, Mode=TwoWay}">
+              <ComboBox.ItemTemplate><DataTemplate x:DataType="local:PortablePlatformChoice"><TextBlock Text="{Binding DisplayName}" /></DataTemplate></ComboBox.ItemTemplate>
+            </ComboBox>
+          </StackPanel>
+          <StackPanel Grid.Column="2" Classes="intro">
+            <TextBlock Classes="eyebrow" Text="2  PLAY STYLE" />
+            <ComboBox ItemsSource="{Binding Presets}" SelectedItem="{Binding SelectedPreset, Mode=TwoWay}">
+              <ComboBox.ItemTemplate><DataTemplate x:DataType="models:SimpleEmulationPreset"><TextBlock Text="{Binding DisplayName}" /></DataTemplate></ComboBox.ItemTemplate>
+            </ComboBox>
+          </StackPanel>
+        </Grid>
+        <Border Classes="workflowCard">
+          <StackPanel Classes="intro">
+            <TextBlock Classes="eyebrow" Text="3  REVIEW" />
+            <TextBlock Classes="help" Text="{Binding Message}" />
+            <ItemsControl ItemsSource="{Binding Changes}" IsVisible="{Binding HasChanges}">
+              <ItemsControl.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" /></DataTemplate></ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Classes="primary" Content="{Binding ApplyLabel}" IsEnabled="{Binding CanApply}" Click="ApplyClicked" />
+          <Button Classes="secondary" Content="{Binding OpenLabel}" IsEnabled="{Binding CanOpen}" Click="OpenClicked" />
+        </StackPanel>
+        <Border Classes="workflowCard" IsVisible="{Binding SupportsContentImport}">
+          <StackPanel Classes="intro">
+            <TextBlock Classes="eyebrow" Text="4  GAME CONTENT" />
+            <TextBlock Classes="section" Text="Updates and DLC" />
+            <TextBlock Classes="help" Text="Keep source files inside each game's Updates and DLC folders. Companion imports them into the emulator's required layout." />
+            <TextBlock Classes="help" Text="{Binding ContentMessage}" />
+            <ItemsControl ItemsSource="{Binding ContentItems}" IsVisible="{Binding HasContentItems}">
+              <ItemsControl.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" /></DataTemplate></ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Button Classes="primary" Content="{Binding ImportContentLabel}" IsEnabled="{Binding CanImportContent}"
+                    HorizontalAlignment="Left" Click="ImportContentClicked" />
+          </StackPanel>
+        </Border>
+        <Button Classes="secondary" Content="Close" HorizontalAlignment="Right" Click="CloseClicked" />
+      </StackPanel>
+    </ScrollViewer>
+  </Border>
+</Window>

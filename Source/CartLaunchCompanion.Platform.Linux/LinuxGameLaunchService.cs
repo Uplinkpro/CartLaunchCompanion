@@ -1,5 +1,7 @@
 using CartLaunchCompanion.Core.Configuration;
+using CartLaunchCompanion.Core.Emulators;
 using CartLaunchCompanion.Core.Launching;
+using CartLaunchCompanion.Core.Platform;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -398,8 +400,8 @@ public sealed class LinuxGameLaunchService : IGameLaunchService
 
         var process = StartProcess(
             request.Target.Executable,
-            CommandLineArgumentParser.Parse(
-                request.Target.Arguments),
+            PpssppPortablePaths.AddLaunchArguments(request.Target.Executable, PlatformKind.Linux,
+                CommandLineArgumentParser.Parse(request.Target.Arguments)),
             ResolveWorkingDirectory(request));
 
         return GameLaunchResult.Success(

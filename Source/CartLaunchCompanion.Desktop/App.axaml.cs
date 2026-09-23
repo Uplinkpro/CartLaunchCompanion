@@ -81,6 +81,17 @@ public partial class App : Application
                     _ => new UnsupportedGameLaunchService()
                 };
 
+            var emulatorStorage = CartLaunchCompanion.Core.Emulators.EmulatorStorageLayout.FromApplicationRoot(portablePaths.Root);
+            var emulatorAdapter = new CartLaunchCompanion.Core.Emulators.Adapters.PpssppReleaseAdapter();
+            var emulatorInstaller = new CartLaunchCompanion.Core.Emulators.PpssppInstaller(
+                emulatorStorage.MediaRoot, emulatorStorage.StateRoot);
+            var emulatorUpdates = new CartLaunchCompanion.Core.Emulators.PpssppLaunchUpdates(
+                emulatorStorage.MediaRoot,
+                emulatorStorage.StateRoot,
+                new CartLaunchCompanion.Core.Emulators.EmulatorRegistryStore(emulatorStorage.StateRoot),
+                new CartLaunchCompanion.Core.Emulators.EmulatorCatalogSource(Path.Combine(AppContext.BaseDirectory, "Catalog", "emulators.json")),
+                emulatorAdapter, emulatorInstaller);
+
             MainWindow? mainWindow = null;
 
             var viewModel = new MainViewModel(
@@ -108,7 +119,8 @@ public partial class App : Application
                 VlcNativeTrailerControl.PrepareRuntimeAsync,
                 new RetroAchievementsClient(metadataHttpClient),
                 metadataHttpClient,
-                exophaseClient: new ExophaseClient(exophaseHttpClient));
+                exophaseClient: new ExophaseClient(exophaseHttpClient),
+                emulatorLaunchUpdates: emulatorUpdates);
 
             mainWindow = new MainWindow
             {
@@ -140,6 +152,9 @@ public partial class App : Application
 
             desktop.Exit += async (_, _) =>
             {
+                viewModel.Dispose();
+                emulatorAdapter.Dispose();
+                emulatorInstaller.Dispose();
                 metadataHttpClient.Dispose();
                 updateHttpClient.Dispose();
                 await controllerService.DisposeAsync();

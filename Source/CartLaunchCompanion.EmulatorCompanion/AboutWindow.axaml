@@ -1,0 +1,50 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:CartLaunchCompanion.EmulatorCompanion"
+        x:Class="CartLaunchCompanion.EmulatorCompanion.AboutWindow"
+        x:DataType="local:AboutViewModel"
+        Title="About Emulator Companion" Icon="/Assets/AppIcon.png"
+        Width="640" Height="600" MinWidth="480" MinHeight="320"
+        WindowState="FullScreen"
+        WindowStartupLocation="CenterOwner">
+  <Border Classes="shell">
+    <Grid RowDefinitions="*,Auto" RowSpacing="16">
+      <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Classes="releaseContent">
+          <TextBlock Classes="heading" Text="{Binding AppName}" />
+          <TextBlock Classes="help" Text="{Binding Version}" />
+          <TextBlock Classes="help" Text="{Binding Author}" />
+          <WrapPanel Classes="linkButtons">
+            <Button Classes="secondary" Content="Project website" Tag="{Binding ProjectWebsite}" Click="OpenLinkClicked" />
+            <Button Classes="secondary" Content="Releases" Tag="{Binding ReleasesPage}" Click="OpenLinkClicked" />
+            <Button Classes="secondary" Content="Buy Me a Coffee" Tag="{Binding SupportPage}" Click="OpenLinkClicked" />
+          </WrapPanel>
+          <TextBlock Classes="section" Text="Third-party projects" IsVisible="{Binding HasProjects}" />
+          <ItemsControl ItemsSource="{Binding Projects}" IsVisible="{Binding HasProjects}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="local:AboutProject">
+                <Border Classes="card attributionCard">
+                  <StackPanel Classes="intro">
+                    <TextBlock Classes="section" Text="{Binding Name}" />
+                    <TextBlock Classes="help" Text="{Binding Credits}" />
+                    <TextBlock Classes="help" Text="{Binding License, StringFormat='License: {0}'}" />
+                    <WrapPanel Classes="linkButtons">
+                      <Button Classes="secondary" Content="Website" Tag="{Binding Website}" IsVisible="{Binding HasWebsite}" Click="OpenLinkClicked" />
+                      <Button Classes="secondary" Content="GitHub" Tag="{Binding Repository}" IsVisible="{Binding HasRepository}" Click="OpenLinkClicked" />
+                      <Button Classes="secondary" Content="License" Tag="{Binding LicensePage}" IsVisible="{Binding HasLicensePage}" Click="OpenLinkClicked" />
+                      <Button Classes="secondary" Content="Branding source" Tag="{Binding BrandingSource}" IsVisible="{Binding HasBrandingSource}" Click="OpenLinkClicked" />
+                    </WrapPanel>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </ScrollViewer>
+      <StackPanel Grid.Row="1">
+        <TextBlock Classes="help" Text="{Binding LinkError}" IsVisible="{Binding HasLinkError}" />
+        <Button Classes="secondary" Content="Close" Click="CloseClicked" HorizontalAlignment="Right" />
+      </StackPanel>
+    </Grid>
+  </Border>
+</Window>

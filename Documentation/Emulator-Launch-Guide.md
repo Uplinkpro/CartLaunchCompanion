@@ -76,7 +76,7 @@ For RetroArch, **Locate ROM** scans the selected portable installation's `cores`
 
 When **Locate ROM** recognizes RetroArch but cannot find a compatible installed core, the Configurator offers **Download and use core**. It shows the official Libretro buildbot URL and the exact portable `RetroArch/cores` destination before making any change. The selected core is downloaded directly into the RetroArch copy on the cart and added to the generated launch arguments automatically.
 
-Automatic downloads currently support Windows x64 and Linux x64. Ambiguous disc/container formats such as `.iso`, `.chd`, `.cue`, and `.zip` still require the user to install or select the correct system core because the extension alone cannot identify the emulated console safely.
+Automatic downloads currently support Windows x64 and Linux x64. Linux support and validation are focused on SteamOS, Bazzite, ChimeraOS, and CachyOS. Ambiguous disc/container formats such as `.iso`, `.chd`, `.cue`, and `.zip` still require the user to install or select the correct system core because the extension alone cannot identify the emulated console safely.
 
 ## Multiple platform versions of one game
 
@@ -246,7 +246,7 @@ RPCS3 can boot a game's `EBOOT.BIN` directly. `--no-gui` suppresses the main gam
 }
 ```
 
-Install the required firmware and configure the controller in RPCS3 before launching from the couch. The first boot of a game may remain visible while RPCS3 compiles modules and shaders.
+Apply RPCS3 setup in Emulator Companion, then install the required firmware once through **File → Install Firmware**. The Windows and Linux builds use the same portable firmware, saves, trophies, updates, and DLC while retaining separate controller, graphics, and compiled-cache files. The first boot of a game may remain visible while RPCS3 compiles modules and shaders.
 
 ## PPSSPP — PlayStation Portable
 

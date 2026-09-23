@@ -89,7 +89,7 @@ public sealed class UnpreparedCartMonitor(
     private bool _baselineEstablished;
     public event EventHandler<UnpreparedCartCandidate>? CandidateInserted;
 
-    public void Start() => _loop ??= MonitorAsync(_stop.Token);
+    public void Start() => _loop ??= Task.Run(() => MonitorAsync(_stop.Token));
 
     private async Task MonitorAsync(CancellationToken cancellationToken)
     {

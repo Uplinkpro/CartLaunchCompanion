@@ -60,7 +60,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         PortablePaths portablePaths,
         PlatformKind platform,
         Action exitApplication,
-        Action<bool> setWindowVisible)
+        Action<bool> setWindowVisible,
+        CartLaunchCompanion.Core.Emulators.IEmulatorLaunchUpdates? emulatorLaunchUpdates = null)
         : this(
             libraryService,
             launchService,
@@ -68,7 +69,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             platform,
             new UnavailableRuntimeUpdateService(),
             exitApplication,
-            setWindowVisible)
+            setWindowVisible,
+            emulatorLaunchUpdates: emulatorLaunchUpdates)
     {
     }
 
@@ -84,8 +86,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         RetroAchievementsClient? retroAchievementsClient = null,
         HttpClient? metadataHttpClient = null,
         GamePlaytimeStore? playtimeStore = null,
-        ExophaseClient? exophaseClient = null)
+        ExophaseClient? exophaseClient = null,
+        CartLaunchCompanion.Core.Emulators.IEmulatorLaunchUpdates? emulatorLaunchUpdates = null)
     {
+        _emulatorLaunchUpdates = emulatorLaunchUpdates;
         _libraryService = libraryService;
         _launchService = launchService;
         _portablePaths = portablePaths;
@@ -599,6 +603,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         _lastInputAction = input.Action;
         _lastInputAt = input.Timestamp;
+
+        if (IsEmulatorUpdateVisible)
+        {
+            OnPropertyChanged(nameof(EmulatorUpdateControls));
+            HandleEmulatorUpdateInput(input.Action);
+            return;
+        }
 
         if (IsLaunching || IsMetadataLoading)
             return;
@@ -1310,12 +1321,23 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         try
         {
+            if (!await PrepareEmulatorLaunchAsync(request)) return;
+            if (_emulatorLaunchUpdates is not null)
+                await _emulatorLaunchUpdates.EnsureReadyAsync(request, _emulatorLaunchLifetime.Token);
+            IsLaunchTransitionVisible = true;
+            launchTransitionStarted = Stopwatch.GetTimestamp();
+
             // Let Avalonia present and animate the launch transition before
             // process creation performs any synchronous platform work.
             await Task.Delay(50);
 
-            var result =
-                await _launchService.LaunchAsync(request);
+            GameLaunchResult result;
+            using (var lease = _emulatorLaunchUpdates is null ? null :
+                await _emulatorLaunchUpdates.AcquireLaunchLeaseAsync(request, _emulatorLaunchLifetime.Token))
+            {
+                _emulatorLaunchLifetime.Token.ThrowIfCancellationRequested();
+                result = await _launchService.LaunchAsync(request);
+            }
             var playtimeStartedAt = Stopwatch.GetTimestamp();
 
             MetadataStatus = result.Message;
@@ -1470,6 +1492,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public void Dispose()
     {
+        _emulatorLaunchLifetime.Cancel();
+        _emulatorInstallCancellation?.Cancel();
         DisposeCards();
         CollectionLogoImage?.Dispose();
         _metadataLoadingCancellation?.Cancel();

@@ -7,6 +7,7 @@ $ErrorActionPreference = 'Stop'
 $version = $Version
 $launcherProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.Desktop\CartLaunchCompanion.Desktop.csproj'
 $configuratorProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.Configurator\CartLaunchCompanion.Configurator.csproj'
+$emulatorCompanionProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.EmulatorCompanion\CartLaunchCompanion.EmulatorCompanion.csproj'
 $updaterProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.Updater\CartLaunchCompanion.Updater.csproj'
 $hostProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.Host\CartLaunchCompanion.Host.csproj'
 $hostCleanupProject = Join-Path $PSScriptRoot 'Source\CartLaunchCompanion.HostCleanup\CartLaunchCompanion.HostCleanup.csproj'
@@ -40,6 +41,14 @@ foreach ($runtime in $runtimes) {
         -p:DebugType=None -p:DebugSymbols=false -o $destination
     if ($LASTEXITCODE -ne 0) {
         throw "Configurator publish failed for $($runtime.Id)."
+    }
+    if ($runtime.Id -eq 'win-x64') {
+        & dotnet publish $emulatorCompanionProject -c Release -r $runtime.Id --self-contained true `
+            -p:PublishSingleFile=false -p:PublishTrimmed=false `
+            -p:DebugType=None -p:DebugSymbols=false -o $destination
+        if ($LASTEXITCODE -ne 0) {
+            throw "Emulator Companion publish failed for $($runtime.Id)."
+        }
     }
 
     $maintenanceDestination = Join-Path $staging (Join-Path 'System\Maintenance' $runtime.Folder)
@@ -137,6 +146,8 @@ $linuxLauncherPath = Join-Path $staging 'Start Cart Launch Companion.sh'
 
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Build\WindowsLaunchers\Game Configurator.bat') `
     -Destination $staging
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Build\WindowsLaunchers\Emulator Companion.bat') `
+    -Destination $staging
 
 $linuxConfigurator = @'
 #!/usr/bin/env sh
@@ -174,6 +185,7 @@ Remove-Item -LiteralPath (Join-Path $linuxStage 'System\Maintenance\Windows-x64'
 Remove-Item -LiteralPath (Join-Path $linuxStage 'System\CartMonitor\Windows-x64') -Recurse -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'Start Cart Launch Companion.bat') -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'Game Configurator.bat') -Force
+Remove-Item -LiteralPath (Join-Path $linuxStage 'Emulator Companion.bat') -Force
 Remove-Item -LiteralPath (Join-Path $linuxStage 'Updater.bat') -Force
 
 $windowsZip = Join-Path $packages "CartLaunchCompanion-$version-win-x64.zip"

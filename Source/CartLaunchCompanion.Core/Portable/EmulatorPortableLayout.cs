@@ -4,7 +4,7 @@ namespace CartLaunchCompanion.Core.Portable;
 
 public static class EmulatorPortableLayout
 {
-    public static readonly string[] SharedFolders = ["BIOS", "Saves", "States", "Screenshots", "Cheats"];
+    public static IReadOnlyList<string> SharedFolders => SharedEmulatorResourceLayout.ResourceFolders;
 
     public static void Create(string mediaRoot)
     {
@@ -19,12 +19,17 @@ public static class EmulatorPortableLayout
                 (platform == "Linux" ? "Use official x86_64 AppImages where available.\n" : "Use portable builds rather than installers where available.\n"));
         }
         var sharedRoot = Directory.CreateDirectory(Path.Combine(emulatorRoot, "Shared")).FullName;
-        foreach (var folder in SharedFolders) Directory.CreateDirectory(Path.Combine(sharedRoot, folder));
+        SharedEmulatorResourceLayout.Create(mediaRoot);
         WriteGuide(Path.Combine(sharedRoot, "ABOUT SHARED DATA.txt"),
-            "Configure Windows and Linux builds to use these real shared folders.\nDo not use symlinks; they are unreliable across operating systems and removable-drive filesystems.\n");
+            "Windows and Linux emulator builds use these real shared folders for BIOS, saves, states, screenshots, cheats, and texture packs.\n" +
+            "Emulator Companion configures a relative path when supported and creates a repairable platform-specific relative link only when required.\n" +
+            "The shared folders contain the real data; links are never the authoritative copy.\n");
         var romRoot = Directory.CreateDirectory(Path.Combine(mediaRoot, "Roms")).FullName;
         foreach (var folder in EmulatorLaunchPresetCatalog.All.SelectMany(item => item.RomFolders).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name))
+        {
             Directory.CreateDirectory(Path.Combine(romRoot, folder));
+            GameContentLayout.PreparePlatform(mediaRoot, folder);
+        }
         WriteGuide(Path.Combine(romRoot, "PLACE ROMS HERE.txt"), "Place legally obtained game images in the matching platform folder.\n");
     }
 

@@ -34,6 +34,16 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private readonly CartHostTrustReviewServer _trustReviewServer;
     private bool _runInBackground;
     private bool _allowClose;
+    private bool _stopping;
+
+    public async Task StopMonitoringAsync()
+    {
+        _stopping = true;
+        foreach (var pending in _pendingAutoLaunches.Values.ToArray()) pending.Cancel();
+        foreach (var session in _activeLaunches.Values.ToArray())
+            await session.StopAsync(TimeSpan.FromSeconds(5));
+        _allowClose = true;
+    }
 
     public MainWindow()
     {
@@ -292,6 +302,12 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         catch (Exception ex) { Status = "Runtime preparation was rejected safely: " + ex.Message; }
     }
     private async void LaunchClicked(object? sender, RoutedEventArgs e)
+        => await LaunchSelectedCartAsync();
+
+    private async void CheckForUpdatesClicked(object? sender, RoutedEventArgs e)
+        => await LaunchSelectedCartAsync(checkForUpdates: true);
+
+    private async Task LaunchSelectedCartAsync(bool checkForUpdates = false)
     {
         if (SelectedConnectedCart is null) { Status = "Select a connected cart first."; return; }
         PreparedCartRuntime? prepared = null;
@@ -306,7 +322,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             var approved = await new LaunchConfirmationWindow(identity.Identity.DisplayName, SelectedConnectedCart.MediaRoot, prepared.ExecutablePath).ShowDialog<bool>(this);
             if (!approved) { TrustedRuntimeStagingService.DeleteSession(prepared); Status = "Launch cancelled. The prepared local session was removed."; return; }
             await new PreparedCartAuthorizationService().ValidateImmediatelyBeforeLaunchAsync(prepared, _trustStore);
-            var session = new PreparedCartLaunchService().Start(prepared);
+            var session = new PreparedCartLaunchService().Start(prepared, checkForUpdates);
             _auditLog.Write(CartHostAuditEvent.VerificationAccepted, "manual", identity.Identity.CartId);
             _auditLog.Write(CartHostAuditEvent.LaunchStarted, "manual", identity.Identity.CartId);
             _activeLaunches[SelectedConnectedCart.MediaRoot] = session;
@@ -337,7 +353,8 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         try
         {
             var trusted = await _trustStore.LoadAsync();
-            var detected = await _cartDetector.ScanAsync();
+            var detected = await Task.Run(() => _cartDetector.ScanAsync());
+            if (_stopping) return;
             ConnectedCarts.Clear();
             foreach (var cart in detected)
                 ConnectedCarts.Add(new(cart.Identity.Identity.DisplayName, cart.MediaRoot, TrustedCartStore.IsTrusted(trusted, cart.Identity)));
@@ -349,7 +366,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
 
     public void StartPassiveMonitoring()
     {
-        if (_monitor is not null) return;
+        if (_stopping || _monitor is not null) return;
         _monitor = new PhysicalCartMonitor(_cartDetector, insertionScanCompleted: (cart, elapsed) =>
             WritePerformance("detection_scan", elapsed, cart.Identity.Identity.CartId));
         _monitor.CartInserted += (_, cart) => Dispatcher.UIThread.Post(async () =>
@@ -375,23 +392,18 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         _setupMonitor.Start();
     }
 
-    public async Task StartBackgroundMonitoringAsync()
+    public Task StartBackgroundMonitoringAsync()
     {
-        // A cart can already be mounted when the Monitor starts at sign-in or
-        // immediately after installation. The passive monitor treats its first
-        // scan as a baseline, so explicitly process that initial set once.
-        var mounted = await _cartDetector.ScanAsync();
-        var unprepared = _unpreparedCartDetector.Scan();
-        await ScanMountedCartsAsync();
+        // Both monitors silently baseline their first scan. Only a subsequent
+        // insertion can offer setup or automatically launch an approved cart.
+        Status = "Monitoring in the notification area. Carts already connected at startup are not launched automatically.";
         StartPassiveMonitoring();
-        foreach (var candidate in unprepared)
-            await HandleUnpreparedInsertionAsync(candidate);
-        foreach (var cart in mounted)
-            await HandleAutomaticInsertionAsync(cart);
+        return Task.CompletedTask;
     }
 
     private async Task HandleUnpreparedInsertionAsync(UnpreparedCartCandidate candidate)
     {
+        if (_stopping) return;
         var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(candidate.MediaRoot));
         if (!_setupPromptsInProgress.Add(root)) return;
         var wasVisible = IsVisible;
@@ -483,14 +495,17 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
 
     private async Task HandleAutomaticInsertionAsync(DetectedPhysicalCart cart)
     {
+        if (_stopping) return;
         var totalTimer = Stopwatch.StartNew();
         CancellationTokenSource? cancellation = null;
         VerificationProgressWindow? verificationWindow = null;
+        PreparedCartRuntime? prepared = null;
         try
         {
             _ = MinimizeExplorerWindowWhenAvailableAsync(cart.MediaRoot);
             var stageTimer = Stopwatch.StartNew();
             var database = await _trustStore.LoadAsync();
+            if (_stopping) return;
             WritePerformance("trust_lookup", stageTimer.Elapsed, cart.Identity.Identity.CartId);
             var decision = _autoLaunchPolicy.TryBegin(database, cart.Identity, DateTimeOffset.UtcNow);
             if (decision != AutomaticLaunchDecision.Allowed) return;
@@ -503,7 +518,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             Status = $"{cart.Identity.Identity.DisplayName} was inserted. Verifying its approved runtime for automatic launch…";
             _auditLog.Write(CartHostAuditEvent.VerificationStarted, "automatic", cart.Identity.Identity.CartId);
             var platform = OperatingSystem.IsWindows() ? "Windows-x64" : "Linux-x64";
-            var prepared = await new TrustedRuntimeStagingService(stageCompleted: (stage, elapsed) =>
+            prepared = await Task.Run(() => new TrustedRuntimeStagingService(stageCompleted: (stage, elapsed) =>
                 WritePerformance(stage switch
                 {
                     RuntimeStagingStage.SourceVerification => "source_verify",
@@ -511,16 +526,18 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
                     RuntimeStagingStage.StagedVerification => "staged_verify",
                     _ => "unknown_stage"
                 }, elapsed, cart.Identity.Identity.CartId)).PrepareAsync(
-                cart.MediaRoot, cart.Identity, database, platform, Path.Combine(_plan.DataDirectory, "Sessions"), cancellation.Token);
+                cart.MediaRoot, cart.Identity, database, platform, Path.Combine(_plan.DataDirectory, "Sessions"), cancellation.Token));
             cancellation.Token.ThrowIfCancellationRequested();
             if (!Directory.Exists(cart.MediaRoot)) { TrustedRuntimeStagingService.DeleteSession(prepared); return; }
             stageTimer.Restart();
-            await new PreparedCartAuthorizationService().ValidateImmediatelyBeforeLaunchAsync(prepared, _trustStore, cancellation.Token);
+            await Task.Run(() => new PreparedCartAuthorizationService().ValidateImmediatelyBeforeLaunchAsync(prepared, _trustStore, cancellation.Token));
+            cancellation.Token.ThrowIfCancellationRequested();
             WritePerformance("final_authorization", stageTimer.Elapsed, cart.Identity.Identity.CartId);
             verificationWindow.Close();
             verificationWindow = null;
             stageTimer.Restart();
             var session = new PreparedCartLaunchService().Start(prepared);
+            prepared = null;
             WritePerformance("process_start", stageTimer.Elapsed, cart.Identity.Identity.CartId);
             _auditLog.Write(CartHostAuditEvent.VerificationAccepted, "automatic", cart.Identity.Identity.CartId);
             _auditLog.Write(CartHostAuditEvent.LaunchStarted, "automatic", cart.Identity.Identity.CartId);
@@ -543,6 +560,8 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         finally
         {
             verificationWindow?.Close();
+            if (prepared is not null)
+                await Task.Run(() => TrustedRuntimeStagingService.DeleteSession(prepared));
             if (cancellation is not null) { _pendingAutoLaunches.Remove(cart.MediaRoot); cancellation.Dispose(); }
             if (!_activeLaunches.ContainsKey(cart.MediaRoot)) _autoLaunchPolicy.Complete(cart.Identity.Identity.CartId);
         }

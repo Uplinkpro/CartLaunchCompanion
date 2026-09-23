@@ -1,0 +1,125 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:CartLaunchCompanion.EmulatorCompanion"
+        x:Class="CartLaunchCompanion.EmulatorCompanion.MainWindow"
+        x:DataType="local:LibraryViewModel"
+        Title="Emulator Companion"
+        Icon="/Assets/AppIcon.png"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="32"
+        WindowDecorations="Full"
+        Width="1120" Height="720" MinWidth="720" MinHeight="480"
+        WindowState="FullScreen"
+        WindowStartupLocation="CenterScreen">
+  <Grid RowDefinitions="32,*">
+    <Border Classes="titleBar" WindowDecorationProperties.ElementRole="TitleBar" />
+    <Border Grid.Row="1" Classes="shell">
+      <Grid Classes="library" RowDefinitions="Auto,Auto,*,Auto">
+        <Grid ColumnDefinitions="*,Auto" Classes="libraryHeader">
+          <StackPanel Classes="intro">
+            <TextBlock Classes="heading" Text="Emulator Companion" />
+            <TextBlock Classes="help" Text="Install, prepare, and keep every emulator ready to play." />
+            <TextBlock Classes="location" Text="{Binding MediaRoot}" ToolTip.Tip="{Binding MediaRoot}" />
+          </StackPanel>
+          <WrapPanel Grid.Column="1" Classes="headerActions" VerticalAlignment="Center">
+            <Button Classes="primary" Content="{Binding ControllerActionLabel}" IsEnabled="{Binding CanViewAbout}" Click="ControllerSetupClicked" />
+            <Button Classes="secondary" Content="Update settings" Click="UpdateSettingsClicked" />
+            <Button Classes="secondary" Content="About" IsEnabled="{Binding CanViewAbout}" Click="AboutClicked" />
+            <Button Classes="secondary" Content="Refresh" IsEnabled="{Binding CanRefresh}" Click="RefreshClicked" />
+            <Button Classes="danger" Content="Exit" Click="ExitClicked" />
+          </WrapPanel>
+        </Grid>
+        <StackPanel Grid.Row="1" Classes="intro">
+          <TextBlock Classes="help" Text="{Binding Summary}" />
+          <Border Classes="notice" IsVisible="{Binding HasError}">
+            <TextBlock Classes="help" Text="{Binding ErrorMessage}" />
+          </Border>
+        </StackPanel>
+        <Grid Grid.Row="2" ColumnDefinitions="320,16,*" IsVisible="{Binding HasRows}">
+          <Border Classes="navigationPanel">
+            <Grid RowDefinitions="Auto,*">
+              <StackPanel Classes="panelHeading">
+                <TextBlock Classes="eyebrow" Text="YOUR EMULATORS" />
+                <TextBlock Classes="help" Text="Choose one to continue" />
+              </StackPanel>
+              <ListBox Grid.Row="1" x:Name="LibraryList" ItemsSource="{Binding Rows}"
+                       SelectedItem="{Binding SelectedRow, Mode=TwoWay}" Classes="emulatorList"
+                       AutomationProperties.Name="Emulator library">
+                <ListBox.ItemTemplate>
+                  <DataTemplate x:DataType="local:LibraryRow">
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" Classes="emulatorRow">
+                      <TextBlock FontSize="17" FontWeight="SemiBold" Text="{Binding Name}" />
+                      <Border Grid.Column="1" Classes="statusPill"><TextBlock Classes="statusText" Text="{Binding Availability}" /></Border>
+                      <TextBlock Grid.Row="1" Classes="help" Text="{Binding Platform}" />
+                    </Grid>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </Grid>
+          </Border>
+
+          <Border Grid.Column="2" Classes="workspacePanel">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <Grid RowDefinitions="Auto,Auto,Auto,*">
+              <Grid Classes="workspaceTitle" ColumnDefinitions="*,Auto">
+                <StackPanel Classes="intro">
+                  <TextBlock Classes="eyebrow" Text="SELECTED EMULATOR" />
+                  <TextBlock Classes="displayHeading" Text="{Binding SelectedName}" />
+                  <TextBlock Classes="help" Text="{Binding SelectedStatus}" />
+                </StackPanel>
+                <Border Grid.Column="1" Classes="emulatorMark">
+                  <Image Source="{Binding SelectedIcon}" Stretch="Uniform" />
+                </Border>
+              </Grid>
+              <Grid Grid.Row="1" ColumnDefinitions="*,*,*" Classes="factsGrid">
+                <StackPanel Classes="fact"><TextBlock Classes="eyebrow" Text="PLATFORM" /><TextBlock Text="{Binding SelectedPlatform}" /></StackPanel>
+                <StackPanel Grid.Column="1" Classes="fact"><TextBlock Classes="eyebrow" Text="VERSION" /><TextBlock Text="{Binding SelectedVersion}" TextTrimming="CharacterEllipsis" /></StackPanel>
+                <StackPanel Grid.Column="2" Classes="fact"><TextBlock Classes="eyebrow" Text="CHANNEL" /><TextBlock Text="{Binding SelectedChannel}" /></StackPanel>
+              </Grid>
+              <Border Grid.Row="2" Classes="nextStepCard">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Classes="intro">
+                    <TextBlock Classes="eyebrow" Text="NEXT STEP" />
+                    <TextBlock Classes="section" Text="{Binding SelectedNextStep}" />
+                    <TextBlock Classes="help" Text="Emulator Companion keeps game folders, presets, saves, and required setup together." />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Classes="actionStack">
+                    <Button Classes="primary" Content="{Binding SelectedActionLabel}" IsEnabled="{Binding CanViewReleases}" Click="ReleasesClicked" />
+                    <Button Classes="secondary" Content="{Binding SetupActionLabel}" IsEnabled="{Binding CanSetUp}" Click="SetupClicked" />
+                    <Button Classes="danger" Content="Uninstall" IsEnabled="{Binding CanUninstall}" Click="UninstallClicked" />
+                  </StackPanel>
+                </Grid>
+              </Border>
+              <Border Grid.Row="3" Classes="workflowCard">
+                <StackPanel Classes="intro">
+                  <TextBlock Classes="eyebrow" Text="GUIDED WORKFLOW" />
+                  <TextBlock Text="1  Install the correct Windows, Linux, or both builds" />
+                  <TextBlock Text="2  Apply portable folders and a simple performance preset" />
+                  <TextBlock Text="3  Add required BIOS or firmware" />
+                  <TextBlock Text="4  Use the library controller profile, then launch a game" />
+                </StackPanel>
+              </Border>
+            </Grid>
+            </ScrollViewer>
+          </Border>
+
+        </Grid>
+        <Grid Grid.Row="2" IsVisible="{Binding ShowEmpty}">
+          <Border Classes="card" IsVisible="{Binding ShowEmpty}" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel Classes="intro">
+              <TextBlock Classes="section" Text="Your library is empty" />
+              <TextBlock Classes="help" Text="{Binding EmptyMessage}" />
+            </StackPanel>
+          </Border>
+          <TextBlock Classes="help" Text="Loading library…" IsVisible="{Binding ShowLoading}"
+                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Grid>
+        <Grid Grid.Row="3" ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+          <TextBlock x:Name="ControllerNavigationStatus" Classes="help" />
+          <TextBlock Grid.Column="1" Classes="help"
+                     Text="D-pad/stick: move  •  A/Cross: select  •  B/Circle: back" />
+        </Grid>
+      </Grid>
+    </Border>
+  </Grid>
+</Window>

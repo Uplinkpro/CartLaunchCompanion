@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:CartLaunchCompanion.Desktop.ViewModels"
+             x:Class="CartLaunchCompanion.Desktop.Views.EmulatorUpdateView"
+             x:DataType="vm:MainViewModel">
+  <UserControl.Styles><StyleInclude Source="/Themes/EmulatorUpdateTheme.axaml" /></UserControl.Styles>
+  <Border Classes="emulatorUpdateOverlay">
+    <Border Classes="emulatorUpdatePanel">
+      <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Classes="emulatorUpdateContent">
+          <TextBlock Classes="emulatorUpdateTitle" Text="Emulator update available" />
+          <TextBlock Classes="emulatorUpdateCopy" Text="{Binding EmulatorUpdateVersion}" />
+          <TextBlock Classes="emulatorUpdateCopy" Text="{Binding EmulatorUpdateMessage}" />
+          <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsEmulatorUpdateBusy}" />
+          <WrapPanel Classes="emulatorUpdateActions" IsVisible="{Binding !IsEmulatorUpdateBusy}">
+            <Button Classes="action" Content="Update" Command="{Binding UpdateEmulatorNowCommand}" />
+            <Button Classes="action" Content="Skip for now" Command="{Binding SkipEmulatorNowCommand}" />
+            <Button Classes="action" Content="Skip this version" Command="{Binding SkipEmulatorVersionCommand}" />
+          </WrapPanel>
+          <TextBlock Classes="emulatorUpdateCopy" Text="{Binding EmulatorUpdateControls}" IsVisible="{Binding !IsEmulatorUpdateBusy}" />
+          <Button Classes="action" Content="Cancel update" Command="{Binding CancelEmulatorUpdateCommand}" IsVisible="{Binding IsEmulatorUpdateBusy}" />
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+  </Border>
+</UserControl>

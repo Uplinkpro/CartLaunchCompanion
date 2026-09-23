@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\Assets\AppIcon.ico</ApplicationIcon>
+    <Product>Emulator Companion</Product>
+    <Description>Emulator management companion for Cart Launch Companion.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Update="Catalog\emulators.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <AvaloniaResource Include="..\..\Assets\AppIcon.png" Link="Assets\AppIcon.png" />
+    <AvaloniaResource Include="..\..\Assets\Emulators\ppsspp.png" Link="Assets\Emulators\ppsspp.png" />
+    <AvaloniaResource Include="..\..\Assets\Emulators\duckstation.png" Link="Assets\Emulators\duckstation.png" />
+    <AvaloniaResource Include="..\..\Assets\Emulators\pcsx2.png" Link="Assets\Emulators\pcsx2.png" />
+    <AvaloniaResource Include="..\..\Assets\Emulators\rpcs3.png" Link="Assets\Emulators\rpcs3.png" />
+    <AvaloniaResource Include="..\..\Assets\Emulators\shadps4.png" Link="Assets\Emulators\shadps4.png" />
+    <PackageReference Include="Avalonia" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
+    <PackageReference Include="ppy.SDL3-CS" Version="2026.722.0" />
+    <ProjectReference Include="..\CartLaunchCompanion.Core\CartLaunchCompanion.Core.csproj" />
+  </ItemGroup>
+</Project>

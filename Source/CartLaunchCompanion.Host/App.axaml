@@ -2,6 +2,7 @@
              x:Class="CartLaunchCompanion.Host.App" RequestedThemeVariant="Dark">
   <Application.Styles>
     <FluentTheme/>
+    <Style Selector="WrapPanel.cart-actions > Button"><Setter Property="Margin" Value="0,0,10,10"/></Style>
     <Style Selector="Window"><Setter Property="Background" Value="#0B0D10"/><Setter Property="FontFamily" Value="Inter"/></Style>
     <Style Selector="Button"><Setter Property="MinHeight" Value="40"/><Setter Property="Padding" Value="18,9"/></Style>
     <Style Selector="Border.card"><Setter Property="Background" Value="#15191F"/><Setter Property="BorderBrush" Value="#2A313B"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="12"/><Setter Property="Padding" Value="18"/></Style>

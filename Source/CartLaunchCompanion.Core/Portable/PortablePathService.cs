@@ -10,6 +10,14 @@ public sealed class PortablePathService : IPortablePathService
 
     public PortablePaths Discover(string applicationBaseDirectory)
     {
+        var paths = DiscoverReadOnly(applicationBaseDirectory);
+        paths.EnsureWritableFolders();
+        return paths;
+    }
+
+    /// <summary>Uses the same root discovery without creating folders on the media.</summary>
+    public PortablePaths DiscoverReadOnly(string applicationBaseDirectory)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(applicationBaseDirectory);
 
         var start = new DirectoryInfo(
@@ -21,9 +29,7 @@ public sealed class PortablePathService : IPortablePathService
         {
             if (LooksLikePortableRoot(current.FullName))
             {
-                var paths = PortablePaths.FromRoot(current.FullName);
-                paths.EnsureWritableFolders();
-                return paths;
+                return PortablePaths.FromRoot(current.FullName);
             }
         }
 
@@ -40,15 +46,11 @@ public sealed class PortablePathService : IPortablePathService
                 Directory.Exists(
                     Path.Combine(current.FullName, "Source")))
             {
-                var paths = PortablePaths.FromRoot(current.FullName);
-                paths.EnsureWritableFolders();
-                return paths;
+                return PortablePaths.FromRoot(current.FullName);
             }
         }
 
-        var fallback = PortablePaths.FromRoot(start.FullName);
-        fallback.EnsureWritableFolders();
-        return fallback;
+        return PortablePaths.FromRoot(start.FullName);
     }
 
     private static bool LooksLikePortableRoot(string path) =>

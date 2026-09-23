@@ -65,7 +65,10 @@ function Assert-ArchiveContents {
     Assert-True ($hasLinuxHost -eq $ExpectLinux) "$name has incorrect Linux Cart Monitor contents."
     if ($ExpectWindows) {
         Assert-True (@($entries | Where-Object { $_ -like '*/Updater.bat' }).Count -gt 0) "$name is missing Updater.bat."
+        Assert-True (@($entries | Where-Object { $_ -like '*/Emulator Companion.bat' }).Count -gt 0) "$name is missing Emulator Companion.bat."
         Assert-True (@($entries | Where-Object { $_ -like '*/System/Windows-x64/CartLaunchCompanion.Configurator.exe' }).Count -gt 0) "$name is missing the Windows configurator."
+        Assert-True (@($entries | Where-Object { $_ -like '*/System/Windows-x64/CartLaunchCompanion.EmulatorCompanion.exe' }).Count -gt 0) "$name is missing the Windows Emulator Companion."
+        Assert-True (@($entries | Where-Object { $_ -like '*/System/Windows-x64/Catalog/emulators.json' }).Count -gt 0) "$name is missing the Emulator Companion catalog."
         Assert-True (@($entries | Where-Object { $_ -like '*/System/Windows-x64/libvlc/win-x64/*' }).Count -gt 0) "$name is missing x64 LibVLC."
         Assert-True (@($entries | Where-Object { $_ -like '*/System/Windows-x64/libvlc/win-x86/*' -or $_ -like '*/System/Windows-x64/libvlc/win-arm64/*' }).Count -eq 0) "$name contains unused Windows LibVLC architectures."
     }

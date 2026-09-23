@@ -437,10 +437,8 @@
 
             </Grid>
 
-            <StackPanel Grid.Row="1"
-                        Orientation="Horizontal"
-                        HorizontalAlignment="Center"
-                        Spacing="14">
+            <WrapPanel Grid.Row="1" Classes="home-actions"
+                       HorizontalAlignment="Center">
                 <Button Classes="action"
                         Command="{Binding OpenSelectedGameCommand}"
                         IsEnabled="{Binding HasSelectedGame}"
@@ -477,7 +475,7 @@
                                    VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
-            </StackPanel>
+            </WrapPanel>
         </Grid>
 
         <Border IsVisible="{Binding IsLoading}"
