@@ -1,5 +1,14 @@
 # Cart Launch Companion development rules
 
+## One cart ecosystem
+
+- Treat Cart Launch Companion (CLC), Emulator Companion, Game Configurator, and CLC-Cart Monitor as parts of one portable cart ecosystem, even though they are separate executables. Consider the effect of changes on their shared cart layout, game launch flow, controller experience, and release packaging.
+- `Source/CartLaunchCompanion.Desktop` is the CLC launcher; `Source/CartLaunchCompanion.EmulatorCompanion` manages emulator installation and setup; `Source/CartLaunchCompanion.Configurator` creates game configurations; `Source/CartLaunchCompanion.Host` provides the optional Cart Monitor. Put contracts and behavior used by more than one app in `Source/CartLaunchCompanion.Core` rather than duplicating them in app projects.
+- Keep emulator identity, installation records, paths, and setup state consistent across Emulator Companion and CLC. A change to shared data or its schema must account for existing carts and both consumers; do not silently migrate or overwrite user data.
+- Preserve portability when adding paths or links: resolve cart-relative locations from the current media root so drive-letter or mount-point changes do not break them. Keep Windows and Linux behavior in scope, including SteamOS-class systems, while documenting any platform behavior that has not been validated.
+- Use one coherent design language and controller-navigation model across the apps. Keep emulator-specific configuration behind shared workflow concepts where practical so adding an emulator does not create a separate user experience.
+- When changing shared contracts or workflows, build the solution and run the relevant Core, Desktop, and Emulator Companion tests. Check that launch behavior and packaging still work for the affected apps.
+
 ## Avalonia tabular UI
 
 - Use Avalonia's native `TableView` for high-performance, read-only tabular data.
@@ -25,7 +34,7 @@
 - Prefer semantic resource names such as `SurfaceBrush`, `MutedTextBrush`, and `PrimaryActionButton` instead of repeating literal colors or visual values.
 - Do not duplicate inline style values across AXAML files.
 - Allow a local value only when it is genuinely unique to that content, such as an intrinsic media preview size or a binding-driven value, and not part of the application theme.
-- Keep the Launcher, Configurator, and CLC-Cart Monitor visually consistent by sharing common tokens wherever their presentation language overlaps.
+- Keep the Launcher, Emulator Companion, Configurator, and CLC-Cart Monitor visually consistent by sharing common tokens wherever their presentation language overlaps.
 
 ## Reusable button states
 
