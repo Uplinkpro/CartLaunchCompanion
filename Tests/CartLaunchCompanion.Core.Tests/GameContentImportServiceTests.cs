@@ -47,20 +47,21 @@ public sealed class GameContentImportServiceTests : IDisposable
         var game = GameContentLayout.EnsureGame(_root, "PlayStation 3", "Example Game");
         var package = Path.Combine(game, "Updates", "UPDATE.pkg");
         await File.WriteAllTextAsync(package, "package");
-        var executable = Path.Combine(_root, "Emulators", "Windows", "RPCS3", "rpcs3.exe");
+        var platform = OperatingSystem.IsLinux() ? PlatformKind.Linux : PlatformKind.Windows;
+        var executable = Path.Combine(_root, "Emulators", platform.ToString(), "RPCS3",
+            platform == PlatformKind.Windows ? "rpcs3.exe" : "rpcs3");
         Directory.CreateDirectory(Path.GetDirectoryName(executable)!);
         await File.WriteAllTextAsync(executable, "exe");
         var runner = new RecordingRunner();
         var service = new GameContentImportService(_root, _root, "rpcs3", runner);
-        var target = new PortableSetupTarget(PlatformKind.Windows, executable, "config.yml", false);
+        var target = new PortableSetupTarget(platform, executable, "config.yml", false);
 
         await service.ImportAsync(target);
 
         var call = Assert.Single(runner.Calls);
         Assert.Equal(executable, call.Executable);
         Assert.Equal(new[] { "--installpkg", package }, call.Arguments);
-        Assert.Empty((await service.PreviewAsync(PlatformKind.Windows)).Items);
-        Assert.Empty((await service.PreviewAsync(PlatformKind.Linux)).Items);
+        Assert.Empty((await service.PreviewAsync(platform)).Items);
         Assert.True(File.Exists(Path.Combine(_root, "Config", "EmulatorCompanion", "ContentImports", "rpcs3", "Shared.json")));
         Assert.True(File.Exists(package));
     }
